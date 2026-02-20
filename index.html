@@ -842,6 +842,30 @@ tr:last-child td{border-bottom:none;}
     <!-- KPI -->
     <div class="dash-grid dash-row-4" style="margin-bottom:20px;" id="admin-kpi"></div>
 
+    <!-- 관리자 비밀번호 변경 -->
+    <div class="card" style="margin-bottom:20px;" id="admin-pwd-section">
+      <div class="card-header">
+        <div class="card-title-lg">🔑 관리자 비밀번호 변경</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:end;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">현재 비밀번호</label>
+          <input class="form-input" type="password" id="admin-pw-current" placeholder="현재 비밀번호">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">새 비밀번호 (8자 이상)</label>
+          <input class="form-input" type="password" id="admin-pw-new" placeholder="새 비밀번호">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">새 비밀번호 확인</label>
+          <input class="form-input" type="password" id="admin-pw-confirm" placeholder="재입력">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:14px;" onclick="changeAdminPassword()">
+        <i class="fas fa-lock"></i> 비밀번호 변경
+      </button>
+    </div>
+
     <!-- 수당 설정 패널 -->
     <div class="card" style="margin-bottom:20px;border-color:rgba(212,168,83,0.3);">
       <div class="card-header">
@@ -1648,6 +1672,26 @@ async function saveProfile(){
   u.phone=document.getElementById('prof-phone').value.trim();
   await dbPut('users',u); currentUser=u; setupTopbar();
   toast('프로필이 저장되었습니다','success');
+}
+async function changeAdminPassword(){
+  if(!_validateSession())return;
+  const cur=document.getElementById('admin-pw-current').value;
+  const nw=document.getElementById('admin-pw-new').value;
+  const cf=document.getElementById('admin-pw-confirm').value;
+  if(!cur||!nw||!cf){toast('모든 항목을 입력하세요','error');return;}
+  const u=await dbGet('users',currentUser.id);
+  if(!u){toast('사용자 정보를 불러올 수 없습니다','error');return;}
+  if(!_verifyPwd(cur,u.pwd)){toast('현재 비밀번호가 틀립니다','error');return;}
+  if(!_sanitizePwd(nw)){toast('새 비밀번호는 8자 이상이어야 합니다','error');return;}
+  if(nw!==cf){toast('새 비밀번호가 일치하지 않습니다','error');return;}
+  u.pwd=_hashPwd(nw);
+  await dbPut('users',u);
+  currentUser=u;
+  document.getElementById('admin-pw-current').value='';
+  document.getElementById('admin-pw-new').value='';
+  document.getElementById('admin-pw-confirm').value='';
+  await audit('PWD_CHANGE','관리자 비밀번호 변경',u.id);
+  toast('✅ 비밀번호가 성공적으로 변경되었습니다!','success');
 }
 async function changePassword(){
   if(!_validateSession())return;
