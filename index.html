@@ -7,6 +7,56 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- Firebase SDK -->
+<script type="module">
+// ★★★ 여기에 Firebase 설정값을 붙여넣으세요 ★★★
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, doc, getDoc, getDocs, setDoc, deleteDoc, collection, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCFFqFk55POE0wrUyLpbyywQrcDnUki0jE",
+  authDomain: "mediworld-51f0f.firebaseapp.com",
+  projectId: "mediworld-51f0f",
+  storageBucket: "mediworld-51f0f.firebasestorage.app",
+  messagingSenderId: "344675244828",
+  appId: "1:344675244828:web:451af0cc5d9692e543b8d9"
+};
+
+const app = initializeApp(firebaseConfig);
+const fsdb = getFirestore(app);
+
+// ── Firestore DB 함수 (기존 IndexedDB 함수를 덮어씁니다) ──
+window.fsdb = fsdb;
+window.fsGet = async (col, id) => {
+  const snap = await getDoc(doc(fsdb, col, String(id)));
+  return snap.exists() ? snap.data() : undefined;
+};
+window.fsGetAll = async (col) => {
+  const snap = await getDocs(collection(fsdb, col));
+  return snap.docs.map(d => d.data());
+};
+window.fsPut = async (col, obj) => {
+  const key = obj.id !== undefined ? String(obj.id) : String(obj.key);
+  await setDoc(doc(fsdb, col, key), obj);
+};
+window.fsDelete = async (col, id) => {
+  await deleteDoc(doc(fsdb, col, String(id)));
+};
+window.fsAdd = async (col, obj) => {
+  if(obj.id !== undefined){
+    await setDoc(doc(fsdb, col, String(obj.id)), { ...obj });
+  } else {
+    await addDoc(collection(fsdb, col), { ...obj, _ts: serverTimestamp() });
+  }
+};
+window.fsGetIndex = async (col, field, val) => {
+  const q = query(collection(fsdb, col), where(field, '==', val));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => d.data());
+};
+window.firebaseReady = true;
+console.log('[Firebase] 연결 완료 ✅');
+</script>
 <style>
 :root{
   --bg:#07080d;--bg2:#0d0f1a;--bg3:#131629;
@@ -964,35 +1014,27 @@ function _genToken(){ return Array.from(crypto.getRandomValues(new Uint8Array(16
 function _validateSession(){ if(!_sessionToken || !currentUser){ doLogout(); return false; } return true; }
 
 // ═══════════════════════════════════════════════════════
-//  DB — IndexedDB
+//  DB — Firebase Firestore (클라우드 저장)
 // ═══════════════════════════════════════════════════════
-const DB_NAME='mediworld_v5', DB_VER=2;
-let db;
-function initDB(){
-  return new Promise((res,rej)=>{
-    const req=indexedDB.open(DB_NAME,DB_VER);
-    req.onupgradeneeded=e=>{
-      const d=e.target.result;
-      if(!d.objectStoreNames.contains('users')){ const us=d.createObjectStore('users',{keyPath:'id'}); us.createIndex('role','role'); us.createIndex('sponsorCode','sponsorCode'); }
-      if(!d.objectStoreNames.contains('transactions')){ const ts=d.createObjectStore('transactions',{keyPath:'id'}); ts.createIndex('userId','userId'); ts.createIndex('type','type'); }
-      if(!d.objectStoreNames.contains('pendingInvestments')) d.createObjectStore('pendingInvestments',{keyPath:'id'});
-      if(!d.objectStoreNames.contains('pendingWithdrawals')) d.createObjectStore('pendingWithdrawals',{keyPath:'id'});
-      if(!d.objectStoreNames.contains('settings')) d.createObjectStore('settings',{keyPath:'key'});
-      if(!d.objectStoreNames.contains('auditLog')) d.createObjectStore('auditLog',{keyPath:'id',autoIncrement:true});
-    };
-    req.onsuccess=e=>{ db=e.target.result; res(db); };
-    req.onerror=rej;
-  });
+async function waitFirebase(timeout=8000){
+  const start=Date.now();
+  while(!window.firebaseReady){
+    if(Date.now()-start>timeout) throw new Error('Firebase 연결 실패');
+    await new Promise(r=>setTimeout(r,100));
+  }
 }
-const dbGet=(s,k)=>new Promise((r,j)=>{ const q=db.transaction(s,'readonly').objectStore(s).get(k); q.onsuccess=()=>r(q.result); q.onerror=j; });
-const dbGetAll=(s)=>new Promise((r,j)=>{ const q=db.transaction(s,'readonly').objectStore(s).getAll(); q.onsuccess=()=>r(q.result); q.onerror=j; });
-const dbPut=(s,o)=>new Promise((r,j)=>{ const q=db.transaction(s,'readwrite').objectStore(s).put(o); q.onsuccess=()=>r(q.result); q.onerror=j; });
-const dbDelete=(s,k)=>new Promise((r,j)=>{ const q=db.transaction(s,'readwrite').objectStore(s).delete(k); q.onsuccess=()=>r(); q.onerror=j; });
-const dbAdd=(s,o)=>new Promise((r,j)=>{ const q=db.transaction(s,'readwrite').objectStore(s).add(o); q.onsuccess=()=>r(); q.onerror=j; });
-const dbGetIndex=(s,idx,val)=>new Promise((r,j)=>{ const q=db.transaction(s,'readonly').objectStore(s).index(idx).getAll(IDBKeyRange.only(val)); q.onsuccess=()=>r(q.result); q.onerror=j; });
+async function initDB(){ await waitFirebase(); console.log('[DB] Firebase 준비 완료'); }
+const dbGet=(s,k)=>window.fsGet(s,k);
+const dbGetAll=(s)=>window.fsGetAll(s);
+const dbPut=(s,o)=>window.fsPut(s,o);
+const dbDelete=(s,k)=>window.fsDelete(s,k);
+const dbAdd=(s,o)=>window.fsAdd(s,o);
+const dbGetIndex=(s,idx,val)=>window.fsGetIndex(s,idx,val);
 
 async function audit(action, detail, userId=null){
-  try{ await dbAdd('auditLog',{ ts:Date.now(), date:localDateStr(new Date()), action, detail, by:userId||(currentUser?currentUser.id:'system') }); }catch(e){}
+  try{
+    await dbAdd('auditLog',{ id:Date.now()+'_'+Math.random().toString(36).slice(2,7), ts:Date.now(), date:localDateStr(new Date()), action, detail, by:userId||(currentUser?currentUser.id:'system') });
+  }catch(e){}
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1010,10 +1052,12 @@ let CFG = {
   DEPOSIT_HOLDER: 'Medi World',
 };
 async function loadSettings(){
-  const s=await dbGetAll('settings');
-  s.forEach(item=>{ if(item.key in CFG) CFG[item.key]=item.value; });
+  try{
+    const s=await dbGetAll('settings');
+    s.forEach(item=>{ if(item && item.key && item.key in CFG) CFG[item.key]=item.value; });
+  }catch(e){ console.warn('설정 로드 실패, 기본값 사용'); }
 }
-async function saveSetting(key,val){ await dbPut('settings',{key,value:val}); CFG[key]=val; }
+async function saveSetting(key,val){ await dbPut('settings',{id:key, key, value:val}); CFG[key]=val; }
 
 // ═══════════════════════════════════════════════════════
 //  직급 테이블 (소라인 기준 투자금)
@@ -1063,11 +1107,15 @@ const SEED_TX=[
   {id:1004,userId:'userA',type:'투자',amount:50000000,fee:0,netAmount:50000000,date:'2026-01-12',status:'completed',desc:'투자 승인'},
 ];
 async function seedIfEmpty(){
-  const ex=await dbGetAll('users');
-  if(ex.length===0){
-    for(const u of SEED_USERS) await dbPut('users',u);
-    for(const t of SEED_TX) await dbPut('transactions',t);
-  }
+  try{
+    const ex=await dbGetAll('users');
+    if(ex.length===0){
+      console.log('[Seed] Firebase에 초기 데이터 저장 중...');
+      for(const u of SEED_USERS) await dbPut('users',u);
+      for(const t of SEED_TX) await dbPut('transactions',t);
+      console.log('[Seed] 초기 데이터 저장 완료 ✅');
+    }
+  }catch(e){ console.error('[Seed] 초기화 실패:', e); }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1340,7 +1388,7 @@ async function submitInvestment(){
   if(amt<CFG.MIN_INVEST){toast(`최소 투자금액은 ${fmt(CFG.MIN_INVEST)}입니다`,'error');return;}
   if(!iname){toast('입금자명을 입력하세요','error');return;}
   const inv={id:Date.now(),userId:currentUser.id,userName:currentUser.name,amount:amt,depositorName:_esc(iname),memo:_esc(document.getElementById('inp-invest-memo').value.trim()),requestedAt:localDateStr(new Date()),status:'pending'};
-  await dbAdd('pendingInvestments',inv);
+  await dbPut('pendingInvestments',inv);  // id 있으므로 fsPut 사용
   await audit('INVEST_REQUEST',`투자신청 ${fmt(amt)}`,currentUser.id);
   document.getElementById('inp-invest-amount').value='';
   document.getElementById('inp-invest-name').value='';
@@ -1508,7 +1556,7 @@ async function submitWithdrawal(){
   const wd={id:Date.now(),userId:u.id,userName:u.name,amount:wdAmountVal,fee,net:wdAmountVal-fee,
     bankName:u.bankName,accountNumber:u.accountNumber,accountHolder:u.accountHolder,
     requestedAt:localDateStr(new Date()),status:'pending'};
-  await dbAdd('pendingWithdrawals',wd);
+  await dbPut('pendingWithdrawals',wd);  // id 있으므로 fsPut 사용
   u.wallet-=wdAmountVal;
   await dbPut('users',u); currentUser=u;
   await audit('WITHDRAW_REQUEST',`출금신청 ${fmt(wdAmountVal)}`,u.id);
@@ -2199,15 +2247,31 @@ function updateNextRoiTimer(){
 //  INIT
 // ═══════════════════════════════════════════════════════
 async function init(){
-  await initDB();
-  await loadSettings();
-  await seedIfEmpty();
+  // 로딩 표시
+  document.body.insertAdjacentHTML('beforeend',`
+    <div id="fb-loading" style="position:fixed;inset:0;background:#07080d;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:#d4a853;margin-bottom:16px;">MEDI WORLD</div>
+      <div style="width:40px;height:40px;border:3px solid rgba(212,168,83,0.2);border-top-color:#d4a853;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <div style="margin-top:16px;font-size:13px;color:#4a5068;">서버 연결 중...</div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    </div>
+  `);
+  try{
+    await initDB();
+    await loadSettings();
+    await seedIfEmpty();
+  }catch(e){
+    console.error('초기화 오류:', e);
+    document.querySelector('#fb-loading div:nth-child(3)').textContent='연결 실패. 새로고침 해주세요.';
+    document.querySelector('#fb-loading div:nth-child(3)').style.color='#f05d5d';
+    return;
+  }
+  document.getElementById('fb-loading').remove();
   startScheduler();
-  // 로그인 페이지만 표시
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.getElementById('page-login').style.display='flex';
   document.getElementById('page-login').classList.add('active');
-  console.log('[MEDI WORLD v5.0] 시스템 초기화 완료');
+  console.log('[MEDI WORLD v5.0] Firebase 연결 완료 ✅');
 }
 init();
 </script>
