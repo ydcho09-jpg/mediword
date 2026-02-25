@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Firebase SDK -->
 <script type="module">
 // ★★★ 여기에 Firebase 설정값을 붙여넣으세요 ★★★
@@ -919,7 +920,8 @@ td{font-size:14px !important;padding:14px 16px !important;}
       <div><div class="page-title">관리자 <span>패널</span></div><div class="page-subtitle">전체 회원 및 시스템 관리</div></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-success btn-sm" onclick="runSettlement()"><i class="fas fa-bolt"></i> 전체 정산</button>
-        <button class="btn btn-secondary btn-sm" onclick="exportReports()"><i class="fas fa-download"></i> CSV</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportReports()"><i class="fas fa-download"></i> 거래 CSV</button>
+        <button class="btn btn-sm" onclick="exportMembersExcel()" style="background:var(--green);color:#000;font-weight:800;"><i class="fas fa-file-excel"></i> 회원 엑셀</button>
       </div>
     </div>
 
@@ -1754,6 +1756,138 @@ function renderReportTable(myTx,filter){
     <td>${statusHtml(t.status)}</td>
   </tr>`).join('');
 }
+async function exportMembersExcel(){
+  toast('회원 목록 엑셀 생성 중...','info');
+  try {
+    const allUsers = await dbGetAll('users');
+    // 가입일 순서로 정렬
+    const members = allUsers
+      .filter(u => u.role === 'member')
+      .sort((a,b) => (a.registeredAt||'').localeCompare(b.registeredAt||''));
+
+    const RANK_LABELS = ['일반','브론즈','실버','골드','플래티넘','다이아'];
+
+    // 헤더 정의
+    const headers = [
+      '번호','아이디','이름','이메일','전화번호',
+      '추천인','가입일','승인상태','계정상태',
+      '투자금(원)','누적ROI(원)','출금잔액(원)','잔여한도(원)',
+      '은행명','계좌번호','예금주',
+      '직급','좌측투자(원)','우측투자(원)',
+      '마지막ROI일','마지막투자일','마지막로그인'
+    ];
+
+    // 데이터 행 생성
+    const rows = members.map((u, i) => {
+      const sl = Math.min(u.leftInvest||0, u.rightInvest||0);
+      const rankObj = calcRank(sl);
+      const maxPayout = u.investment * (CFG.MAX_PAYOUT||3);
+      const remaining = Math.max(0, maxPayout - (u.roi||0));
+      return [
+        i + 1,
+        u.id || '',
+        u.name || '',
+        u.email || '',
+        u.phone || '',
+        (u.sponsorCode && u.sponsorCode !== 'SYSTEM-ROOT') ? u.sponsorCode : '직가입',
+        u.registeredAt || '',
+        u.approvalStatus === 'approved' ? '승인' : u.approvalStatus === 'pending' ? '대기중' : '거부',
+        u.suspended ? '정지' : '정상',
+        u.investment || 0,
+        u.roi || 0,
+        u.wallet || 0,
+        remaining,
+        u.bankName || '',
+        u.accountNumber || '',
+        u.accountHolder || '',
+        rankObj.label || '일반',
+        u.leftInvest || 0,
+        u.rightInvest || 0,
+        u.lastRoiDate || '',
+        u.lastInvestmentDate || '',
+        u.lastLogin || ''
+      ];
+    });
+
+    // 워크북 생성
+    const wb = XLSX.utils.book_new();
+    const wsData = [headers, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // 컬럼 너비 설정
+    ws['!cols'] = [
+      {wch:6},{wch:14},{wch:12},{wch:26},{wch:16},
+      {wch:12},{wch:14},{wch:10},{wch:8},
+      {wch:16},{wch:16},{wch:16},{wch:16},
+      {wch:12},{wch:18},{wch:12},
+      {wch:10},{wch:16},{wch:16},
+      {wch:14},{wch:14},{wch:18}
+    ];
+
+    // 헤더 행 스타일 (배경색)
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for(let C = range.s.c; C <= range.e.c; C++){
+      const cellAddr = XLSX.utils.encode_cell({r:0, c:C});
+      if(!ws[cellAddr]) continue;
+      ws[cellAddr].s = {
+        fill:{fgColor:{rgb:'1A1A2E'}},
+        font:{bold:true, color:{rgb:'D4A853'}, sz:12},
+        alignment:{horizontal:'center', vertical:'center'},
+        border:{bottom:{style:'medium', color:{rgb:'D4A853'}}}
+      };
+    }
+
+    // 숫자 컬럼 천 단위 포맷
+    const numCols = [9,10,11,12,17,18]; // 0-indexed
+    for(let R = 1; R <= rows.length; R++){
+      for(const C of numCols){
+        const cellAddr = XLSX.utils.encode_cell({r:R, c:C});
+        if(ws[cellAddr] && typeof ws[cellAddr].v === 'number'){
+          ws[cellAddr].z = '#,##0';
+        }
+      }
+    }
+
+    XLSX.utils.book_append_sheet(wb, ws, '회원목록');
+
+    // 요약 시트 추가
+    const today = localDateStr(new Date());
+    const totalInvest = members.reduce((s,u) => s+(u.investment||0), 0);
+    const totalWallet = members.reduce((s,u) => s+(u.wallet||0), 0);
+    const totalRoi = members.reduce((s,u) => s+(u.roi||0), 0);
+    const activeCount = members.filter(u => u.investment > 0 && !u.suspended).length;
+    const pendingCount = members.filter(u => u.approvalStatus === 'pending').length;
+    const suspendedCount = members.filter(u => u.suspended).length;
+
+    const summaryData = [
+      ['MEDI WORLD 회원 현황 요약', ''],
+      ['추출일', today],
+      ['', ''],
+      ['항목', '수치'],
+      ['전체 회원 수', members.length],
+      ['투자 중 회원', activeCount],
+      ['승인 대기', pendingCount],
+      ['계정 정지', suspendedCount],
+      ['', ''],
+      ['총 투자금', totalInvest],
+      ['총 누적ROI', totalRoi],
+      ['총 출금잔액', totalWallet],
+    ];
+    const ws2 = XLSX.utils.aoa_to_sheet(summaryData);
+    ws2['!cols'] = [{wch:20},{wch:20}];
+    XLSX.utils.book_append_sheet(wb, ws2, '요약');
+
+    // 다운로드
+    const filename = `MEDIWORLD_회원목록_${today.replace(/-/g,'')}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    toast(`✅ 엑셀 다운로드 완료! (${members.length}명)`, 'success');
+
+  } catch(e) {
+    console.error(e);
+    toast('엑셀 생성 중 오류가 발생했습니다', 'error');
+  }
+}
+
 async function exportReports(){
   const allTx=await dbGetAll('transactions');
   const myTx=currentUser.role==='admin'?allTx:allTx.filter(t=>t.userId===currentUser.id);
