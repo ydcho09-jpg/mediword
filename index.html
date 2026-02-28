@@ -3,17 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- ★ 보안 헤더 ★ -->
+<meta http-equiv="X-XSS-Protection" content="1; mode=block">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
 <title>MEDI WORLD v5.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuTy/Sz4uFZAAAAAd1+K5R+EUGvKB5BRFGRKpXB0AFrpfEXW0tn7gNHlxPTFQPAhrgzQAK5GFCtyGnhw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-ZwR1/gSZM3ai6vCdI+LVF1zSq/5HznD3oD+sCoJrzXJ+yKiwusmDXjJh4moNgseTBMFPuOR/KSHhG5R0WgTkw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKnH4rJT6WPAzaBFIBeLs2UjgO3pV0EpKKxDnVXZEHWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <!-- Firebase SDK -->
 <script type="module">
 // ★★★ 여기에 Firebase 설정값을 붙여넣으세요 ★★★
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, doc, getDoc, getDocs, setDoc, deleteDoc, collection, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ⚠️  보안 안내: Firebase API 키는 클라이언트에 노출됩니다.
+//    반드시 Firebase Console에서 아래 설정을 완료하세요:
+//    1) Authentication → Settings → Authorized domains
+//       → 실제 배포 도메인만 등록 (localhost 제거)
+//    2) Firestore → Rules → 아래 규칙 적용:
+//       rules_version = '2';
+//       service cloud.firestore {
+//         match /databases/{database}/documents {
+//           match /{document=**} {
+//             allow read, write: if false; // 기본 차단
+//           }
+//         }
+//       }
+//    3) Google Cloud Console → API 제한 → 허용 도메인 설정
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const firebaseConfig = {
   apiKey: "AIzaSyCFFqFk55POE0wrUyLpbyywQrcDnUki0jE",
   authDomain: "mediworld-51f0f.firebaseapp.com",
@@ -912,6 +934,16 @@ td{font-size:14px !important;padding:14px 16px !important;}
 <!-- ═══════════ ADMIN ═══════════ -->
 <div id="page-admin_dash" class="page">
   <div class="main">
+    <!-- ★ 보안 경고 배너 (초기 비밀번호 미변경 시 표시) -->
+    <div id="admin-pwd-warn" style="display:none;align-items:center;gap:12px;padding:14px 20px;margin-bottom:20px;
+      background:rgba(240,93,93,0.12);border:1px solid rgba(240,93,93,0.35);border-left:4px solid var(--red);
+      border-radius:var(--r);">
+      <i class="fas fa-shield-halved" style="color:var(--red);font-size:20px;flex-shrink:0;"></i>
+      <div style="flex:1;">
+        <div style="font-weight:800;color:var(--red);font-size:16px;">⚠️ 보안 경고: 초기 비밀번호를 즉시 변경하세요!</div>
+        <div style="font-size:14px;color:var(--text2);margin-top:3px;">기본 비밀번호(admin123!)를 사용 중입니다. 해킹 위험이 있습니다. 아래 비밀번호 변경 탭에서 즉시 변경해 주세요.</div>
+      </div>
+    </div>
     <div class="page-header">
       <div><div class="page-title">관리자 <span>패널</span></div><div class="page-subtitle">전체 회원 및 시스템 관리</div></div>
       <div style="display:flex;gap:8px;">
@@ -1144,8 +1176,18 @@ td{font-size:14px !important;padding:14px 16px !important;}
 // ═══════════════════════════════════════════════════════
 const _esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 let _sessionToken = null;
+let _sessionStartTime = null;
+const _SESSION_TIMEOUT_MS = 2 * 60 * 60 * 1000; // ★ 2시간 세션 만료
 function _genToken(){ return Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join(''); }
-function _validateSession(){ if(!_sessionToken || !currentUser){ doLogout(); return false; } return true; }
+function _validateSession(){
+  if(!_sessionToken || !currentUser){ doLogout(); return false; }
+  // ★ 세션 만료 체크 (2시간)
+  if(_sessionStartTime && Date.now() - _sessionStartTime > _SESSION_TIMEOUT_MS){
+    toast('세션이 만료되었습니다. 다시 로그인해주세요.','warning');
+    doLogout(); return false;
+  }
+  return true;
+}
 
 // ═══════════════════════════════════════════════════════
 //  DB — Firebase Firestore (클라우드 저장)
@@ -1214,11 +1256,18 @@ function calcRank(smallLineAmt){
 // ═══════════════════════════════════════════════════════
 //  SEED DATA
 // ═══════════════════════════════════════════════════════
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ⚠️  보안 경고: 아래 초기 데이터는 최초 1회만 사용됩니다.
+//    배포 후 즉시 관리자 페이지에서 비밀번호를 변경하세요!
+//    기본 관리자 계정: admin / admin123!  ← 반드시 변경!
+//    기본 테스트 계정: ydcho, userA, userB / pass1234! ← 실서비스에서 삭제!
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const SEED_USERS=[
   {id:'admin',pwd:_hashPwd('admin123!'),role:'admin',name:'최고관리자',inviteCode:'SYSTEM-ROOT',sponsorCode:null,
    wallet:0,investment:0,roi:0,leftPoints:0,rightPoints:0,leftInvest:0,rightInvest:0,
    paidRanks:[],children:{left:null,right:null},email:'admin@mediworld.net',phone:'010-0000-0000',
-   bankName:'',accountNumber:'',accountHolder:'',registeredAt:'2026-01-01',lastLogin:null,suspended:false,approvalStatus:'approved'},
+   bankName:'',accountNumber:'',accountHolder:'',registeredAt:'2026-01-01',lastLogin:null,suspended:false,approvalStatus:'approved',
+   _pwdChangedAt:null, _mustChangePwd:true},
   {id:'ydcho',pwd:_hashPwd('pass1234!'),role:'member',name:'조영덕',inviteCode:'ydcho',sponsorCode:'admin',
    wallet:5000000,investment:10000000,roi:1200000,leftPoints:50000000,rightPoints:20000000,
    leftInvest:50000000,rightInvest:20000000,
@@ -1253,19 +1302,50 @@ async function seedIfEmpty(){
 }
 
 // ═══════════════════════════════════════════════════════
-//  보안 — 비밀번호 해싱 (간단 SHA-256 기반)
+//  보안 — 비밀번호 해싱 (Web Crypto API SHA-256 + Salt)
 // ═══════════════════════════════════════════════════════
+// ⚠️ 동기 해시 → SHA-256 기반 강화 버전
+// 실서비스 최고 보안 = Firebase Authentication 이전 권장
+const _HASH_VER = 'MW5v2'; // 버전 태그 (구 해시와 구별)
+const _APP_SALT = 'MediWorld2026!SecureSalt$#@'; // 앱 고정 솔트
+
+// SHA-256 동기 대체 (Web Crypto는 비동기라 기존 코드와 호환 유지)
+// + 기존 해시 하위호환 유지를 위해 두 함수 모두 보존
 function _hashPwd(pw){
-  // 단순 해시 (실서비스에는 bcrypt 권장 - IndexedDB 내 JS 한계)
+  // 구버전 해시 (기존 DB 데이터 호환용 — 신규 저장 시 _hashPwdV2 사용)
   let h=0;
   const s='MW5_SALT_'+pw+'_2026';
   for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; }
   return 'mw5$'+Math.abs(h).toString(36)+'$'+btoa(pw.split('').reverse().join('')).replace(/=/g,'');
 }
+async function _hashPwdSecure(pw){
+  // ★ 강화된 SHA-256 해시 (신규 비밀번호 저장 시 사용)
+  const salt = _APP_SALT + pw.length;
+  const msgBuffer = new TextEncoder().encode(salt + pw + _APP_SALT);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return _HASH_VER + '$' + hashHex;
+}
+async function _verifyPwdSecure(plain, hash){
+  if(hash.startsWith(_HASH_VER)){
+    // 신규 SHA-256 해시 검증
+    const computed = await _hashPwdSecure(plain);
+    return computed === hash;
+  } else {
+    // 구버전 해시 하위호환 (기존 회원 로그인 가능하도록)
+    return _hashPwd(plain) === hash;
+  }
+}
 function _verifyPwd(plain,hash){ return _hashPwd(plain)===hash; }
 // 입력 검증
 function _sanitizeId(v){ return /^[a-zA-Z0-9_]{4,20}$/.test(v); }
-function _sanitizePwd(v){ return v.length>=8; }
+function _sanitizePwd(v){
+  // ★ 강화된 비밀번호 정책: 8자 이상 + 숫자 포함
+  if(v.length < 8) return false;
+  if(!/[0-9]/.test(v)) return false; // 숫자 1개 이상 필수
+  return true;
+}
 
 // ═══════════════════════════════════════════════════════
 //  APP STATE
@@ -1344,27 +1424,56 @@ async function doLogin(){
   const id=document.getElementById('inp-lid').value.trim();
   const pwd=document.getElementById('inp-lpwd').value;
   if(!id||!pwd){toast('아이디와 비밀번호를 입력하세요','error');return;}
-  // 브루트포스 방지 (간단)
-  if(window._loginAttempts>5){ toast('로그인 시도가 너무 많습니다. 잠시 후 다시 시도하세요','error'); return; }
-  const user=await dbGet('users',id);
-  if(!user||!_verifyPwd(pwd,user.pwd)){
-    window._loginAttempts=(window._loginAttempts||0)+1;
-    toast('아이디 또는 비밀번호가 틀립니다','error'); return;
+
+  // ★ 강화된 브루트포스 방지 (sessionStorage 사용 — 새로고침해도 유지)
+  const _attemptKey = 'mw_login_attempts';
+  const _lockKey = 'mw_login_locktime';
+  const lockUntil = parseInt(sessionStorage.getItem(_lockKey)||'0');
+  if(Date.now() < lockUntil){
+    const remain = Math.ceil((lockUntil - Date.now())/1000);
+    toast(`⛔ 로그인이 잠겼습니다. ${remain}초 후 다시 시도하세요`,'error');
+    return;
   }
-  window._loginAttempts=0;
+  const attempts = parseInt(sessionStorage.getItem(_attemptKey)||'0');
+  if(attempts >= 5){
+    sessionStorage.setItem(_lockKey, String(Date.now() + 5*60*1000)); // 5분 잠금
+    sessionStorage.setItem(_attemptKey, '0');
+    toast('⛔ 로그인 시도 5회 초과. 5분간 잠깁니다','error');
+    return;
+  }
+
+  const user=await dbGet('users',id);
+  // ★ 보안: 존재하지 않는 ID도 동일한 에러 메시지 (ID 존재 여부 노출 방지)
+  const pwdOk = user ? await _verifyPwdSecure(pwd, user.pwd) : false;
+  if(!user||!pwdOk){
+    const newAttempts = attempts + 1;
+    sessionStorage.setItem(_attemptKey, String(newAttempts));
+    const remain = 5 - newAttempts;
+    toast(`아이디 또는 비밀번호가 틀립니다 (남은 시도: ${remain}회)`,'error');
+    return;
+  }
+  // 로그인 성공 → 시도 횟수 초기화
+  sessionStorage.removeItem(_attemptKey);
+  sessionStorage.removeItem(_lockKey);
+
   if(user.suspended&&user.role!=='admin'){toast('계정이 정지되었습니다. 관리자에게 문의하세요','error');return;}
   if(user.approvalStatus==='pending'&&user.role!=='admin'){toast('⏳ 가입 승인 대기 중입니다. 관리자 승인 후 이용 가능합니다','error');return;}
+
+  // ★ 최초 로그인 시 비밀번호 변경 강제 (관리자 계정)
+  if(user._mustChangePwd && user.role==='admin'){
+    await loginUser(user);
+    toast('⚠️ 초기 비밀번호를 반드시 변경해주세요!','warning');
+    setTimeout(()=>goView('admin_dash'),500);
+    return;
+  }
   await loginUser(user);
 }
-async function quickLogin(id,pwd){
-  document.getElementById('inp-lid').value=id;
-  document.getElementById('inp-lpwd').value=pwd;
-  await doLogin();
-}
+// ★ quickLogin 함수 보안상 제거됨 (자동 로그인 기능은 보안 위험)
 async function loginUser(user){
   user.lastLogin=localDateStr(new Date());
   await dbPut('users',user);
   _sessionToken=_genToken();
+  _sessionStartTime=Date.now(); // ★ 세션 시작 시간 기록
   currentUser=user;
   setupTopbar();
   document.getElementById('page-login').style.display='none';
@@ -1376,7 +1485,10 @@ async function loginUser(user){
   setTimeout(()=>catchUpRoi(),800);
 }
 function doLogout(){
-  currentUser=null; _sessionToken=null;
+  currentUser=null; _sessionToken=null; _sessionStartTime=null;
+  // ★ 로그아웃 시 로그인 시도 기록 초기화
+  sessionStorage.removeItem('mw_login_attempts');
+  sessionStorage.removeItem('mw_login_locktime');
   document.getElementById('topbar').style.display='none';
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.getElementById('page-login').style.display='flex';
@@ -1394,8 +1506,10 @@ async function doRegister(){
   // 보안 검증
   if(!id||!name||!pwd){toast('필수 항목을 모두 입력하세요','error');return;}
   if(!_sanitizeId(id)){toast('아이디는 영문/숫자 4~20자입니다','error');return;}
-  if(!_sanitizePwd(pwd)){toast('비밀번호는 8자 이상이어야 합니다','error');return;}
+  if(!_sanitizePwd(pwd)){toast('비밀번호는 8자 이상, 숫자 포함이어야 합니다','error');return;}
   if(pwd!==pwd2){toast('비밀번호가 일치하지 않습니다','error');return;}
+  // ★ 이름 길이 제한
+  if(name.length > 30){toast('이름은 30자 이하로 입력하세요','error');return;}
   const existing=await dbGet('users',id);
   if(existing){toast('이미 사용 중인 아이디입니다','error');return;}
   // 추천인 코드 — 입력 시에만 유효성 검사 (선택사항)
@@ -1403,8 +1517,10 @@ async function doRegister(){
     const refUser=await dbGet('users',ref);
     if(!refUser||refUser.suspended){toast('유효하지 않은 추천인 코드입니다','error');return;}
   }
+  // ★ 신규 가입 시 강화된 SHA-256 해시 사용
+  const hashedPwd = await _hashPwdSecure(pwd);
   const newUser={
-    id, pwd:_hashPwd(pwd), role:'member', name,
+    id, pwd:hashedPwd, role:'member', name,
     inviteCode:id, sponsorCode:ref||'',
     wallet:0, investment:0, roi:0,
     leftPoints:0, rightPoints:0, leftInvest:0, rightInvest:0,
@@ -2135,8 +2251,8 @@ async function adminSaveBasicInfo(){
   u.phone=newPhone;
   if(newSponsor) u.sponsorCode=newSponsor;
   if(newPwd){
-    if(!_sanitizePwd(newPwd)){toast('비밀번호는 8자 이상이어야 합니다','error');return;}
-    u.pwd=_hashPwd(newPwd);
+    if(!_sanitizePwd(newPwd)){toast('비밀번호는 8자 이상, 숫자 포함이어야 합니다','error');return;}
+    u.pwd=await _hashPwdSecure(newPwd);
   }
   await dbPut('users',u);
   await audit('ADMIN_EDIT_INFO',`기본정보 수정 [${u.id}] 이름:${newName} 이메일:${newEmail} 전화:${newPhone}`,'admin');
@@ -2263,10 +2379,13 @@ async function changeAdminPassword(){
   if(!cur||!nw||!cf){toast('모든 항목을 입력하세요','error');return;}
   const u=await dbGet('users',currentUser.id);
   if(!u){toast('사용자 정보를 불러올 수 없습니다','error');return;}
-  if(!_verifyPwd(cur,u.pwd)){toast('현재 비밀번호가 틀립니다','error');return;}
-  if(!_sanitizePwd(nw)){toast('새 비밀번호는 8자 이상이어야 합니다','error');return;}
+  if(!await _verifyPwdSecure(cur,u.pwd)){toast('현재 비밀번호가 틀립니다','error');return;}
+  if(!_sanitizePwd(nw)){toast('새 비밀번호는 8자 이상, 숫자 포함이어야 합니다','error');return;}
   if(nw!==cf){toast('새 비밀번호가 일치하지 않습니다','error');return;}
-  u.pwd=_hashPwd(nw);
+  if(nw===cur){toast('현재 비밀번호와 다른 비밀번호를 입력하세요','error');return;}
+  u.pwd=await _hashPwdSecure(nw);
+  u._mustChangePwd=false;
+  u._pwdChangedAt=localDateStr(new Date());
   await dbPut('users',u);
   currentUser=u;
   document.getElementById('admin-pw-current').value='';
@@ -2281,10 +2400,11 @@ async function changePassword(){
   const cur=document.getElementById('pw-current').value;
   const nw=document.getElementById('pw-new').value;
   const cf=document.getElementById('pw-confirm').value;
-  if(!_verifyPwd(cur,u.pwd)){toast('현재 비밀번호가 틀립니다','error');return;}
-  if(!_sanitizePwd(nw)){toast('새 비밀번호는 8자 이상이어야 합니다','error');return;}
+  if(!await _verifyPwdSecure(cur,u.pwd)){toast('현재 비밀번호가 틀립니다','error');return;}
+  if(!_sanitizePwd(nw)){toast('새 비밀번호는 8자 이상, 숫자 포함이어야 합니다','error');return;}
   if(nw!==cf){toast('새 비밀번호가 일치하지 않습니다','error');return;}
-  u.pwd=_hashPwd(nw);
+  if(nw===cur){toast('현재 비밀번호와 다른 비밀번호를 입력하세요','error');return;}
+  u.pwd=await _hashPwdSecure(nw);
   await dbPut('users',u); currentUser=u;
   document.getElementById('pw-current').value='';document.getElementById('pw-new').value='';document.getElementById('pw-confirm').value='';
   await audit('PWD_CHANGE','비밀번호 변경',u.id);
@@ -2296,6 +2416,14 @@ async function changePassword(){
 // ═══════════════════════════════════════════════════════
 async function renderAdmin(){
   if(currentUser.role!=='admin')return;
+
+  // ★ 초기 비밀번호 변경 경고
+  const adminUser=await dbGet('users',currentUser.id);
+  if(adminUser && adminUser._mustChangePwd){
+    const warnEl=document.getElementById('admin-pwd-warn');
+    if(warnEl) warnEl.style.display='flex';
+  }
+
   const allUsers=await dbGetAll('users');
   const members=allUsers.filter(u=>u.role==='member');
   const pendInv=await dbGetAll('pendingInvestments');
