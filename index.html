@@ -280,6 +280,24 @@ tr:last-child td{border-bottom:none;}
   animation:pulse 2s infinite;margin-right:4px;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 @keyframes spin{to{transform:rotate(360deg)}}
+.login-right{padding:60px 50px;}
+@media(max-width:600px){
+  .login-right{padding:28px 18px !important;}
+  .login-wrap{border-radius:20px !important;}
+  #page-login{padding:12px !important;padding-top:28px !important;}
+}
+/* 모바일 하단 네비 */
+#mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:300;padding-bottom:env(safe-area-inset-bottom);}
+#mobile-nav-inner{display:flex;justify-content:space-around;align-items:stretch;}
+.mnav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--text3);font-size:11px;font-family:'DM Sans',sans-serif;font-weight:700;padding:8px 4px 7px;flex:1;cursor:pointer;min-height:52px;-webkit-tap-highlight-color:transparent;}
+.mnav-btn i{font-size:18px;line-height:1;}
+.mnav-btn.active{color:var(--gold);}
+.mnav-btn.mnav-logout{color:var(--red);}
+@media(max-width:700px){
+  #mobile-nav{display:block !important;}
+  .main{padding-bottom:80px !important;}
+  .topbar-nav{display:none !important;}
+}
 
 /* RANK BADGE */
 .rank-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:14px;font-weight:700;letter-spacing:.3px;}
@@ -329,12 +347,6 @@ tr:last-child td{border-bottom:none;}
 .login-stat{background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:14px;padding:18px 22px;}
 .login-stat-label{font-size:15px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-weight:600;}
 .login-stat-value{font-family:'Space Mono',monospace;font-size:22px;color:var(--gold);font-weight:700;}
-.login-right{padding:60px 50px;}
-@media(max-width:600px){
-  .login-right{padding:28px 18px !important;}
-  .login-wrap{border-radius:20px !important;margin:0 !important;}
-  #page-login{padding:12px !important;align-items:flex-start !important;padding-top:30px !important;}
-}
 .login-title{font-family:'Syne',sans-serif;font-size:27px;font-weight:800;margin-bottom:8px;color:var(--text);}
 .login-sub{font-size:16px;color:var(--text2);margin-bottom:32px;font-weight:500;}
 .login-tabs{display:flex;gap:0;margin-bottom:28px;background:var(--bg3);border-radius:12px;padding:4px;}
@@ -585,22 +597,12 @@ td{font-size:14px !important;padding:14px 16px !important;}
   </div>
 </nav>
 
-<!-- ★ 모바일 하단 네비게이션 ★ -->
-<nav id="mobile-nav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border2);z-index:300;padding-bottom:env(safe-area-inset-bottom);">
-  <div id="mobile-nav-inner" style="display:flex;justify-content:space-around;align-items:stretch;"></div>
+<!-- ★ 모바일 하단 네비게이션 -->
+<nav id="mobile-nav">
+  <div id="mobile-nav-inner"></div>
 </nav>
-<style>
-.mnav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--text3);font-size:11px;font-family:'DM Sans',sans-serif;font-weight:700;padding:9px 4px 8px;flex:1;cursor:pointer;min-height:54px;-webkit-tap-highlight-color:transparent;letter-spacing:.2px;transition:color .15s;}
-.mnav-btn i{font-size:18px;line-height:1;}
-.mnav-btn.active,.mnav-btn:active{color:var(--gold);}
-.mnav-btn.mnav-logout{color:var(--red) !important;}
-@media(max-width:700px){
-  #mobile-nav{display:block !important;}
-  .main{padding-bottom:80px !important;}
-  .topbar-nav{display:none !important;}
-}
-@media(min-width:701px){#mobile-nav{display:none !important;}}
-</style>
+
+<!-- ═══════════ DASHBOARD ═══════════ -->
 <div id="page-dashboard" class="page">
   <div class="main">
     <div class="page-header">
@@ -1045,7 +1047,6 @@ td{font-size:14px !important;padding:14px 16px !important;}
       <button class="tab" onclick="switchAdminTab('approval',this)">✅ 가입승인 <span id="appr-badge" class="stat-badge badge-pend" style="margin-left:4px;"></span></button>
       <button class="tab" onclick="switchAdminTab('members',this)">👥 회원관리</button>
       <button class="tab" onclick="switchAdminTab('investments',this)">💰 투자승인 <span id="inv-badge" class="stat-badge badge-pend" style="margin-left:4px;"></span></button>
-      <button class="tab" onclick="switchAdminTab('inv_status',this)">📈 투자현황</button>
       <button class="tab" onclick="switchAdminTab('withdrawals',this)">🏧 출금승인 <span id="wd-badge" class="stat-badge badge-pend" style="margin-left:4px;"></span></button>
       <button class="tab" onclick="switchAdminTab('logs',this)">📋 거래로그</button>
     </div>
@@ -1061,31 +1062,6 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <div class="card-header"><div class="card-title-lg">직급별 현황</div></div>
           <div id="admin-rank-overview"></div>
         </div>
-      </div>
-    </div>
-
-    <!-- 투자현황 TAB -->
-    <div id="admin-tab-inv_status" style="display:none;">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title-lg">📈 전체 투자 현황</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <input class="form-input" id="inv-status-search" placeholder="이름/아이디 검색" style="width:180px;padding:8px 12px;font-size:14px;" oninput="searchInvStatus()">
-            <select class="form-input form-select" id="inv-status-filter" style="width:130px;padding:8px 12px;font-size:14px;" onchange="searchInvStatus()">
-              <option value="all">전체</option>
-              <option value="investing">투자중</option>
-              <option value="maxed">한도완료</option>
-              <option value="none">미투자</option>
-            </select>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>회원</th><th>투자금</th><th>누적ROI</th><th>진행률</th><th>일일배당</th><th>잔액</th><th>최근투자일</th><th>상태</th><th>수정</th></tr></thead>
-            <tbody id="inv-status-body"></tbody>
-          </table>
-        </div>
-        <div id="inv-status-summary" style="display:flex;gap:16px;flex-wrap:wrap;padding:16px 0 4px;font-size:15px;color:var(--text2);"></div>
       </div>
     </div>
 
@@ -1139,22 +1115,114 @@ td{font-size:14px !important;padding:14px 16px !important;}
 
     <!-- LOGS TAB -->
     <div id="admin-tab-logs" style="display:none;">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title-lg">전체 거래 로그</div>
-          <div style="display:flex;gap:8px;">
-            <input class="form-input" id="log-search" placeholder="회원ID 검색" style="width:180px;padding:8px 12px;font-size:14px;" oninput="searchLogs()">
+      <!-- ── 거래내역 관리 ── -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header" style="flex-wrap:wrap;gap:10px;">
+          <div class="card-title-lg">📋 전체 거래내역 관리</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <input class="form-input" id="log-search" placeholder="회원ID/내용 검색" style="width:160px;padding:8px 12px;font-size:14px;" oninput="searchLogs()">
+            <select class="form-input form-select" id="log-type-filter" style="width:110px;padding:8px 12px;font-size:14px;" onchange="searchLogs()">
+              <option value="all">전체유형</option>
+              <option value="투자">투자</option>
+              <option value="ROI">ROI</option>
+              <option value="보너스">보너스</option>
+              <option value="출금">출금</option>
+              <option value="직급수당">직급수당</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="openAddTxModal()" style="white-space:nowrap;"><i class="fas fa-plus"></i> 거래 추가</button>
           </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>날짜</th><th>회원</th><th>유형</th><th>금액</th><th>내용</th><th>상태</th></tr></thead>
+            <thead><tr><th>날짜</th><th>회원</th><th>유형</th><th>금액</th><th>수수료</th><th>내용</th><th>상태</th><th style="min-width:100px;">관리</th></tr></thead>
             <tbody id="admin-log-body"></tbody>
+          </table>
+        </div>
+        <div id="log-count" style="padding:10px 0 4px;font-size:14px;color:var(--text3);"></div>
+      </div>
+
+      <!-- ── 시스템 감사 로그 ── -->
+      <div class="card">
+        <div class="card-header" style="flex-wrap:wrap;gap:10px;">
+          <div class="card-title-lg">🔍 시스템 감사 로그</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input class="form-input" id="audit-search" placeholder="검색" style="width:160px;padding:8px 12px;font-size:14px;" oninput="searchAuditLogs()">
+            <button class="btn btn-danger btn-sm" onclick="clearOldAuditLogs()" style="white-space:nowrap;"><i class="fas fa-trash"></i> 30일 이전 삭제</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>시각</th><th>작업자</th><th>액션</th><th>내용</th><th>관리</th></tr></thead>
+            <tbody id="admin-audit-body"></tbody>
           </table>
         </div>
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ★ 거래내역 편집 모달 -->
+<div id="modal-tx-edit" class="modal-overlay hidden" onclick="if(event.target===this)closeTxEdit()">
+  <div class="modal" style="max-width:480px;width:96%;padding:28px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;" id="tx-edit-title">거래내역 수정</div>
+      <button class="btn btn-secondary btn-sm" onclick="closeTxEdit()"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">회원 ID *</label>
+        <input class="form-input" id="tx-edit-userId" placeholder="회원 아이디">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">유형 *</label>
+          <select class="form-input form-select" id="tx-edit-type">
+            <option value="투자">투자</option>
+            <option value="ROI">ROI</option>
+            <option value="보너스">보너스</option>
+            <option value="출금">출금</option>
+            <option value="직급수당">직급수당</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">날짜 *</label>
+          <input class="form-input" id="tx-edit-date" type="date">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">금액 (원)</label>
+          <input class="form-input mono" id="tx-edit-amount" type="number" placeholder="0">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">수수료 (원)</label>
+          <input class="form-input mono" id="tx-edit-fee" type="number" placeholder="0">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">실지급 (원)</label>
+          <input class="form-input mono" id="tx-edit-net" type="number" placeholder="0">
+        </div>
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">내용/메모</label>
+        <input class="form-input" id="tx-edit-desc" placeholder="거래 내용">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">상태</label>
+        <select class="form-input form-select" id="tx-edit-status">
+          <option value="completed">완료</option>
+          <option value="pending">대기</option>
+          <option value="cancelled">취소</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:22px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveTxEdit()"><i class="fas fa-save"></i> 저장</button>
+      <button class="btn btn-secondary" onclick="closeTxEdit()">취소</button>
+    </div>
+    <input type="hidden" id="tx-edit-id">
   </div>
 </div>
 
@@ -1175,12 +1243,14 @@ td{font-size:14px !important;padding:14px 16px !important;}
     <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto;">
       <button class="tab active" id="mmd-tab-info" onclick="switchMmdTab('info',this)">📋 기본정보</button>
       <button class="tab" id="mmd-tab-finance" onclick="switchMmdTab('finance',this)">💰 금융정보</button>
+      <button class="tab" id="mmd-tab-tx" onclick="switchMmdTab('tx',this)">📄 거래내역</button>
       <button class="tab" id="mmd-tab-account" onclick="switchMmdTab('account',this)">🔐 계정관리</button>
     </div>
 
     <!-- 탭 내용 -->
     <div id="mmd-tab-info-body"><!-- 기본정보 --></div>
     <div id="mmd-tab-finance-body" style="display:none;"><!-- 금융정보 --></div>
+    <div id="mmd-tab-tx-body" style="display:none;"><!-- 거래내역 --></div>
     <div id="mmd-tab-account-body" style="display:none;"><!-- 계정관리 --></div>
 
   </div>
@@ -1241,7 +1311,6 @@ function _validateSession(){
 //  DB — Firebase Firestore (클라우드 저장)
 // ═══════════════════════════════════════════════════════
 async function waitFirebase(timeout=20000){
-  // ★ 모바일 느린 네트워크 대응: 타임아웃 20초
   const start=Date.now();
   while(!window.firebaseReady){
     if(Date.now()-start>timeout) throw new Error('Firebase 연결 시간 초과');
@@ -1446,7 +1515,6 @@ function showPage(name){
   if(pg){pg.style.display='block';pg.classList.add('active');}
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll(`.nav-btn[data-view="${name}"]`).forEach(b=>b.classList.add('active'));
-  // ★ 모바일 네비 active 상태
   document.querySelectorAll('.mnav-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll(`.mnav-btn[data-view="${name}"]`).forEach(b=>b.classList.add('active'));
   currentView=name; window.scrollTo(0,0);
@@ -1618,6 +1686,7 @@ function setupTopbar(){
     lb.innerHTML=`<i class="fas fa-sign-out-alt"></i><span>로그아웃</span>`;
     lb.onclick=doLogout;
     mInner.appendChild(lb);
+    const mn=document.getElementById('mobile-nav'); if(mn) mn.style.display='block';
   }
 }
 
@@ -2104,10 +2173,11 @@ async function saveProfile(){
 }
 // ── 회원 상세 모달 함수들 ──
 function switchMmdTab(tab, btn){
-  ['info','finance','account'].forEach(t=>{
+  ['info','finance','tx','account'].forEach(t=>{
     document.getElementById('mmd-tab-'+t+'-body').style.display = t===tab?'block':'none';
     document.getElementById('mmd-tab-'+t).classList.toggle('active', t===tab);
   });
+  if(tab==='tx') renderMemberTxTab(_detailUserId);
 }
 
 async function openMemberDetail(uid){
@@ -2423,25 +2493,19 @@ async function adminEditAmounts(){
   renderAdmin();
 }
 async function rejectInvestment(id){
-  const invId=String(id);
   showModal('투자 거부','이 투자 신청을 거부하시겠습니까?',async()=>{
-    await dbDelete('pendingInvestments',invId);
+    await dbDelete('pendingInvestments',id);
     await audit('INV_REJECT','투자 거부','admin');
-    toast('투자 신청이 거부되었습니다','error');
-    const itemEl=document.querySelector(`[data-inv-id="${invId}"]`);
-    if(itemEl) itemEl.remove();
-    const list=document.getElementById('admin-invest-list');
-    if(list && list.children.length===0) list.innerHTML='<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>대기 중인 투자 신청이 없습니다</p></div>';
+    toast('투자 신청이 거부되었습니다');
     renderAdmin();
   },'거부','btn-danger');
 }
 async function rejectWithdrawal(id){
-  const wdId=String(id);
   showModal('출금 거부','출금을 거부하고 잔액을 반환하시겠습니까?',async()=>{
-    const wd=await dbGet('pendingWithdrawals',wdId); if(!wd)return;
+    const wd=await dbGet('pendingWithdrawals',id); if(!wd)return;
     const user=await dbGet('users',wd.userId);
     if(user){user.wallet+=wd.amount; await dbPut('users',user);}
-    await dbDelete('pendingWithdrawals',wdId);
+    await dbDelete('pendingWithdrawals',id);
     await audit('WD_REJECT',`출금 거부+반환 ${fmt(wd.amount)} 회원:${wd.userId}`,'admin');
     toast('출금이 거부되었고 잔액이 반환되었습니다');
     renderAdmin();
@@ -2532,16 +2596,18 @@ async function renderAdmin(){
   document.getElementById('admin-bank-holder').value=CFG.DEPOSIT_HOLDER;
   // 탭
   const tab=adminCurrentTab;
-  ['overview','approval','members','investments','inv_status','withdrawals','logs'].forEach(t=>{
+  ['overview','approval','members','investments','withdrawals','logs'].forEach(t=>{
     const el=document.getElementById('admin-tab-'+t); if(el) el.style.display=t===tab?'block':'none';
   });
   if(tab==='overview') renderAdminOverview(members);
   if(tab==='approval') renderAdminApproval(pendApproval);
   if(tab==='members') renderAdminMembers(members);
   if(tab==='investments') renderAdminInvestments(pendInv);
-  if(tab==='inv_status') renderAdminInvStatus(members);
   if(tab==='withdrawals') renderAdminWithdrawals(pendWd);
-  if(tab==='logs') renderAdminLogs(allTx);
+  if(tab==='logs'){
+    renderAdminLogs(allTx);
+    dbGetAll('auditLog').then(logs=>renderAuditLogs(logs));
+  }
 }
 function renderAdminApproval(pendList){
   const el=document.getElementById('admin-approval-list');
@@ -2615,61 +2681,6 @@ function renderAdminOverview(members){
       ${r.rank>0?`<div style="font-size:14px;color:var(--text3);">수당 ${fmt(r.bonus)}</div>`:''}
     </div>`).join('');
 }
-function renderAdminInvStatus(members){
-  _renderInvStatusTable(members);
-}
-function searchInvStatus(){
-  const q=(document.getElementById('inv-status-search')?.value||'').toLowerCase();
-  const f=document.getElementById('inv-status-filter')?.value||'all';
-  dbGetAll('users').then(allUsers=>{
-    let list=allUsers.filter(u=>u.role==='member');
-    if(q) list=list.filter(u=>u.name.toLowerCase().includes(q)||u.id.toLowerCase().includes(q));
-    if(f==='investing') list=list.filter(u=>u.investment>0&&u.roi<u.investment*CFG.MAX_PAYOUT);
-    else if(f==='maxed') list=list.filter(u=>u.investment>0&&u.roi>=u.investment*CFG.MAX_PAYOUT);
-    else if(f==='none') list=list.filter(u=>u.investment===0);
-    _renderInvStatusTable(list);
-  });
-}
-function _renderInvStatusTable(members){
-  const tbody=document.getElementById('inv-status-body');
-  if(!tbody) return;
-  const totalInvest=members.reduce((a,u)=>a+u.investment,0);
-  const totalRoi=members.reduce((a,u)=>a+u.roi,0);
-  const investing=members.filter(u=>u.investment>0).length;
-  const summaryEl=document.getElementById('inv-status-summary');
-  if(summaryEl) summaryEl.innerHTML=`
-    <span>👥 조회: <b style="color:var(--text)">${members.length}명</b></span>
-    <span>💰 총투자: <b style="color:var(--gold)">${fmt(totalInvest)}</b></span>
-    <span>📈 총ROI지급: <b style="color:var(--green)">${fmt(totalRoi)}</b></span>
-    <span>🔥 투자중: <b style="color:var(--blue)">${investing}명</b></span>
-  `;
-  if(members.length===0){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">조회 결과가 없습니다</td></tr>';return;}
-  tbody.innerHTML=members.sort((a,b)=>b.investment-a.investment).map(u=>{
-    const max=u.investment*CFG.MAX_PAYOUT;
-    const pct=max>0?Math.min(100,u.roi/max*100):0;
-    const daily=u.investment>0&&!u.suspended?Math.round(u.investment*CFG.DAILY_ROI):0;
-    const isMaxed=u.investment>0&&u.roi>=max;
-    const isNone=u.investment===0;
-    let statusBadge=isNone?'<span class="status status-stop">미투자</span>':isMaxed?'<span class="status status-fail">한도완료</span>':u.suspended?'<span class="status status-fail">정지</span>':'<span class="status status-done">투자중</span>';
-    const barColor=isMaxed?'var(--red)':pct>80?'var(--gold)':'var(--green)';
-    return `<tr>
-      <td><div style="font-weight:600;">${_esc(u.name)}</div><div style="font-size:13px;color:var(--text3);font-family:monospace;">${_esc(u.id)}</div></td>
-      <td class="td-amount">${fmt(u.investment)}</td>
-      <td class="td-amount" style="color:var(--gold);">${fmt(u.roi)}</td>
-      <td style="min-width:100px;">
-        <div style="display:flex;align-items:center;gap:6px;">
-          <div style="flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct.toFixed(1)}%;background:${barColor};border-radius:4px;transition:width .3s;"></div></div>
-          <span style="font-size:12px;color:var(--text3);min-width:36px;">${pct.toFixed(0)}%</span>
-        </div>
-      </td>
-      <td class="td-amount" style="color:var(--blue);">${daily>0?fmt(daily):'-'}</td>
-      <td class="td-amount" style="color:var(--green);">${fmt(u.wallet)}</td>
-      <td style="font-size:13px;color:var(--text3);">${u.lastInvestmentDate||'-'}</td>
-      <td>${statusBadge}</td>
-      <td><button class="btn btn-secondary btn-sm" onclick="openMemberDetail('${_esc(u.id)}')"><i class="fas fa-edit"></i> 수정</button></td>
-    </tr>`;
-  }).join('');
-}
 function renderAdminMembers(members){
   const tbody=document.getElementById('admin-member-body');
   tbody.innerHTML=members.map(u=>{
@@ -2694,7 +2705,7 @@ function renderAdminInvestments(pendInv){
   const list=document.getElementById('admin-invest-list');
   if(pendInv.length===0){list.innerHTML='<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>대기 중인 투자 신청이 없습니다</p></div>';return;}
   list.innerHTML=pendInv.map(inv=>`
-    <div data-inv-id="${inv.id}" style="display:flex;justify-content:space-between;align-items:center;padding:18px 20px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;flex-wrap:wrap;gap:12px;">
+    <div data-inv-id="${inv.id}" style="display:flex;justify-content:space-between;align-items:center;padding:18px 20px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;flex-wrap:wrap;gap:10px;">
       <div>
         <div style="font-size:16px;font-weight:700;" class="mono">${fmtFull(inv.amount)}</div>
         <div style="font-size:14px;color:var(--text3);margin-top:4px;">${_esc(inv.userId)} (${_esc(inv.userName)}) · 신청일: ${inv.requestedAt}</div>
@@ -2724,14 +2735,41 @@ function renderAdminWithdrawals(pendWd){
     </div>`).join('');
 }
 function renderAdminLogs(allTx){
-  const sorted=allTx.sort((a,b)=>b.id-a.id).slice(0,200);
-  document.getElementById('admin-log-body').innerHTML=sorted.map(t=>`<tr>
-    <td style="font-size:14px;color:var(--text3);white-space:nowrap;">${t.date}</td>
-    <td style="font-size:14px;font-family:'Space Mono',monospace;">${_esc(t.userId)}</td>
-    <td><span style="color:${typeColor(t.type)};font-size:14px;font-weight:600;">${typeLabel(t.type)}</span></td>
-    <td class="td-amount">${fmt(t.amount)}</td>
-    <td style="font-size:14px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis;">${_esc(t.desc||'')}</td>
+  const sorted=allTx.sort((a,b)=>b.id-a.id).slice(0,500);
+  const countEl=document.getElementById('log-count');
+  if(countEl) countEl.textContent=`총 ${allTx.length}건 (최대 500건 표시)`;
+  document.getElementById('admin-log-body').innerHTML=sorted.length===0
+    ?'<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3);">거래내역이 없습니다</td></tr>'
+    :sorted.map(t=>`<tr>
+    <td style="font-size:13px;color:var(--text3);white-space:nowrap;">${t.date}</td>
+    <td style="font-size:13px;font-family:'Space Mono',monospace;">${_esc(t.userId||'')}</td>
+    <td><span style="color:${typeColor(t.type)};font-size:13px;font-weight:700;">${typeLabel(t.type)}</span></td>
+    <td class="td-amount" style="font-size:13px;">${fmt(t.amount)}</td>
+    <td style="font-size:13px;color:var(--text3);">${t.fee>0?fmt(t.fee):'-'}</td>
+    <td style="font-size:13px;color:var(--text3);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(t.desc||'')}">${_esc(t.desc||'')}</td>
     <td>${statusHtml(t.status)}</td>
+    <td>
+      <div style="display:flex;gap:4px;">
+        <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:12px;" onclick="openTxEditModal('${String(t.id)}')"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:12px;" onclick="deleteTx('${String(t.id)}')"><i class="fas fa-trash"></i></button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+// ── 감사 로그 렌더 ──
+function renderAuditLogs(logs){
+  const tbody=document.getElementById('admin-audit-body');
+  if(!tbody) return;
+  const sorted=logs.sort((a,b)=>b.ts-a.ts).slice(0,300);
+  tbody.innerHTML=sorted.length===0
+    ?'<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text3);">감사 로그가 없습니다</td></tr>'
+    :sorted.map(l=>`<tr>
+    <td style="font-size:12px;color:var(--text3);white-space:nowrap;">${new Date(l.ts).toLocaleString('ko-KR')}</td>
+    <td style="font-size:13px;font-family:monospace;">${_esc(l.by||'system')}</td>
+    <td style="font-size:13px;color:var(--gold);font-weight:700;">${_esc(l.action||'')}</td>
+    <td style="font-size:13px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;" title="${_esc(l.detail||'')}">${_esc(l.detail||'')}</td>
+    <td><button class="btn btn-danger btn-sm" style="padding:3px 7px;font-size:11px;" onclick="deleteAuditLog('${_esc(String(l.id))}')"><i class="fas fa-trash"></i></button></td>
   </tr>`).join('');
 }
 
@@ -2739,7 +2777,7 @@ function renderAdminLogs(allTx){
 //  ADMIN ACTIONS
 // ═══════════════════════════════════════════════════════
 function switchAdminTab(tab,btn){
-  ['overview','approval','members','investments','inv_status','withdrawals','logs'].forEach(t=>{
+  ['overview','approval','members','investments','withdrawals','logs'].forEach(t=>{
     const el=document.getElementById('admin-tab-'+t); if(el) el.style.display=t===tab?'block':'none';
   });
   document.querySelectorAll('#admin-tabs .tab').forEach(b=>b.classList.remove('active'));
@@ -2759,11 +2797,164 @@ function searchMembers(){
   });
 }
 function searchLogs(){
-  const q=document.getElementById('log-search').value.toLowerCase();
+  const q=(document.getElementById('log-search')?.value||'').toLowerCase();
+  const typeF=document.getElementById('log-type-filter')?.value||'all';
   dbGetAll('transactions').then(allTx=>{
-    const filtered=q?allTx.filter(t=>t.userId.toLowerCase().includes(q)):allTx;
+    let filtered=allTx;
+    if(q) filtered=filtered.filter(t=>(t.userId||'').toLowerCase().includes(q)||(t.desc||'').toLowerCase().includes(q));
+    if(typeF!=='all') filtered=filtered.filter(t=>t.type===typeF);
     renderAdminLogs(filtered);
   });
+}
+function searchAuditLogs(){
+  const q=(document.getElementById('audit-search')?.value||'').toLowerCase();
+  dbGetAll('auditLog').then(logs=>{
+    const filtered=q?logs.filter(l=>(l.action||'').toLowerCase().includes(q)||(l.detail||'').toLowerCase().includes(q)||(l.by||'').toLowerCase().includes(q)):logs;
+    renderAuditLogs(filtered);
+  });
+}
+
+// ── 거래내역 수정 모달 열기 ──
+async function openTxEditModal(txId){
+  const tx=await dbGet('transactions', String(txId));
+  if(!tx){toast('거래내역을 찾을 수 없습니다','error');return;}
+  document.getElementById('tx-edit-title').textContent='거래내역 수정';
+  document.getElementById('tx-edit-id').value=String(tx.id);
+  document.getElementById('tx-edit-userId').value=tx.userId||'';
+  document.getElementById('tx-edit-type').value=tx.type||'기타';
+  document.getElementById('tx-edit-date').value=tx.date||localDateStr(new Date());
+  document.getElementById('tx-edit-amount').value=tx.amount||0;
+  document.getElementById('tx-edit-fee').value=tx.fee||0;
+  document.getElementById('tx-edit-net').value=tx.netAmount||0;
+  document.getElementById('tx-edit-desc').value=tx.desc||'';
+  document.getElementById('tx-edit-status').value=tx.status||'completed';
+  document.getElementById('modal-tx-edit').classList.remove('hidden');
+}
+
+// ── 새 거래내역 추가 모달 ──
+function openAddTxModal(){
+  document.getElementById('tx-edit-title').textContent='거래내역 추가';
+  document.getElementById('tx-edit-id').value='';
+  document.getElementById('tx-edit-userId').value='';
+  document.getElementById('tx-edit-type').value='ROI';
+  document.getElementById('tx-edit-date').value=localDateStr(new Date());
+  document.getElementById('tx-edit-amount').value='';
+  document.getElementById('tx-edit-fee').value='0';
+  document.getElementById('tx-edit-net').value='';
+  document.getElementById('tx-edit-desc').value='';
+  document.getElementById('tx-edit-status').value='completed';
+  document.getElementById('modal-tx-edit').classList.remove('hidden');
+}
+
+function closeTxEdit(){
+  document.getElementById('modal-tx-edit').classList.add('hidden');
+}
+
+// ── 거래내역 저장 (추가/수정) ──
+async function saveTxEdit(){
+  const txId=document.getElementById('tx-edit-id').value;
+  const userId=document.getElementById('tx-edit-userId').value.trim();
+  const type=document.getElementById('tx-edit-type').value;
+  const date=document.getElementById('tx-edit-date').value;
+  const amount=parseInt(document.getElementById('tx-edit-amount').value)||0;
+  const fee=parseInt(document.getElementById('tx-edit-fee').value)||0;
+  const net=parseInt(document.getElementById('tx-edit-net').value)||amount-fee;
+  const desc=document.getElementById('tx-edit-desc').value.trim();
+  const status=document.getElementById('tx-edit-status').value;
+
+  if(!userId){toast('회원 ID를 입력하세요','error');return;}
+  if(!date){toast('날짜를 입력하세요','error');return;}
+
+  const isNew=!txId;
+  const id=isNew?Date.now():parseInt(txId)||txId;
+
+  await dbPut('transactions',{id, userId, type, date, amount, fee, netAmount:net, desc, status});
+  await audit(isNew?'TX_ADD':'TX_EDIT',`거래내역 ${isNew?'추가':'수정'} [${id}] ${userId} ${type} ${fmt(amount)}`,'admin');
+  toast(isNew?'거래내역이 추가되었습니다':'거래내역이 수정되었습니다','success');
+  closeTxEdit();
+  renderAdmin();
+}
+
+// ── 거래내역 삭제 ──
+async function deleteTx(txId){
+  showModal('거래내역 삭제','이 거래내역을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',async()=>{
+    await dbDelete('transactions', String(txId));
+    await audit('TX_DELETE',`거래내역 삭제 [${txId}]`,'admin');
+    toast('거래내역이 삭제되었습니다','success');
+    renderAdmin();
+  },'삭제','btn-danger');
+}
+
+// ── 감사로그 단건 삭제 ──
+async function deleteAuditLog(logId){
+  showModal('감사로그 삭제','이 감사 로그를 삭제하시겠습니까?',async()=>{
+    await dbDelete('auditLog', String(logId));
+    toast('감사 로그가 삭제되었습니다');
+    searchAuditLogs();
+  },'삭제','btn-danger');
+}
+
+// ── 30일 이전 감사로그 일괄 삭제 ──
+async function clearOldAuditLogs(){
+  const cutoff=Date.now()-(30*24*60*60*1000);
+  showModal('오래된 감사 로그 삭제',`30일 이전(${new Date(cutoff).toLocaleDateString('ko-KR')})의 감사 로그를 모두 삭제하시겠습니까?`,async()=>{
+    const logs=await dbGetAll('auditLog');
+    const old=logs.filter(l=>l.ts<cutoff);
+    for(const l of old) await dbDelete('auditLog',String(l.id));
+    toast(`${old.length}건의 오래된 감사 로그가 삭제되었습니다`,'success');
+    searchAuditLogs();
+  },'삭제','btn-danger');
+}
+
+// ── 회원 개별 거래내역 탭 렌더 ──
+async function renderMemberTxTab(uid){
+  const body=document.getElementById('mmd-tab-tx-body');
+  if(!body) return;
+  body.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);">로딩 중...</div>';
+  const allTx=await dbGetAll('transactions');
+  const myTx=allTx.filter(t=>t.userId===uid).sort((a,b)=>b.id-a.id);
+  body.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:15px;color:var(--text2);">총 <b style="color:var(--text)">${myTx.length}건</b></div>
+      <button class="btn btn-primary btn-sm" onclick="openAddTxForUser('${_esc(uid)}')"><i class="fas fa-plus"></i> 거래 추가</button>
+    </div>
+    <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
+      <table>
+        <thead><tr><th>날짜</th><th>유형</th><th>금액</th><th>내용</th><th>상태</th><th>관리</th></tr></thead>
+        <tbody>
+          ${myTx.length===0
+            ?'<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text3);">거래내역이 없습니다</td></tr>'
+            :myTx.map(t=>`<tr>
+            <td style="font-size:13px;color:var(--text3);">${t.date}</td>
+            <td><span style="color:${typeColor(t.type)};font-size:13px;font-weight:700;">${typeLabel(t.type)}</span></td>
+            <td style="font-size:13px;text-align:right;font-family:monospace;">${fmt(t.amount)}</td>
+            <td style="font-size:12px;color:var(--text3);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(t.desc||'')}">${_esc(t.desc||'')}</td>
+            <td>${statusHtml(t.status)}</td>
+            <td>
+              <div style="display:flex;gap:3px;">
+                <button class="btn btn-secondary btn-sm" style="padding:3px 7px;font-size:11px;" onclick="openTxEditModal('${String(t.id)}')"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-danger btn-sm" style="padding:3px 7px;font-size:11px;" onclick="deleteTxFromMember('${String(t.id)}','${_esc(uid)}')"><i class="fas fa-trash"></i></button>
+              </div>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openAddTxForUser(uid){
+  openAddTxModal();
+  document.getElementById('tx-edit-userId').value=uid;
+}
+
+async function deleteTxFromMember(txId, uid){
+  showModal('거래내역 삭제','이 거래내역을 영구 삭제하시겠습니까?',async()=>{
+    await dbDelete('transactions',String(txId));
+    await audit('TX_DELETE',`거래내역 삭제 [${txId}] 회원:${uid}`,'admin');
+    toast('거래내역이 삭제되었습니다','success');
+    renderMemberTxTab(uid);
+  },'삭제','btn-danger');
 }
 async function saveOverrides(){
   const roi=parseFloat(document.getElementById('ov-roi').value)/100;
@@ -2786,14 +2977,11 @@ async function saveDepositAccount(){
   toast('입금 계좌가 저장되었습니다','success');
 }
 async function approveInvestment(id){
-  const invId = String(id);
+  const invId=String(id);
   showModal('투자 승인','이 투자 신청을 승인하시겠습니까?',async()=>{
     try{
       const inv=await dbGet('pendingInvestments',invId);
-      if(!inv){
-        toast('투자 신청을 찾을 수 없습니다 (이미 처리됨)','error');
-        renderAdmin(); return;
-      }
+      if(!inv){toast('투자 신청을 찾을 수 없습니다 (이미 처리됨)','error');renderAdmin();return;}
       const user=await dbGet('users',inv.userId);
       if(!user){toast('회원 정보를 찾을 수 없습니다','error');return;}
       const today=localDateStr(new Date());
@@ -2836,23 +3024,19 @@ async function approveInvestment(id){
       await checkRankBonuses(user.id,today);
       await dbDelete('pendingInvestments',invId);
       await audit('INV_APPROVE',`투자 승인 ${fmt(inv.amount)} 회원:${inv.userId}`,'admin');
-      toast(`✅ ${inv.userName || inv.userId} 투자 승인 완료 (${fmt(inv.amount)})`,'success');
-      // ★ 승인된 항목 즉시 DOM에서 제거
-      const itemEl = document.querySelector(`[data-inv-id="${invId}"]`);
+      toast(`✅ ${inv.userName||inv.userId} 투자 승인 완료 (${fmt(inv.amount)})`,'success');
+      const itemEl=document.querySelector(`[data-inv-id="${invId}"]`);
       if(itemEl) itemEl.remove();
-      // 목록이 비었으면 빈 메시지 표시
       const list=document.getElementById('admin-invest-list');
-      if(list && list.children.length===0){
-        list.innerHTML='<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>대기 중인 투자 신청이 없습니다</p></div>';
-      }
-      // 배지 숫자 업데이트
+      if(list&&list.children.length===0) list.innerHTML='<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>대기 중인 투자 신청이 없습니다</p></div>';
       renderAdmin();
     }catch(err){
-      console.error('투자 승인 오류:', err);
-      toast('승인 처리 중 오류가 발생했습니다: '+err.message,'error');
+      console.error('투자 승인 오류:',err);
+      toast('승인 처리 중 오류 발생: '+err.message,'error');
     }
   },'승인','btn-success');
 }
+    // ═══════════════════════════════════════════════
 // processBinaryBonus 제거 — 수당은 approveInvestment에서 직접 처리
 async function updateLinePoints(newUserId,amount){
   // 추천 체인 올라가면서 좌우 포인트 업데이트
@@ -2913,14 +3097,11 @@ async function checkRankBonuses(newUserId,date){
   }
 }
 async function approveWithdrawal(id){
-  const wdId=String(id);
   showModal('출금 승인','이 출금 신청을 승인하시겠습니까?',async()=>{
-    const wd=await dbGet('pendingWithdrawals',wdId);
-    if(!wd){toast('출금 신청을 찾을 수 없습니다','error');renderAdmin();return;}
-    // wallet은 신청 시(submitWithdrawal)에 이미 차감됨 → 여기서 재차감 금지
+    const wd=await dbGet('pendingWithdrawals',id); if(!wd)return;
     const today=localDateStr(new Date());
     await dbPut('transactions',{id:Date.now(),userId:wd.userId,type:'출금',amount:wd.amount,fee:wd.fee,netAmount:wd.net,date:today,status:'completed',desc:'출금 승인 완료'});
-    await dbDelete('pendingWithdrawals',wdId);
+    await dbDelete('pendingWithdrawals',id);
     await audit('WD_APPROVE',`출금 승인 ${fmt(wd.amount)} 회원:${wd.userId}`,'admin');
     toast('출금이 승인되었습니다','success');
     renderAdmin();
@@ -3093,7 +3274,6 @@ async function init(){
       <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#d4a853;margin-bottom:20px;letter-spacing:2px;">MEDI WORLD</div>
       <div id="fb-spinner" style="width:44px;height:44px;border:3px solid rgba(212,168,83,0.2);border-top-color:#d4a853;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
       <div id="fb-status" style="margin-top:18px;font-size:16px;color:#6b7280;">서버에 연결하는 중입니다...</div>
-      <div id="fb-sub" style="margin-top:8px;font-size:14px;color:#4a5068;">잠시만 기다려 주세요</div>
       <button id="fb-retry-btn" onclick="location.reload()" style="display:none;margin-top:24px;padding:14px 32px;background:#d4a853;color:#07080d;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;min-height:52px;">&#128260; 다시 시도</button>
     </div>
   `);
@@ -3106,11 +3286,9 @@ async function init(){
     const st=document.getElementById('fb-status');
     const sp=document.getElementById('fb-spinner');
     const rb=document.getElementById('fb-retry-btn');
-    const sb=document.getElementById('fb-sub');
-    if(st){st.textContent='연결에 실패했습니다.';st.style.color='#f05d5d';}
-    if(sb){sb.textContent='인터넷 연결을 확인하고 아래 버튼을 눌러주세요.';}
-    if(sp){sp.style.display='none';}
-    if(rb){rb.style.display='block';}
+    if(st){st.textContent='연결 실패. 인터넷 연결을 확인해주세요.';st.style.color='#f05d5d';}
+    if(sp) sp.style.display='none';
+    if(rb) rb.style.display='block';
     return;
   }
   document.getElementById('fb-loading').remove();
@@ -3118,7 +3296,7 @@ async function init(){
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.getElementById('page-login').style.display='flex';
   document.getElementById('page-login').classList.add('active');
-  console.log('[MEDI WORLD v5.0] 초기화 완료 ✅');
+  console.log('[MEDI WORLD v5.0] Firebase 연결 완료 ✅');
 }
 init();
 </script>
