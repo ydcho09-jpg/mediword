@@ -422,68 +422,283 @@ td{font-size:14px !important;padding:14px 16px !important;}
 --text2:#aab0c4;
 --text3:#6b7280;
 
-@media(max-width:900px){
-  .login-wrap{grid-template-columns:1fr;}.login-left{display:none;}
-  .dash-row-4{grid-template-columns:1fr 1fr;}.dash-row-3{grid-template-columns:1fr 1fr;}
-  .dash-row-main{grid-template-columns:1fr;}
-  .main{padding:80px 16px 40px;}
-  #topbar{padding:0 14px;}
-  .form-row{grid-template-columns:1fr;}
+
+/* ══════════════════════════════════════════
+   📱 MOBILE-FIRST RESPONSIVE DESIGN
+   ══════════════════════════════════════════ */
+
+/* ── 하단 탭바 (모바일 앱 네비게이션) ── */
+#bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  height:68px;
+  background:rgba(10,11,18,0.97);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-top:1px solid var(--border);
+  z-index:300;
+  padding-bottom:env(safe-area-inset-bottom);
 }
-@media(max-width:600px){
-  /* ── 모바일 최적화 (노인 친화) ── */
-  .dash-row-4{grid-template-columns:1fr 1fr;}
-  .dash-row-3{grid-template-columns:1fr 1fr;}
-  .dash-row-2{grid-template-columns:1fr;}
-  .topbar-nav{display:none;}
-  .main{padding:72px 14px 48px !important;}
-  #topbar{padding:0 14px !important;height:60px !important;}
-  .topbar-logo{font-size:18px !important;}
-  .user-name{display:none;}
-  /* 페이지 제목 */
-  .page-title{font-size:23px !important;}
-  .page-subtitle{font-size:15px !important;}
+#bottom-nav-inner{
+  display:flex;align-items:stretch;
+  height:100%;padding:0 4px;
+}
+.bnav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;background:none;border:none;cursor:pointer;
+  color:var(--text3);font-family:'DM Sans',sans-serif;
+  font-size:10px;font-weight:600;letter-spacing:.3px;
+  padding:6px 2px 4px;border-radius:12px;
+  transition:color .15s,background .15s;
+  -webkit-tap-highlight-color:transparent;
+  position:relative;
+}
+.bnav-btn i{ font-size:20px;transition:transform .2s; }
+.bnav-btn.active{ color:var(--gold); }
+.bnav-btn.active i{ transform:translateY(-2px); }
+.bnav-btn:active{ background:rgba(255,255,255,0.05); }
+.bnav-badge{
+  position:absolute;top:5px;right:calc(50% - 18px);
+  background:var(--red);color:#fff;font-size:9px;font-weight:800;
+  padding:1px 5px;border-radius:10px;min-width:16px;text-align:center;
+  font-family:'Space Mono',monospace;
+}
+
+/* ── 모바일 헤더 (topbar 대체) ── */
+@media(max-width:768px){
+  /* 레이아웃 */
+  .login-wrap{grid-template-columns:1fr !important;}
+  .login-left{display:none !important;}
+  .form-row{grid-template-columns:1fr !important;}
+  .dash-row-4,.dash-row-3{grid-template-columns:1fr 1fr !important;}
+  .dash-row-2{grid-template-columns:1fr !important;}
+  .dash-row-main{grid-template-columns:1fr !important;}
+
+  /* 상단 topbar 모바일 스타일 */
+  #topbar{
+    height:58px !important;
+    padding:0 16px !important;
+  }
+  .topbar-nav{display:none !important;}
+  .topbar-logo{font-size:17px !important;}
+  .user-name{display:none !important;}
+  .btn-logout{font-size:12px !important;padding:7px 11px !important;}
+  .user-chip{padding:4px 10px 4px 4px !important;}
+  .user-avatar{width:30px !important;height:30px !important;font-size:13px !important;}
+
+  /* 메인 컨텐츠 패딩 - 상단 topbar + 하단 탭바 고려 */
+  .main{padding:70px 14px 84px !important;}
+
+  /* 하단 탭바 표시 */
+  #bottom-nav{display:block !important;}
+
+  /* 페이지 헤더 */
+  .page-header{margin-bottom:18px !important;flex-wrap:wrap;gap:10px;}
+  .page-title{font-size:22px !important;}
+  .page-subtitle{font-size:13px !important;}
+
   /* 카드 */
-  .card{padding:18px !important;border-radius:16px !important;}
-  .card-title-lg{font-size:18px !important;}
-  .card-title{font-size:14px !important;}
+  .card{padding:16px !important;border-radius:18px !important;}
+  .card-title-lg{font-size:17px !important;}
+  .card-title{font-size:12px !important;}
+  .card-header{margin-bottom:14px !important;}
+
   /* 통계 카드 */
-  .stat-value{font-size:26px !important;}
-  .stat-label{font-size:13px !important;}
-  .stat-sub{font-size:13px !important;}
-  /* 버튼 - 손가락으로 누르기 편하게 */
-  .btn{font-size:15px !important;padding:13px 20px !important;min-height:48px !important;}
-  .btn-sm{font-size:14px !important;padding:10px 15px !important;min-height:44px !important;}
-  .btn-lg{font-size:17px !important;min-height:54px !important;}
+  .stat-card{padding:16px !important;border-radius:16px !important;}
+  .stat-value{font-size:24px !important;}
+  .stat-label{font-size:11px !important;margin-bottom:6px !important;}
+  .stat-sub{font-size:12px !important;margin-top:6px !important;}
+
+  /* 버튼 */
+  .btn{font-size:14px !important;padding:12px 18px !important;min-height:46px !important;}
+  .btn-sm{font-size:13px !important;padding:9px 14px !important;min-height:40px !important;}
+  .btn-lg{font-size:16px !important;min-height:52px !important;padding:16px 28px !important;}
+
   /* 탭 */
-  .tabs{gap:0px;overflow-x:auto;}
-  .tab{font-size:13px !important;padding:11px 14px !important;min-height:46px !important;}
-  /* 테이블 */
-  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  th{font-size:12px !important;padding:10px 12px !important;}
-  td{font-size:14px !important;padding:13px 12px !important;}
-  /* 입력 폼 - 자동확대 방지 및 터치 편의 */
-  .form-input{font-size:16px !important;padding:14px 16px !important;min-height:52px !important;}
-  .form-label{font-size:15px !important;margin-bottom:8px !important;}
-  /* 모달 */
-  .modal{width:96% !important;max-width:100% !important;margin:8px !important;max-height:88vh !important;overflow-y:auto !important;border-radius:20px !important;}
+  .tabs{gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;margin:0 -14px;padding:0 14px;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{font-size:12px !important;padding:10px 14px !important;min-height:44px !important;white-space:nowrap;}
+
+  /* 테이블 - 가로 스크롤 */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -16px;padding:0 16px;}
+  th{font-size:11px !important;padding:10px 10px !important;}
+  td{font-size:13px !important;padding:12px 10px !important;}
+
+  /* 폼 */
+  .form-input{font-size:16px !important;padding:13px 14px !important;min-height:50px !important;}
+  .form-label{font-size:14px !important;margin-bottom:7px !important;}
+  .form-group{margin-bottom:16px !important;}
+
+  /* 모달 - 하단 시트 스타일 */
+  .modal-overlay{align-items:flex-end !important;}
+  .modal{
+    width:100% !important;max-width:100% !important;
+    margin:0 !important;
+    border-radius:24px 24px 0 0 !important;
+    max-height:92vh !important;overflow-y:auto !important;
+    padding-bottom:calc(20px + env(safe-area-inset-bottom)) !important;
+  }
+
   /* 알림 */
-  .alert{font-size:15px !important;padding:14px 16px !important;}
+  .alert{font-size:14px !important;padding:12px 14px !important;}
+
   /* 상태 배지 */
-  .status{font-size:12px !important;padding:5px 10px !important;}
-  /* 폰트 자동크기 조절 방지 */
-  *{-webkit-text-size-adjust:100% !important;}
+  .status{font-size:11px !important;padding:4px 8px !important;}
+
+  /* 토스트 - 하단 탭바 위로 */
+  #toast-container{
+    bottom:calc(76px + env(safe-area-inset-bottom)) !important;
+    right:14px !important;left:14px !important;
+  }
+  .toast{font-size:14px !important;padding:12px 16px !important;width:100% !important;}
+
   /* 네트워크 카드 */
-  .net-name{font-size:16px !important;}
-  .net-meta-item{font-size:13px !important;}
+  .net-name{font-size:15px !important;}
+  .net-meta-item{font-size:12px !important;}
+
+  /* 폰트 자동확대 방지 */
+  *{-webkit-text-size-adjust:100% !important;text-size-adjust:100% !important;}
+
+  /* 로그인 페이지 */
+  .login-right{padding:28px 20px !important;border-radius:0 !important;}
+  .login-title{font-size:26px !important;}
+
+  /* 수익 진행 링 - 모바일 최적화 */
+  .roi-ring-wrap{flex-direction:column !important;align-items:center !important;gap:20px !important;}
+  .roi-ring{width:130px !important;height:130px !important;}
+
+  /* 어드민 탭 스크롤 */
+  #admin-tabs{overflow-x:auto;scrollbar-width:none;margin:0 -14px;padding:0 14px;}
+  #admin-tabs::-webkit-scrollbar{display:none;}
+  #admin-tabs .tab{min-width:90px;font-size:11px !important;padding:10px 12px !important;}
+
+  /* 어드민 KPI 2열 */
+  #admin-kpi{grid-template-columns:1fr 1fr !important;}
+
+  /* 투자 승인 카드 */
+  [data-inv-id]{flex-direction:column !important;gap:12px !important;}
+  [data-inv-id] > div:last-child{width:100%;display:flex;gap:8px;}
+  [data-inv-id] > div:last-child .btn{flex:1;}
+
+  /* 스텝 인디케이터 */
+  .step-label{font-size:10px !important;}
+
+  /* 섹션 헤더 컴팩트 */
+  .section-header{padding:16px !important;}
 }
-/* 터치 디바이스 버튼 크기 */
+
+/* 터치 디바이스 공통 */
 @media(hover:none) and (pointer:coarse){
   .btn{min-height:44px;}
   .btn-sm{min-height:40px;}
   .form-input{min-height:48px;}
   .tab{min-height:44px;}
   .nav-btn{min-height:44px;}
+  /* 터치 피드백 */
+  .btn:active,.card:active{opacity:.85;}
+}
+
+/* 초소형 화면 */
+@media(max-width:360px){
+  .dash-row-4,.dash-row-3{grid-template-columns:1fr !important;}
+  .main{padding:66px 12px 80px !important;}
+  .stat-value{font-size:20px !important;}
+  .bnav-btn{font-size:9px;}
+  .bnav-btn i{font-size:18px;}
+}
+
+/* 데스크탑 - 하단 탭바 숨김 */
+@media(min-width:769px){
+  #bottom-nav{display:none !important;}
+  .main{padding:88px 28px 48px;}
+}
+
+/* ══════════════════════════════════════════
+   📱 EXTRA MOBILE UI COMPONENTS
+   ══════════════════════════════════════════ */
+
+/* 모바일 Pull-to-refresh 힌트 */
+@media(max-width:768px){
+  /* 대시보드 KPI 카드 - 2열 균등 */
+  #dash-kpi .stat-card{min-height:90px;}
+
+  /* 카드 내 버튼들 풀 너비 */
+  .card .btn-full{min-height:50px !important;}
+
+  /* 네트워크 트리 모바일 */
+  .net-tree{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* 출금 폼 모바일 */
+  #page-wallet .main > .card{margin-bottom:12px;}
+
+  /* 모달 상단 핸들 표시 */
+  .modal::before{
+    content:'';display:block;
+    width:40px;height:4px;
+    background:var(--border2);border-radius:2px;
+    margin:0 auto 16px;
+  }
+
+  /* 어드민 탭 뱃지 */
+  .stat-badge{font-size:10px !important;padding:2px 6px !important;}
+
+  /* 테이블 셀 줄바꿈 허용 */
+  td{word-break:break-word;}
+
+  /* 거래내역 테이블 desc 컬럼 숨기기 (모바일에서) */
+  .tx-desc-col{display:none;}
+
+  /* 로그인 박스 컴팩트 */
+  .login-right{
+    min-height:100vh;
+    padding:env(safe-area-inset-top,20px) 20px 30px !important;
+  }
+  .login-title{margin-top:20px !important;}
+
+  /* 섹션 간격 */
+  .page > .main > * + *{margin-top:0;}
+
+  /* 버튼 그룹 모바일 */
+  .btn-group{flex-wrap:wrap !important;gap:8px !important;}
+  .btn-group .btn{flex:1;min-width:120px;}
+
+  /* 어드민 거래로그 버튼들 */
+  #admin-log-body td:last-child div{flex-wrap:wrap !important;gap:4px !important;}
+  #admin-log-body td:last-child button{flex:1;min-width:60px;}
+
+  /* 회원 상세 모달 탭 */
+  #modal-member-detail .tabs{flex-wrap:nowrap;overflow-x:auto;}
+
+  /* 투자 신청 스텝 */
+  .step-indicator{overflow-x:auto;padding-bottom:8px;}
+  .step-line{flex:0 0 20px !important;min-width:20px;}
+
+  /* ROI 링 컴팩트 */
+  #roi-ring-canvas{width:100% !important;height:100% !important;}
+
+  /* 프로필 페이지 */
+  #page-profile .form-row{grid-template-columns:1fr !important;}
+
+  /* 출금 정보 카드 */
+  .wd-info-row{flex-direction:column !important;gap:4px !important;}
+}
+
+/* iOS Safe Area 대응 */
+@supports(padding-bottom: env(safe-area-inset-bottom)){
+  #bottom-nav{
+    padding-bottom:env(safe-area-inset-bottom);
+    height:calc(68px + env(safe-area-inset-bottom));
+  }
+  @media(max-width:768px){
+    .main{padding-bottom:calc(84px + env(safe-area-inset-bottom)) !important;}
+  }
+}
+
+@media(max-width:768px){
+  .mobile-back-btn{display:inline-flex !important;}
+}
+@media(min-width:769px){
+  .mobile-back-btn{display:none !important;}
 }
 </style>
 </head>
@@ -606,6 +821,11 @@ td{font-size:14px !important;padding:14px 16px !important;}
   </div>
 </nav>
 
+<!-- ═══════════ BOTTOM NAVIGATION (Mobile) ═══════════ -->
+<div id="bottom-nav" style="display:none;">
+  <div id="bottom-nav-inner"></div>
+</div>
+
 <!-- ═══════════ DASHBOARD ═══════════ -->
 <div id="page-dashboard" class="page">
   <div class="main">
@@ -693,7 +913,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>날짜</th><th>유형</th><th>금액</th><th>상태</th><th>설명</th></tr></thead>
+          <thead><tr><th>날짜</th><th>유형</th><th>금액</th><th>상태</th><th class="tx-desc-col">설명</th></tr></thead>
           <tbody id="dash-tx-body"></tbody>
         </table>
       </div>
@@ -903,7 +1123,10 @@ td{font-size:14px !important;padding:14px 16px !important;}
 <div id="page-reports" class="page">
   <div class="main">
     <div class="page-header">
-      <div><div class="page-title">거래 <span>내역</span></div><div class="page-subtitle">모든 수익 및 거래 기록</div></div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="btn btn-secondary btn-sm mobile-back-btn" onclick="goHome()" style="display:none;padding:8px 12px;"><i class="fas fa-arrow-left"></i></button>
+        <div><div class="page-title">거래 <span>내역</span></div><div class="page-subtitle">모든 수익 및 거래 기록</div></div>
+      </div>
       <button class="btn btn-secondary btn-sm" onclick="exportReports()"><i class="fas fa-download"></i> CSV 다운로드</button>
     </div>
     <div class="dash-grid dash-row-3" style="margin-bottom:20px;" id="report-kpi"></div>
@@ -1509,8 +1732,11 @@ function showPage(name){
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   const pg=document.getElementById('page-'+name);
   if(pg){pg.style.display='block';pg.classList.add('active');}
+  // 상단 nav active
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll(`.nav-btn[data-view="${name}"]`).forEach(b=>b.classList.add('active'));
+  // 하단 탭바 active
+  _updateBnavActive(name);
   currentView=name; window.scrollTo(0,0);
 }
 function goView(name){ showPage(name); renderPage(name); }
@@ -1604,6 +1830,7 @@ function doLogout(){
   sessionStorage.removeItem('mw_login_attempts');
   sessionStorage.removeItem('mw_login_locktime');
   document.getElementById('topbar').style.display='none';
+  document.getElementById('bottom-nav').style.display='none';
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.getElementById('page-login').style.display='flex';
   document.getElementById('page-login').classList.add('active');
@@ -1653,6 +1880,8 @@ async function doRegister(){
 function setupTopbar(){
   document.getElementById('top-avatar').textContent=currentUser.name.charAt(0);
   document.getElementById('top-name').textContent=currentUser.name+' ('+currentUser.id+')';
+
+  // 상단 nav (데스크탑)
   const nav=document.getElementById('topbar-nav'); nav.innerHTML='';
   const views=currentUser.role==='admin'
     ?[{id:'admin_dash',label:'관리자홈'}]
@@ -1661,6 +1890,56 @@ function setupTopbar(){
     const b=document.createElement('button');
     b.className='nav-btn'; b.dataset.view=v.id; b.textContent=v.label;
     b.onclick=()=>goView(v.id); nav.appendChild(b);
+  });
+
+  // 하단 탭바 (모바일)
+  setupBottomNav();
+}
+
+function setupBottomNav(){
+  const wrap=document.getElementById('bottom-nav-inner');
+  if(!wrap) return;
+  wrap.innerHTML='';
+  document.getElementById('bottom-nav').style.display='block';
+
+  const isMobile = window.innerWidth <= 768;
+
+  if(currentUser.role==='admin'){
+    // 어드민: 간단하게
+    const items=[
+      {id:'admin_dash',icon:'fa-chart-line',label:'관리자'},
+    ];
+    items.forEach(v=>_makeBnavBtn(wrap,v));
+    // 로그아웃 버튼
+    const lo=document.createElement('button');
+    lo.className='bnav-btn';
+    lo.innerHTML='<i class="fas fa-sign-out-alt"></i><span>로그아웃</span>';
+    lo.onclick=doLogout;
+    wrap.appendChild(lo);
+    return;
+  }
+
+  const items=[
+    {id:'dashboard', icon:'fa-home',        label:'홈'},
+    {id:'invest',    icon:'fa-coins',        label:'투자'},
+    {id:'network',   icon:'fa-sitemap',      label:'조직'},
+    {id:'wallet',    icon:'fa-paper-plane',  label:'출금'},
+    {id:'profile',   icon:'fa-user',         label:'내정보'},
+  ];
+  items.forEach(v=>_makeBnavBtn(wrap,v));
+}
+
+function _makeBnavBtn(wrap,v){
+  const b=document.createElement('button');
+  b.className='bnav-btn'; b.dataset.view=v.id;
+  b.innerHTML=`<i class="fas ${v.icon}"></i><span>${v.label}</span>`;
+  b.onclick=()=>goView(v.id);
+  wrap.appendChild(b);
+}
+
+function _updateBnavActive(name){
+  document.querySelectorAll('.bnav-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view===name);
   });
 }
 
