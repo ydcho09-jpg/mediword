@@ -18,7 +18,7 @@
 <script type="module">
 // ★★★ 여기에 Firebase 설정값을 붙여넣으세요 ★★★
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, doc, getDoc, getDocs, setDoc, deleteDoc, collection, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, getDocs, getDocFromServer, getDocsFromServer, setDoc, deleteDoc, collection, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ⚠️  보안 안내: Firebase API 키는 클라이언트에 노출됩니다.
@@ -51,12 +51,25 @@ const fsdb = getFirestore(app);
 // ── Firestore DB 함수 (기존 IndexedDB 함수를 덮어씁니다) ──
 window.fsdb = fsdb;
 window.fsGet = async (col, id) => {
-  const snap = await getDoc(doc(fsdb, col, String(id)));
-  return snap.exists() ? snap.data() : undefined;
+  // ★ 캐시 우회: 항상 서버에서 최신 데이터 읽기
+  try {
+    const snap = await getDocFromServer(doc(fsdb, col, String(id)));
+    return snap.exists() ? snap.data() : undefined;
+  } catch(e) {
+    const snap = await getDoc(doc(fsdb, col, String(id)));
+    return snap.exists() ? snap.data() : undefined;
+  }
 };
 window.fsGetAll = async (col) => {
-  const snap = await getDocs(collection(fsdb, col));
-  return snap.docs.map(d => d.data());
+  // ★ 캐시 우회: 항상 서버에서 최신 데이터 읽기
+  try {
+    const snap = await getDocsFromServer(collection(fsdb, col));
+    return snap.docs.map(d => d.data());
+  } catch(e) {
+    // 오프라인 fallback
+    const snap = await getDocs(collection(fsdb, col));
+    return snap.docs.map(d => d.data());
+  }
 };
 window.fsPut = async (col, obj) => {
   const key = obj.id !== undefined ? String(obj.id) : String(obj.key);
@@ -2440,11 +2453,19 @@ async function adminEditAmounts(){
   renderAdmin();
 }
 async function rejectInvestment(id){
+  const invId=String(id);
   showModal('투자 거부','이 투자 신청을 거부하시겠습니까?',async()=>{
-    await dbDelete('pendingInvestments',id);
-    await audit('INV_REJECT','투자 거부','admin');
-    toast('투자 신청이 거부되었습니다');
-    renderAdmin();
+    try{
+      await dbDelete('pendingInvestments',invId);
+      await audit('INV_REJECT','투자 거부','admin');
+      // DOM 즉시 제거
+      const itemEl=document.querySelector(`[data-inv-id="${invId}"]`);
+      if(itemEl) itemEl.remove();
+      const list=document.getElementById('admin-invest-list');
+      if(list&&list.children.length===0) list.innerHTML='<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>대기 중인 투자 신청이 없습니다</p></div>';
+      toast('투자 신청이 거부되었습니다');
+      await renderAdmin();
+    }catch(e){ toast('거부 오류: '+e.message,'error'); }
   },'거부','btn-danger');
 }
 async function rejectWithdrawal(id){
@@ -2764,25 +2785,35 @@ async function saveTxEdit(){
   const status=document.getElementById('tx-edit-status').value;
   if(!userId){toast('회원 ID를 입력하세요','error');return;}
   if(!date){toast('날짜를 선택하세요','error');return;}
-  const ux=await dbGet('users',userId);
-  if(!ux){toast(`회원 [${userId}] 을 찾을 수 없습니다`,'error');return;}
-  const isNew=!txId;
-  const id=isNew?Date.now():(parseInt(txId)||txId);
-  await dbPut('transactions',{id,userId,type,date,amount,fee,netAmount:net,desc,status});
-  await audit(isNew?'TX_ADD':'TX_EDIT',`거래 ${isNew?'추가':'수정'} [${id}] ${userId} ${type} ${fmt(amount)}`,'admin');
-  toast(isNew?'✅ 거래내역 추가 완료':'✅ 거래내역 수정 완료','success');
-  closeTxEdit();
-  if(_detailUserId) renderMemberTxTab(_detailUserId);
-  renderAdmin();
+  try{
+    const ux=await dbGet('users',userId);
+    if(!ux){toast(`회원 [${userId}] 을 찾을 수 없습니다`,'error');return;}
+    const isNew=!txId;
+    const id=isNew?Date.now():(parseInt(txId)||txId);
+    await dbPut('transactions',{id,userId,type,date,amount,fee,netAmount:net,desc,status});
+    await audit(isNew?'TX_ADD':'TX_EDIT',`거래 ${isNew?'추가':'수정'} [${id}] ${userId} ${type} ${fmt(amount)}`,'admin');
+    toast(isNew?'✅ 거래내역 추가 완료':'✅ 거래내역 수정 완료','success');
+    closeTxEdit();
+    if(_detailUserId) await renderMemberTxTab(_detailUserId);
+    await renderAdmin();
+  }catch(e){
+    console.error('저장 오류:',e);
+    toast('저장 오류: '+e.message,'error');
+  }
 }
 
 // ── 거래내역 삭제 (로그 탭) ──
 async function deleteTxLog(txId){
   showModal('거래내역 삭제','이 거래내역을 영구 삭제합니다. 되돌릴 수 없습니다.',async()=>{
-    await dbDelete('transactions',String(txId));
-    await audit('TX_DELETE',`거래내역 삭제 [${txId}]`,'admin');
-    toast('삭제되었습니다','success');
-    renderAdmin();
+    try{
+      await dbDelete('transactions',String(txId));
+      await audit('TX_DELETE',`거래내역 삭제 [${txId}]`,'admin');
+      toast('삭제되었습니다','success');
+      await renderAdmin();
+    }catch(e){
+      console.error('삭제 오류:',e);
+      toast('삭제 오류: '+e.message,'error');
+    }
   },'삭제','btn-danger');
 }
 
@@ -2830,11 +2861,16 @@ async function renderMemberTxTab(uid){
 // ── 회원 상세에서 거래내역 삭제 ──
 async function deleteTxMember(txId,uid){
   showModal('거래내역 삭제','이 거래내역을 영구 삭제합니다.',async()=>{
-    await dbDelete('transactions',String(txId));
-    await audit('TX_DELETE',`거래내역 삭제 [${txId}] 회원:${uid}`,'admin');
-    toast('삭제되었습니다','success');
-    await renderMemberTxTab(uid);
-    renderAdmin();
+    try{
+      await dbDelete('transactions',String(txId));
+      await audit('TX_DELETE',`거래내역 삭제 [${txId}] 회원:${uid}`,'admin');
+      toast('삭제되었습니다','success');
+      await renderMemberTxTab(uid);
+      await renderAdmin();
+    }catch(e){
+      console.error('삭제 오류:',e);
+      toast('삭제 오류: '+e.message,'error');
+    }
   },'삭제','btn-danger');
 }
 
@@ -2946,15 +2982,18 @@ async function approveInvestment(id){
         }
       }
 
-      await updateLinePoints(user.id, inv.amount);
-      await checkRankBonuses(user.id, today);
+      // ★ 라인 포인트/직급 수당은 부가기능 - 에러나도 승인은 계속
+      try{ await updateLinePoints(user.id, inv.amount); }
+      catch(e){ console.warn('[라인포인트 오류 무시]', e.message); }
+      try{ await checkRankBonuses(user.id, today); }
+      catch(e){ console.warn('[직급수당 오류 무시]', e.message); }
 
-      // ★ 마지막에 pending 삭제
+      // ★ pending 삭제 (핵심 - 여기서 실패하면 진짜 실패)
       await dbDelete('pendingInvestments', invId);
       await audit('INV_APPROVE',`투자 승인 ${fmt(inv.amount)} 회원:${inv.userId}`,'admin');
       toast(`✅ ${inv.userName||inv.userId} 투자 승인 완료 (${fmt(inv.amount)})`,'success');
 
-      // 승인 항목 DOM 즉시 제거
+      // DOM 즉시 제거
       if(itemEl) itemEl.remove();
       const list = document.getElementById('admin-invest-list');
       if(list&&list.children.length===0) list.innerHTML='<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>대기 중인 투자 신청이 없습니다</p></div>';
@@ -3035,7 +3074,7 @@ async function approveWithdrawal(id){
     await dbDelete('pendingWithdrawals',id);
     await audit('WD_APPROVE',`출금 승인 ${fmt(wd.amount)} 회원:${wd.userId}`,'admin');
     toast('출금이 승인되었습니다','success');
-    renderAdmin();
+    await renderAdmin();
   },'승인','btn-success');
 }
 async function runSettlement(){
