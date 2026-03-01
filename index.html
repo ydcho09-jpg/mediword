@@ -19,18 +19,18 @@
 // ★★★ 여기에 Firebase 설정값을 붙여넣으세요 ★★★
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, doc, getDoc, getDocs, getDocFromServer, getDocsFromServer, setDoc, deleteDoc, collection, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ⚠️  보안 안내: Firebase API 키는 클라이언트에 노출됩니다.
 //    반드시 Firebase Console에서 아래 설정을 완료하세요:
-//    1) Authentication → Settings → Authorized domains
-//       → 실제 배포 도메인만 등록 (localhost 제거)
-//    2) Firestore → Rules → 아래 규칙 적용:
+//    1) Authentication → Sign-in method → [익명(Anonymous)] → 사용 설정 ✅ (필수!)
+//    2) Firestore → Rules → 아래 규칙으로 교체 후 게시:
 //       rules_version = '2';
 //       service cloud.firestore {
 //         match /databases/{database}/documents {
 //           match /{document=**} {
-//             allow read, write: if false; // 기본 차단
+//             allow read, write: if request.auth != null;
 //           }
 //         }
 //       }
@@ -90,7 +90,20 @@ window.fsGetIndex = async (col, field, val) => {
   const snap = await getDocs(q);
   return snap.docs.map(d => d.data());
 };
-window.firebaseReady = true;
+
+// ★ Firebase Anonymous Auth - Firestore 권한 획득
+const _fbAuth = getAuth(app);
+window.firebaseReady = false;
+signInAnonymously(_fbAuth)
+  .then(() => {
+    window.firebaseReady = true;
+    console.log('[Firebase] 익명 인증 완료 ✅');
+  })
+  .catch((e) => {
+    // Auth 실패해도 Rules가 public이면 동작하도록 fallback
+    console.warn('[Firebase] 익명 인증 실패, Rules 확인 필요:', e.message);
+    window.firebaseReady = true;
+  });
 console.log('[Firebase] 연결 완료 ✅');
 </script>
 <style>
