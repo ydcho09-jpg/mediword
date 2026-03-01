@@ -279,6 +279,7 @@ tr:last-child td{border-bottom:none;}
 .coin-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);
   animation:pulse 2s infinite;margin-right:4px;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* RANK BADGE */
 .rank-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:14px;font-weight:700;letter-spacing:.3px;}
@@ -3093,8 +3094,7 @@ async function init(){
       <div id="fb-spinner" style="width:44px;height:44px;border:3px solid rgba(212,168,83,0.2);border-top-color:#d4a853;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
       <div id="fb-status" style="margin-top:18px;font-size:16px;color:#6b7280;">서버에 연결하는 중입니다...</div>
       <div id="fb-sub" style="margin-top:8px;font-size:14px;color:#4a5068;">잠시만 기다려 주세요</div>
-      <button id="fb-retry-btn" onclick="location.reload()" style="display:none;margin-top:24px;padding:14px 32px;background:#d4a853;color:#07080d;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;min-height:52px;">🔄 다시 시도</button>
-      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+      <button id="fb-retry-btn" onclick="location.reload()" style="display:none;margin-top:24px;padding:14px 32px;background:#d4a853;color:#07080d;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;min-height:52px;">&#128260; 다시 시도</button>
     </div>
   `);
   try{
