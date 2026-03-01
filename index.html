@@ -178,6 +178,7 @@ h1,h2,h3,.syne{font-family:'Syne',sans-serif;}
 .btn-success{background:var(--green-dim);border:1px solid rgba(61,214,140,0.25);color:var(--green);}
 .btn-success:hover{background:var(--green);color:#000;}
 .btn-danger{background:var(--red-dim);border:1px solid rgba(240,93,93,0.25);color:var(--red);}
+.btn-warning{background:#e67e22;border-color:#d35400;color:#fff;}
 .btn-danger:hover{background:var(--red);color:#fff;}
 .btn-purple{background:var(--purple-dim);border:1px solid rgba(167,139,250,0.25);color:var(--purple);}
 .btn-purple:hover{background:var(--purple);color:#fff;}
@@ -1454,7 +1455,7 @@ function localDateStr(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).pa
 function isWeekday(d){ const w=d.getDay(); return w>=1&&w<=5; } // 월~금
 function typeColor(t){ const m={ROI:'var(--gold)',보너스:'var(--green)',바이너리:'var(--blue)',직급수당:'var(--purple)',출금:'var(--red)',투자:'var(--text)'}; return m[t]||'var(--text2)'; }
 function typeLabel(t){ const m={ROI:'ROI 배당',보너스:'추천수당',바이너리:'소실적수당',직급수당:'직급수당',출금:'출금',투자:'투자'}; return m[t]||t; }
-function statusHtml(s){ const m={completed:'done',pending:'pend',rejected:'fail',suspended:'stop'}; const l={completed:'완료',pending:'대기',rejected:'거부',suspended:'정지'}; return `<span class="status status-${m[s]||'pend'}">${l[s]||s}</span>`; }
+function statusHtml(s){ const m={completed:'done',pending:'pend',rejected:'fail',suspended:'stop',cancelled:'fail'}; const l={completed:'완료',pending:'대기',rejected:'거부',suspended:'정지',cancelled:'취소'}; return `<span class="status status-${m[s]||'pend'}">${l[s]||s}</span>`; }
 
 // ═══════════════════════════════════════════════════════
 //  TOAST & MODAL
@@ -2705,17 +2706,19 @@ function renderAdminLogs(allTx){
   if(c) c.textContent=`전체 ${allTx.length}건`;
   document.getElementById('admin-log-body').innerHTML=sorted.length===0
     ?'<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3);">거래내역이 없습니다</td></tr>'
-    :sorted.map(t=>`<tr>
+    :sorted.map(t=>`<tr style="${t.status==='cancelled'?'opacity:0.55;':''}">
     <td style="font-size:13px;color:var(--text3);white-space:nowrap;">${t.date}</td>
     <td style="font-size:13px;font-family:monospace;">${_esc(t.userId||'')}</td>
     <td><span style="color:${typeColor(t.type)};font-size:13px;font-weight:700;">${typeLabel(t.type)}</span></td>
-    <td class="td-amount" style="font-size:13px;">${fmt(t.amount)}</td>
+    <td class="td-amount" style="font-size:13px;${t.status==='cancelled'?'text-decoration:line-through;color:var(--text3);':''}">
+      ${t.status==='cancelled'?'<span style="color:var(--red);font-size:11px;font-weight:700;">✗ 취소</span> ':''} ${fmt(t.amount)}</td>
     <td style="font-size:13px;color:var(--text3);">${t.fee>0?fmt(t.fee):'-'}</td>
-    <td style="font-size:13px;color:var(--text3);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(t.desc||'')}">${_esc(t.desc||'')}</td>
+    <td style="font-size:13px;color:var(--text3);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(t.desc||'')}">${_esc(t.desc||'')}</td>
     <td>${statusHtml(t.status)}</td>
-    <td><div style="display:flex;gap:4px;">
-      <button class="btn btn-secondary btn-sm" style="padding:5px 10px;font-size:12px;" onclick="openTxEditModal('${String(t.id)}')"><i class="fas fa-edit"></i> 수정</button>
-      <button class="btn btn-danger btn-sm" style="padding:5px 10px;font-size:12px;" onclick="deleteTxLog('${String(t.id)}')"><i class="fas fa-trash"></i> 삭제</button>
+    <td><div style="display:flex;gap:4px;flex-wrap:wrap;">
+      ${t.status!=='cancelled'?`<button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="openTxEditModal('${String(t.id)}')"><i class="fas fa-edit"></i></button>`:''}
+      ${t.status==='completed'?`<button class="btn btn-warning btn-sm" style="padding:4px 8px;font-size:11px;background:#e67e22;border-color:#e67e22;color:#fff;" onclick="cancelTxLog('${String(t.id)}')"><i class="fas fa-undo"></i> 취소</button>`:''}
+      <button class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:11px;" onclick="deleteTxLog('${String(t.id)}')"><i class="fas fa-trash"></i></button>
     </div></td>
   </tr>`).join('');
 }
@@ -2803,6 +2806,68 @@ async function saveTxEdit(){
 }
 
 // ── 거래내역 삭제 (로그 탭) ──
+// ── 거래내역 취소 (역차감) ──
+async function cancelTxLog(txId){
+  const tx = await dbGet('transactions', String(txId));
+  if(!tx){ toast('거래내역을 찾을 수 없습니다','error'); return; }
+  if(tx.status === 'cancelled'){ toast('이미 취소된 거래입니다','error'); return; }
+
+  const typeStr = tx.type || '거래';
+  const amtStr = fmt(tx.amount);
+  const userStr = tx.userId;
+
+  showModal(
+    `${typeStr} 취소`,
+    `[${userStr}] ${typeStr} ${amtStr} 을 취소합니다.<br><br>` +
+    `<b style="color:var(--red);">⚠️ 해당 금액이 회원 잔액/투자금에서 역차감됩니다.</b><br>` +
+    `대시보드 집계도 즉시 반영됩니다.`,
+    async()=>{
+      try{
+        const user = await dbGet('users', tx.userId);
+        if(user){
+          const amt = tx.amount || 0;
+          const net = tx.netAmount || tx.amount || 0;
+
+          if(tx.type === '투자'){
+            // 투자금 차감 (0 미만 방지)
+            user.investment = Math.max(0, (user.investment||0) - amt);
+          } else if(tx.type === 'ROI'){
+            // ROI는 wallet + roi 차감
+            user.wallet = Math.max(0, (user.wallet||0) - net);
+            user.roi    = Math.max(0, (user.roi||0)    - net);
+          } else if(tx.type === '보너스'){
+            // 추천 수당: wallet + roi 차감
+            user.wallet = Math.max(0, (user.wallet||0) - net);
+            user.roi    = Math.max(0, (user.roi||0)    - net);
+          } else if(tx.type === '직급수당'){
+            // 직급 수당: wallet + roi 차감
+            user.wallet = Math.max(0, (user.wallet||0) - net);
+            user.roi    = Math.max(0, (user.roi||0)    - net);
+          } else if(tx.type === '출금'){
+            // 출금 취소: wallet 복원
+            user.wallet = (user.wallet||0) + net;
+          }
+          await dbPut('users', user);
+        }
+
+        // 거래 상태를 'cancelled'로 변경 (삭제 X - 감사 추적 보존)
+        const updated = { ...tx, status:'cancelled', cancelledAt: localDateStr(new Date()), cancelledBy:'admin', cancelDesc:`[관리자 취소] 원거래: ${tx.desc||''}` };
+        await dbPut('transactions', updated);
+
+        // 취소 감사 로그
+        await audit('TX_CANCEL', `거래취소 [${txId}] ${tx.userId} ${tx.type} ${fmt(tx.amount)} → 역차감 완료`, 'admin');
+
+        toast(`✅ ${typeStr} 취소 완료 - ${userStr} 잔액 반영됨`, 'success');
+        await renderAdmin();
+      }catch(e){
+        console.error('취소 오류:',e);
+        toast('취소 오류: '+e.message,'error');
+      }
+    },
+    '취소 실행', 'btn-danger'
+  );
+}
+
 async function deleteTxLog(txId){
   showModal('거래내역 삭제','이 거래내역을 영구 삭제합니다. 되돌릴 수 없습니다.',async()=>{
     try{
@@ -2849,9 +2914,10 @@ async function renderMemberTxTab(uid){
           <td style="font-size:13px;text-align:right;font-family:monospace;">${fmt(t.amount)}</td>
           <td style="font-size:12px;color:var(--text3);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(t.desc||'')}">${_esc(t.desc||'')}</td>
           <td>${statusHtml(t.status)}</td>
-          <td><div style="display:flex;gap:3px;">
-            <button class="btn btn-secondary btn-sm" style="padding:4px 9px;font-size:12px;" onclick="openTxEditModal('${String(t.id)}')"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-danger btn-sm" style="padding:4px 9px;font-size:12px;" onclick="deleteTxMember('${String(t.id)}','${_esc(uid)}')"><i class="fas fa-trash"></i></button>
+          <td><div style="display:flex;gap:3px;flex-wrap:wrap;">
+            ${t.status!=='cancelled'?`<button class="btn btn-secondary btn-sm" style="padding:3px 7px;font-size:11px;" onclick="openTxEditModal('${String(t.id)}')"><i class="fas fa-edit"></i></button>`:''}
+            ${t.status==='completed'?`<button class="btn btn-sm" style="padding:3px 7px;font-size:11px;background:#e67e22;border:1px solid #e67e22;color:#fff;border-radius:var(--r);" onclick="cancelTxLog('${String(t.id)}')"><i class="fas fa-undo"></i></button>`:''}
+            <button class="btn btn-danger btn-sm" style="padding:3px 7px;font-size:11px;" onclick="deleteTxMember('${String(t.id)}','${_esc(uid)}')"><i class="fas fa-trash"></i></button>
           </div></td>
         </tr>`).join('')}</tbody>
       </table>
@@ -2993,11 +3059,13 @@ async function approveInvestment(id){
       await audit('INV_APPROVE',`투자 승인 ${fmt(inv.amount)} 회원:${inv.userId}`,'admin');
       toast(`✅ ${inv.userName||inv.userId} 투자 승인 완료 (${fmt(inv.amount)})`,'success');
 
-      // DOM 즉시 제거
+      // ★ DOM에서 즉시 제거 후 목록 새로고침
       if(itemEl) itemEl.remove();
       const list = document.getElementById('admin-invest-list');
-      if(list&&list.children.length===0) list.innerHTML='<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>대기 중인 투자 신청이 없습니다</p></div>';
-      renderAdmin();
+      if(list&&!list.querySelector('[data-inv-id]')){
+        list.innerHTML='<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>대기 중인 투자 신청이 없습니다</p></div>';
+      }
+      await renderAdmin();
 
     } catch(err){
       console.error('투자 승인 오류:',err);
