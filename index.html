@@ -330,8 +330,9 @@ tr:last-child td{border-bottom:none;}
 .login-stat-value{font-family:'Space Mono',monospace;font-size:22px;color:var(--gold);font-weight:700;}
 .login-right{padding:60px 50px;}
 @media(max-width:600px){
-  .login-right{padding:32px 20px !important;}
-  .login-wrap{border-radius:20px !important;}
+  .login-right{padding:28px 18px !important;}
+  .login-wrap{border-radius:20px !important;margin:0 !important;}
+  #page-login{padding:12px !important;align-items:flex-start !important;padding-top:30px !important;}
 }
 .login-title{font-family:'Syne',sans-serif;font-size:27px;font-weight:800;margin-bottom:8px;color:var(--text);}
 .login-sub{font-size:16px;color:var(--text2);margin-bottom:32px;font-weight:500;}
@@ -562,7 +563,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <input class="form-input" id="inp-rref" placeholder="추천인 아이디 입력 (없으면 비워두세요)">
           <div class="form-hint">추천인 코드가 없어도 가입할 수 있습니다</div>
         </div>
-        <button class="btn btn-primary btn-full" style="margin-top:4px;" onclick="doRegister()" ontouchend="event.preventDefault();doRegister();">
+        <button class="btn btn-primary btn-full" style="margin-top:4px;" onclick="doRegister()">
           <i class="fas fa-user-plus"></i> 계정 만들기
         </button>
       </div>
@@ -583,37 +584,22 @@ td{font-size:14px !important;padding:14px 16px !important;}
   </div>
 </nav>
 
-<!-- ═══════════ 모바일 하단 네비게이션 ═══════════ -->
-<nav id="mobile-bottom-nav" style="display:none;">
-  <div id="mobile-nav-inner"></div>
+<!-- ★ 모바일 하단 네비게이션 ★ -->
+<nav id="mobile-nav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border2);z-index:300;padding-bottom:env(safe-area-inset-bottom);">
+  <div id="mobile-nav-inner" style="display:flex;justify-content:space-around;align-items:stretch;"></div>
 </nav>
 <style>
-#mobile-bottom-nav{
-  position:fixed;bottom:0;left:0;right:0;
-  background:var(--bg2);border-top:1px solid var(--border);
-  padding:6px 0 calc(6px + env(safe-area-inset-bottom));
-  z-index:200;
+.mnav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--text3);font-size:11px;font-family:'DM Sans',sans-serif;font-weight:700;padding:9px 4px 8px;flex:1;cursor:pointer;min-height:54px;-webkit-tap-highlight-color:transparent;letter-spacing:.2px;transition:color .15s;}
+.mnav-btn i{font-size:18px;line-height:1;}
+.mnav-btn.active,.mnav-btn:active{color:var(--gold);}
+.mnav-btn.mnav-logout{color:var(--red) !important;}
+@media(max-width:700px){
+  #mobile-nav{display:block !important;}
+  .main{padding-bottom:80px !important;}
+  .topbar-nav{display:none !important;}
 }
-#mobile-nav-inner{
-  display:flex;justify-content:space-around;align-items:center;
-}
-.mob-nav-btn{
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  background:none;border:none;color:var(--text3);font-size:10px;
-  font-family:'DM Sans',sans-serif;font-weight:600;padding:6px 8px;
-  cursor:pointer;min-width:52px;letter-spacing:.3px;
-  -webkit-tap-highlight-color:transparent;
-}
-.mob-nav-btn i{font-size:19px;}
-.mob-nav-btn.active{color:var(--gold);}
-.mob-nav-btn.active i{color:var(--gold);}
-@media(min-width:601px){#mobile-bottom-nav{display:none !important;}}
-@media(max-width:600px){
-  .main{padding-bottom:90px !important;}
-}
+@media(min-width:701px){#mobile-nav{display:none !important;}}
 </style>
-
-<!-- ═══════════ DASHBOARD ═══════════ -->
 <div id="page-dashboard" class="page">
   <div class="main">
     <div class="page-header">
@@ -1058,6 +1044,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
       <button class="tab" onclick="switchAdminTab('approval',this)">✅ 가입승인 <span id="appr-badge" class="stat-badge badge-pend" style="margin-left:4px;"></span></button>
       <button class="tab" onclick="switchAdminTab('members',this)">👥 회원관리</button>
       <button class="tab" onclick="switchAdminTab('investments',this)">💰 투자승인 <span id="inv-badge" class="stat-badge badge-pend" style="margin-left:4px;"></span></button>
+      <button class="tab" onclick="switchAdminTab('inv_status',this)">📈 투자현황</button>
       <button class="tab" onclick="switchAdminTab('withdrawals',this)">🏧 출금승인 <span id="wd-badge" class="stat-badge badge-pend" style="margin-left:4px;"></span></button>
       <button class="tab" onclick="switchAdminTab('logs',this)">📋 거래로그</button>
     </div>
@@ -1073,6 +1060,31 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <div class="card-header"><div class="card-title-lg">직급별 현황</div></div>
           <div id="admin-rank-overview"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- 투자현황 TAB -->
+    <div id="admin-tab-inv_status" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-lg">📈 전체 투자 현황</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input class="form-input" id="inv-status-search" placeholder="이름/아이디 검색" style="width:180px;padding:8px 12px;font-size:14px;" oninput="searchInvStatus()">
+            <select class="form-input form-select" id="inv-status-filter" style="width:130px;padding:8px 12px;font-size:14px;" onchange="searchInvStatus()">
+              <option value="all">전체</option>
+              <option value="investing">투자중</option>
+              <option value="maxed">한도완료</option>
+              <option value="none">미투자</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>회원</th><th>투자금</th><th>누적ROI</th><th>진행률</th><th>일일배당</th><th>잔액</th><th>최근투자일</th><th>상태</th><th>수정</th></tr></thead>
+            <tbody id="inv-status-body"></tbody>
+          </table>
+        </div>
+        <div id="inv-status-summary" style="display:flex;gap:16px;flex-wrap:wrap;padding:16px 0 4px;font-size:15px;color:var(--text2);"></div>
       </div>
     </div>
 
@@ -1227,17 +1239,12 @@ function _validateSession(){
 // ═══════════════════════════════════════════════════════
 //  DB — Firebase Firestore (클라우드 저장)
 // ═══════════════════════════════════════════════════════
-async function waitFirebase(timeout=15000){
-  // ★ 모바일 느린 네트워크 대응: 타임아웃 15초로 증가
+async function waitFirebase(timeout=20000){
+  // ★ 모바일 느린 네트워크 대응: 타임아웃 20초
   const start=Date.now();
   while(!window.firebaseReady){
-    if(Date.now()-start>timeout){
-      // 재시도 1회 더 (모바일 LTE 환경에서 지연 발생 가능)
-      await new Promise(r=>setTimeout(r,3000));
-      if(window.firebaseReady) break;
-      throw new Error('Firebase 연결 실패 — 인터넷 연결을 확인해주세요');
-    }
-    await new Promise(r=>setTimeout(r,100));
+    if(Date.now()-start>timeout) throw new Error('Firebase 연결 시간 초과');
+    await new Promise(r=>setTimeout(r,200));
   }
 }
 async function initDB(){ await waitFirebase(); console.log('[DB] Firebase 준비 완료'); }
@@ -1438,9 +1445,9 @@ function showPage(name){
   if(pg){pg.style.display='block';pg.classList.add('active');}
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll(`.nav-btn[data-view="${name}"]`).forEach(b=>b.classList.add('active'));
-  // ★ 모바일 하단 네비 active 상태 업데이트
-  document.querySelectorAll('.mob-nav-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll(`.mob-nav-btn[data-view="${name}"]`).forEach(b=>b.classList.add('active'));
+  // ★ 모바일 네비 active 상태
+  document.querySelectorAll('.mnav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll(`.mnav-btn[data-view="${name}"]`).forEach(b=>b.classList.add('active'));
   currentView=name; window.scrollTo(0,0);
 }
 function goView(name){ showPage(name); renderPage(name); }
@@ -1530,13 +1537,10 @@ async function loginUser(user){
 }
 function doLogout(){
   currentUser=null; _sessionToken=null; _sessionStartTime=null;
-  // ★ 로그아웃 시 로그인 시도 기록 초기화
   sessionStorage.removeItem('mw_login_attempts');
   sessionStorage.removeItem('mw_login_locktime');
   document.getElementById('topbar').style.display='none';
-  // ★ 모바일 하단 네비 숨기기
-  const mobileNav=document.getElementById('mobile-bottom-nav');
-  if(mobileNav) mobileNav.style.display='none';
+  const mn=document.getElementById('mobile-nav'); if(mn) mn.style.display='none';
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.getElementById('page-login').style.display='flex';
   document.getElementById('page-login').classList.add('active');
@@ -1595,27 +1599,24 @@ function setupTopbar(){
     b.className='nav-btn'; b.dataset.view=v.id; b.textContent=v.label;
     b.onclick=()=>goView(v.id); nav.appendChild(b);
   });
-  // ★ 모바일 하단 네비게이션 설정
-  const mobileNav=document.getElementById('mobile-bottom-nav');
-  const mobileInner=document.getElementById('mobile-nav-inner');
-  if(mobileNav && mobileInner){
-    mobileInner.innerHTML='';
-    const mobileIcons={dashboard:'fa-chart-line',invest:'fa-coins',network:'fa-sitemap',wallet:'fa-paper-plane',reports:'fa-list-alt',profile:'fa-user',admin_dash:'fa-shield-alt'};
-    const mobileLabels={dashboard:'대시보드',invest:'투자',network:'조직',wallet:'출금',reports:'내역',profile:'내정보',admin_dash:'관리자'};
+  // ★ 모바일 하단 네비 초기화
+  const mInner=document.getElementById('mobile-nav-inner');
+  if(mInner){
+    mInner.innerHTML='';
+    const icons={dashboard:'fa-chart-line',invest:'fa-coins',network:'fa-sitemap',wallet:'fa-paper-plane',reports:'fa-list-alt',profile:'fa-user-circle',admin_dash:'fa-shield-alt'};
+    const labels={dashboard:'대시보드',invest:'투자',network:'조직',wallet:'출금',reports:'내역',profile:'내정보',admin_dash:'관리자'};
     views.forEach(v=>{
       const b=document.createElement('button');
-      b.className='mob-nav-btn'; b.dataset.view=v.id;
-      b.innerHTML=`<i class="fas ${mobileIcons[v.id]||'fa-circle'}"></i><span>${mobileLabels[v.id]||v.label}</span>`;
+      b.className='mnav-btn'; b.dataset.view=v.id;
+      b.innerHTML=`<i class="fas ${icons[v.id]||'fa-circle'}"></i><span>${labels[v.id]||v.label}</span>`;
       b.onclick=()=>goView(v.id);
-      mobileInner.appendChild(b);
+      mInner.appendChild(b);
     });
-    // 로그아웃 버튼도 추가
-    const logoutBtn=document.createElement('button');
-    logoutBtn.className='mob-nav-btn';
-    logoutBtn.innerHTML=`<i class="fas fa-sign-out-alt" style="color:var(--red);"></i><span style="color:var(--red);">로그아웃</span>`;
-    logoutBtn.onclick=doLogout;
-    mobileInner.appendChild(logoutBtn);
-    mobileNav.style.display='block';
+    const lb=document.createElement('button');
+    lb.className='mnav-btn mnav-logout';
+    lb.innerHTML=`<i class="fas fa-sign-out-alt"></i><span>로그아웃</span>`;
+    lb.onclick=doLogout;
+    mInner.appendChild(lb);
   }
 }
 
@@ -2421,19 +2422,25 @@ async function adminEditAmounts(){
   renderAdmin();
 }
 async function rejectInvestment(id){
+  const invId=String(id);
   showModal('투자 거부','이 투자 신청을 거부하시겠습니까?',async()=>{
-    await dbDelete('pendingInvestments',id);
+    await dbDelete('pendingInvestments',invId);
     await audit('INV_REJECT','투자 거부','admin');
-    toast('투자 신청이 거부되었습니다');
+    toast('투자 신청이 거부되었습니다','error');
+    const itemEl=document.querySelector(`[data-inv-id="${invId}"]`);
+    if(itemEl) itemEl.remove();
+    const list=document.getElementById('admin-invest-list');
+    if(list && list.children.length===0) list.innerHTML='<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>대기 중인 투자 신청이 없습니다</p></div>';
     renderAdmin();
   },'거부','btn-danger');
 }
 async function rejectWithdrawal(id){
+  const wdId=String(id);
   showModal('출금 거부','출금을 거부하고 잔액을 반환하시겠습니까?',async()=>{
-    const wd=await dbGet('pendingWithdrawals',id); if(!wd)return;
+    const wd=await dbGet('pendingWithdrawals',wdId); if(!wd)return;
     const user=await dbGet('users',wd.userId);
     if(user){user.wallet+=wd.amount; await dbPut('users',user);}
-    await dbDelete('pendingWithdrawals',id);
+    await dbDelete('pendingWithdrawals',wdId);
     await audit('WD_REJECT',`출금 거부+반환 ${fmt(wd.amount)} 회원:${wd.userId}`,'admin');
     toast('출금이 거부되었고 잔액이 반환되었습니다');
     renderAdmin();
@@ -2524,13 +2531,14 @@ async function renderAdmin(){
   document.getElementById('admin-bank-holder').value=CFG.DEPOSIT_HOLDER;
   // 탭
   const tab=adminCurrentTab;
-  ['overview','approval','members','investments','withdrawals','logs'].forEach(t=>{
+  ['overview','approval','members','investments','inv_status','withdrawals','logs'].forEach(t=>{
     const el=document.getElementById('admin-tab-'+t); if(el) el.style.display=t===tab?'block':'none';
   });
   if(tab==='overview') renderAdminOverview(members);
   if(tab==='approval') renderAdminApproval(pendApproval);
   if(tab==='members') renderAdminMembers(members);
   if(tab==='investments') renderAdminInvestments(pendInv);
+  if(tab==='inv_status') renderAdminInvStatus(members);
   if(tab==='withdrawals') renderAdminWithdrawals(pendWd);
   if(tab==='logs') renderAdminLogs(allTx);
 }
@@ -2606,6 +2614,61 @@ function renderAdminOverview(members){
       ${r.rank>0?`<div style="font-size:14px;color:var(--text3);">수당 ${fmt(r.bonus)}</div>`:''}
     </div>`).join('');
 }
+function renderAdminInvStatus(members){
+  _renderInvStatusTable(members);
+}
+function searchInvStatus(){
+  const q=(document.getElementById('inv-status-search')?.value||'').toLowerCase();
+  const f=document.getElementById('inv-status-filter')?.value||'all';
+  dbGetAll('users').then(allUsers=>{
+    let list=allUsers.filter(u=>u.role==='member');
+    if(q) list=list.filter(u=>u.name.toLowerCase().includes(q)||u.id.toLowerCase().includes(q));
+    if(f==='investing') list=list.filter(u=>u.investment>0&&u.roi<u.investment*CFG.MAX_PAYOUT);
+    else if(f==='maxed') list=list.filter(u=>u.investment>0&&u.roi>=u.investment*CFG.MAX_PAYOUT);
+    else if(f==='none') list=list.filter(u=>u.investment===0);
+    _renderInvStatusTable(list);
+  });
+}
+function _renderInvStatusTable(members){
+  const tbody=document.getElementById('inv-status-body');
+  if(!tbody) return;
+  const totalInvest=members.reduce((a,u)=>a+u.investment,0);
+  const totalRoi=members.reduce((a,u)=>a+u.roi,0);
+  const investing=members.filter(u=>u.investment>0).length;
+  const summaryEl=document.getElementById('inv-status-summary');
+  if(summaryEl) summaryEl.innerHTML=`
+    <span>👥 조회: <b style="color:var(--text)">${members.length}명</b></span>
+    <span>💰 총투자: <b style="color:var(--gold)">${fmt(totalInvest)}</b></span>
+    <span>📈 총ROI지급: <b style="color:var(--green)">${fmt(totalRoi)}</b></span>
+    <span>🔥 투자중: <b style="color:var(--blue)">${investing}명</b></span>
+  `;
+  if(members.length===0){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">조회 결과가 없습니다</td></tr>';return;}
+  tbody.innerHTML=members.sort((a,b)=>b.investment-a.investment).map(u=>{
+    const max=u.investment*CFG.MAX_PAYOUT;
+    const pct=max>0?Math.min(100,u.roi/max*100):0;
+    const daily=u.investment>0&&!u.suspended?Math.round(u.investment*CFG.DAILY_ROI):0;
+    const isMaxed=u.investment>0&&u.roi>=max;
+    const isNone=u.investment===0;
+    let statusBadge=isNone?'<span class="status status-stop">미투자</span>':isMaxed?'<span class="status status-fail">한도완료</span>':u.suspended?'<span class="status status-fail">정지</span>':'<span class="status status-done">투자중</span>';
+    const barColor=isMaxed?'var(--red)':pct>80?'var(--gold)':'var(--green)';
+    return `<tr>
+      <td><div style="font-weight:600;">${_esc(u.name)}</div><div style="font-size:13px;color:var(--text3);font-family:monospace;">${_esc(u.id)}</div></td>
+      <td class="td-amount">${fmt(u.investment)}</td>
+      <td class="td-amount" style="color:var(--gold);">${fmt(u.roi)}</td>
+      <td style="min-width:100px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct.toFixed(1)}%;background:${barColor};border-radius:4px;transition:width .3s;"></div></div>
+          <span style="font-size:12px;color:var(--text3);min-width:36px;">${pct.toFixed(0)}%</span>
+        </div>
+      </td>
+      <td class="td-amount" style="color:var(--blue);">${daily>0?fmt(daily):'-'}</td>
+      <td class="td-amount" style="color:var(--green);">${fmt(u.wallet)}</td>
+      <td style="font-size:13px;color:var(--text3);">${u.lastInvestmentDate||'-'}</td>
+      <td>${statusBadge}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick="openMemberDetail('${_esc(u.id)}')"><i class="fas fa-edit"></i> 수정</button></td>
+    </tr>`;
+  }).join('');
+}
 function renderAdminMembers(members){
   const tbody=document.getElementById('admin-member-body');
   tbody.innerHTML=members.map(u=>{
@@ -2630,7 +2693,7 @@ function renderAdminInvestments(pendInv){
   const list=document.getElementById('admin-invest-list');
   if(pendInv.length===0){list.innerHTML='<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>대기 중인 투자 신청이 없습니다</p></div>';return;}
   list.innerHTML=pendInv.map(inv=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 20px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;">
+    <div data-inv-id="${inv.id}" style="display:flex;justify-content:space-between;align-items:center;padding:18px 20px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;flex-wrap:wrap;gap:12px;">
       <div>
         <div style="font-size:16px;font-weight:700;" class="mono">${fmtFull(inv.amount)}</div>
         <div style="font-size:14px;color:var(--text3);margin-top:4px;">${_esc(inv.userId)} (${_esc(inv.userName)}) · 신청일: ${inv.requestedAt}</div>
@@ -2654,8 +2717,8 @@ function renderAdminWithdrawals(pendWd){
         <div style="font-size:14px;margin-top:2px;">실지급: <span class="mono" style="color:var(--green);">${fmtFull(wd.net)}</span> · 수수료: ${fmtFull(wd.fee)}</div>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-success btn-sm" onclick="approveWithdrawal('${wd.id}')"><i class="fas fa-check"></i> 승인</button>
-        <button class="btn btn-danger btn-sm" onclick="rejectWithdrawal('${wd.id}')"><i class="fas fa-times"></i> 거부</button>
+        <button class="btn btn-success btn-sm" onclick="approveWithdrawal(${wd.id})"><i class="fas fa-check"></i> 승인</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectWithdrawal(${wd.id})"><i class="fas fa-times"></i> 거부</button>
       </div>
     </div>`).join('');
 }
@@ -2675,7 +2738,7 @@ function renderAdminLogs(allTx){
 //  ADMIN ACTIONS
 // ═══════════════════════════════════════════════════════
 function switchAdminTab(tab,btn){
-  ['overview','approval','members','investments','withdrawals','logs'].forEach(t=>{
+  ['overview','approval','members','investments','inv_status','withdrawals','logs'].forEach(t=>{
     const el=document.getElementById('admin-tab-'+t); if(el) el.style.display=t===tab?'block':'none';
   });
   document.querySelectorAll('#admin-tabs .tab').forEach(b=>b.classList.remove('active'));
@@ -2722,76 +2785,71 @@ async function saveDepositAccount(){
   toast('입금 계좌가 저장되었습니다','success');
 }
 async function approveInvestment(id){
+  const invId = String(id);
   showModal('투자 승인','이 투자 신청을 승인하시겠습니까?',async()=>{
-    const inv=await dbGet('pendingInvestments',id);
-    if(!inv){toast('투자 신청을 찾을 수 없습니다','error');renderAdmin();return;}
-    const user=await dbGet('users',inv.userId);
-    if(!user){toast('회원 정보를 찾을 수 없습니다','error');return;}
-    const today=localDateStr(new Date());
-    user.investment+=inv.amount;
-    user.lastInvestmentDate=today;
-    await dbPut('users',user);
-    // ★ BUG FIX: 트랜잭션 ID 충돌 방지 (랜덤 suffix 추가)
-    const txBase=Date.now();
-    const txRand=()=>Math.floor(Math.random()*9999);
-    await dbPut('transactions',{id:txBase,userId:inv.userId,type:'투자',amount:inv.amount,fee:0,netAmount:inv.amount,date:today,status:'completed',desc:'투자 승인 완료'});
-    // ═══════════════════════════════════════════════
-    // 추천 수당 지급 구조
-    //  1대(직접 추천인): 투자금의 5% (DIRECT_BONUS)
-    //  2대(추천인의 추천인): 투자금의 3% (BINARY_BONUS)
-    // ═══════════════════════════════════════════════
-    if(user.sponsorCode&&user.sponsorCode!=='SYSTEM-ROOT'){
-
-      // ── 1대 추천인 → 5% ──
-      const sponsor1=await dbGet('users',user.sponsorCode);
-      if(sponsor1&&!sponsor1.suspended){
-        const max1=sponsor1.investment*CFG.MAX_PAYOUT;
-        if(sponsor1.roi<max1||sponsor1.investment===0){
-          const bonus1=Math.floor(inv.amount*CFG.DIRECT_BONUS); // 5%
-          const actual1=sponsor1.investment>0?Math.min(bonus1,max1-sponsor1.roi):bonus1;
-          if(actual1>0){
-            sponsor1.wallet+=actual1; sponsor1.roi+=actual1;
-            await dbPut('users',sponsor1);
-            await dbPut('transactions',{
-              id:txBase+1+txRand(), userId:sponsor1.id, type:'보너스',
-              amount:actual1, fee:0, netAmount:actual1,
-              date:today, status:'completed',
-              desc:`직추천 수당 1대 (${user.id} 투자금의 ${(CFG.DIRECT_BONUS*100).toFixed(0)}%)`
-            });
+    try{
+      const inv=await dbGet('pendingInvestments',invId);
+      if(!inv){
+        toast('투자 신청을 찾을 수 없습니다 (이미 처리됨)','error');
+        renderAdmin(); return;
+      }
+      const user=await dbGet('users',inv.userId);
+      if(!user){toast('회원 정보를 찾을 수 없습니다','error');return;}
+      const today=localDateStr(new Date());
+      user.investment+=inv.amount;
+      user.lastInvestmentDate=today;
+      await dbPut('users',user);
+      const txBase=Date.now();
+      await dbPut('transactions',{id:txBase,userId:inv.userId,type:'투자',amount:inv.amount,fee:0,netAmount:inv.amount,date:today,status:'completed',desc:'투자 승인 완료'});
+      if(user.sponsorCode&&user.sponsorCode!=='SYSTEM-ROOT'){
+        const sponsor1=await dbGet('users',user.sponsorCode);
+        if(sponsor1&&!sponsor1.suspended){
+          const max1=sponsor1.investment*CFG.MAX_PAYOUT;
+          if(sponsor1.roi<max1||sponsor1.investment===0){
+            const bonus1=Math.floor(inv.amount*CFG.DIRECT_BONUS);
+            const actual1=sponsor1.investment>0?Math.min(bonus1,max1-sponsor1.roi):bonus1;
+            if(actual1>0){
+              sponsor1.wallet+=actual1; sponsor1.roi+=actual1;
+              await dbPut('users',sponsor1);
+              await dbPut('transactions',{id:txBase+1+Math.floor(Math.random()*999),userId:sponsor1.id,type:'보너스',amount:actual1,fee:0,netAmount:actual1,date:today,status:'completed',desc:`직추천 수당 1대 (${user.id} 투자금의 ${(CFG.DIRECT_BONUS*100).toFixed(0)}%)`});
+            }
           }
-        }
-
-        // ── 2대 추천인 → 3% ──
-        if(sponsor1.sponsorCode&&sponsor1.sponsorCode!=='SYSTEM-ROOT'){
-          const sponsor2=await dbGet('users',sponsor1.sponsorCode);
-          if(sponsor2&&!sponsor2.suspended){
-            const max2=sponsor2.investment*CFG.MAX_PAYOUT;
-            if(sponsor2.roi<max2||sponsor2.investment===0){
-              const bonus2=Math.floor(inv.amount*CFG.BINARY_BONUS); // 3%
-              const actual2=sponsor2.investment>0?Math.min(bonus2,max2-sponsor2.roi):bonus2;
-              if(actual2>0){
-                sponsor2.wallet+=actual2; sponsor2.roi+=actual2;
-                await dbPut('users',sponsor2);
-                await dbPut('transactions',{
-                  id:txBase+2+txRand(), userId:sponsor2.id, type:'보너스',
-                  amount:actual2, fee:0, netAmount:actual2,
-                  date:today, status:'completed',
-                  desc:`소실적 수당 2대 (${user.id} 투자금의 ${(CFG.BINARY_BONUS*100).toFixed(0)}%)`
-                });
+          if(sponsor1.sponsorCode&&sponsor1.sponsorCode!=='SYSTEM-ROOT'){
+            const sponsor2=await dbGet('users',sponsor1.sponsorCode);
+            if(sponsor2&&!sponsor2.suspended){
+              const max2=sponsor2.investment*CFG.MAX_PAYOUT;
+              if(sponsor2.roi<max2||sponsor2.investment===0){
+                const bonus2=Math.floor(inv.amount*CFG.BINARY_BONUS);
+                const actual2=sponsor2.investment>0?Math.min(bonus2,max2-sponsor2.roi):bonus2;
+                if(actual2>0){
+                  sponsor2.wallet+=actual2; sponsor2.roi+=actual2;
+                  await dbPut('users',sponsor2);
+                  await dbPut('transactions',{id:txBase+2+Math.floor(Math.random()*999),userId:sponsor2.id,type:'보너스',amount:actual2,fee:0,netAmount:actual2,date:today,status:'completed',desc:`소실적 수당 2대 (${user.id} 투자금의 ${(CFG.BINARY_BONUS*100).toFixed(0)}%)`});
+                }
               }
             }
           }
         }
       }
+      await updateLinePoints(user.id,inv.amount);
+      await checkRankBonuses(user.id,today);
+      await dbDelete('pendingInvestments',invId);
+      await audit('INV_APPROVE',`투자 승인 ${fmt(inv.amount)} 회원:${inv.userId}`,'admin');
+      toast(`✅ ${inv.userName || inv.userId} 투자 승인 완료 (${fmt(inv.amount)})`,'success');
+      // ★ 승인된 항목 즉시 DOM에서 제거
+      const itemEl = document.querySelector(`[data-inv-id="${invId}"]`);
+      if(itemEl) itemEl.remove();
+      // 목록이 비었으면 빈 메시지 표시
+      const list=document.getElementById('admin-invest-list');
+      if(list && list.children.length===0){
+        list.innerHTML='<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>대기 중인 투자 신청이 없습니다</p></div>';
+      }
+      // 배지 숫자 업데이트
+      renderAdmin();
+    }catch(err){
+      console.error('투자 승인 오류:', err);
+      toast('승인 처리 중 오류가 발생했습니다: '+err.message,'error');
     }
-    // 좌우 포인트 업데이트
-    await updateLinePoints(user.id,inv.amount);
-    // 직급 수당 체크 (상위 라인 전체)
-    await checkRankBonuses(user.id,today);
-    await dbDelete('pendingInvestments',id);
-    await audit('INV_APPROVE',`투자 승인 ${fmt(inv.amount)} 회원:${inv.userId}`,'admin');
-    toast('투자가 승인되었습니다','success');
-    renderAdmin();
   },'승인','btn-success');
 }
 // processBinaryBonus 제거 — 수당은 approveInvestment에서 직접 처리
@@ -2854,13 +2912,14 @@ async function checkRankBonuses(newUserId,date){
   }
 }
 async function approveWithdrawal(id){
+  const wdId=String(id);
   showModal('출금 승인','이 출금 신청을 승인하시겠습니까?',async()=>{
-    const wd=await dbGet('pendingWithdrawals',id);
+    const wd=await dbGet('pendingWithdrawals',wdId);
     if(!wd){toast('출금 신청을 찾을 수 없습니다','error');renderAdmin();return;}
-    // ★ wallet은 출금 신청 시(submitWithdrawal)에 이미 차감됨 → 여기서 재차감 하면 이중 차감!
+    // wallet은 신청 시(submitWithdrawal)에 이미 차감됨 → 여기서 재차감 금지
     const today=localDateStr(new Date());
     await dbPut('transactions',{id:Date.now(),userId:wd.userId,type:'출금',amount:wd.amount,fee:wd.fee,netAmount:wd.net,date:today,status:'completed',desc:'출금 승인 완료'});
-    await dbDelete('pendingWithdrawals',id);
+    await dbDelete('pendingWithdrawals',wdId);
     await audit('WD_APPROVE',`출금 승인 ${fmt(wd.amount)} 회원:${wd.userId}`,'admin');
     toast('출금이 승인되었습니다','success');
     renderAdmin();
@@ -3028,13 +3087,13 @@ function updateNextRoiTimer(){
 //  INIT
 // ═══════════════════════════════════════════════════════
 async function init(){
-  // 로딩 표시
   document.body.insertAdjacentHTML('beforeend',`
-    <div id="fb-loading" style="position:fixed;inset:0;background:#07080d;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
-      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:#d4a853;margin-bottom:16px;">MEDI WORLD</div>
-      <div id="fb-spinner" style="width:40px;height:40px;border:3px solid rgba(212,168,83,0.2);border-top-color:#d4a853;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-      <div id="fb-status" style="margin-top:16px;font-size:15px;color:#4a5068;">서버 연결 중...</div>
-      <button id="fb-retry-btn" onclick="location.reload()" style="display:none;margin-top:20px;padding:12px 28px;background:#d4a853;color:#07080d;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">🔄 다시 시도</button>
+    <div id="fb-loading" style="position:fixed;inset:0;background:#07080d;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;padding:20px;text-align:center;">
+      <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#d4a853;margin-bottom:20px;letter-spacing:2px;">MEDI WORLD</div>
+      <div id="fb-spinner" style="width:44px;height:44px;border:3px solid rgba(212,168,83,0.2);border-top-color:#d4a853;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <div id="fb-status" style="margin-top:18px;font-size:16px;color:#6b7280;">서버에 연결하는 중입니다...</div>
+      <div id="fb-sub" style="margin-top:8px;font-size:14px;color:#4a5068;">잠시만 기다려 주세요</div>
+      <button id="fb-retry-btn" onclick="location.reload()" style="display:none;margin-top:24px;padding:14px 32px;background:#d4a853;color:#07080d;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;min-height:52px;">🔄 다시 시도</button>
       <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
     </div>
   `);
@@ -3044,13 +3103,14 @@ async function init(){
     await seedIfEmpty();
   }catch(e){
     console.error('초기화 오류:', e);
-    const statusEl = document.getElementById('fb-status');
-    const spinnerEl = document.getElementById('fb-spinner');
-    const retryBtn = document.getElementById('fb-retry-btn');
-    if(statusEl) statusEl.textContent = '연결 실패. 인터넷 연결을 확인하고 다시 시도해주세요.';
-    if(statusEl) statusEl.style.color = '#f05d5d';
-    if(spinnerEl) spinnerEl.style.display = 'none';
-    if(retryBtn) retryBtn.style.display = 'block';
+    const st=document.getElementById('fb-status');
+    const sp=document.getElementById('fb-spinner');
+    const rb=document.getElementById('fb-retry-btn');
+    const sb=document.getElementById('fb-sub');
+    if(st){st.textContent='연결에 실패했습니다.';st.style.color='#f05d5d';}
+    if(sb){sb.textContent='인터넷 연결을 확인하고 아래 버튼을 눌러주세요.';}
+    if(sp){sp.style.display='none';}
+    if(rb){rb.style.display='block';}
     return;
   }
   document.getElementById('fb-loading').remove();
@@ -3058,7 +3118,7 @@ async function init(){
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.getElementById('page-login').style.display='flex';
   document.getElementById('page-login').classList.add('active');
-  console.log('[MEDI WORLD v5.0] Firebase 연결 완료 ✅');
+  console.log('[MEDI WORLD v5.0] 초기화 완료 ✅');
 }
 init();
 </script>
