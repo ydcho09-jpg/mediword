@@ -94,8 +94,7 @@ console.log('[Firebase] 연결 완료 ✅');
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:-webkit-fill-available;overflow-x:hidden;font-size:17px;line-height:1.75;font-weight:500;}
-html{height:-webkit-fill-available;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:17px;line-height:1.75;font-weight:500;}
 body::before{content:'';position:fixed;inset:0;
   background-image:linear-gradient(rgba(212,168,83,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(212,168,83,0.025) 1px,transparent 1px);
   background-size:60px 60px;pointer-events:none;z-index:0;}
@@ -280,24 +279,6 @@ tr:last-child td{border-bottom:none;}
   animation:pulse 2s infinite;margin-right:4px;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 @keyframes spin{to{transform:rotate(360deg)}}
-.login-right{padding:60px 50px;}
-@media(max-width:600px){
-  .login-right{padding:28px 18px !important;}
-  .login-wrap{border-radius:20px !important;}
-  #page-login{padding:12px !important;padding-top:28px !important;}
-}
-/* 모바일 하단 네비 */
-#mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:300;padding-bottom:env(safe-area-inset-bottom);}
-#mobile-nav-inner{display:flex;justify-content:space-around;align-items:stretch;}
-.mnav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--text3);font-size:11px;font-family:'DM Sans',sans-serif;font-weight:700;padding:8px 4px 7px;flex:1;cursor:pointer;min-height:52px;-webkit-tap-highlight-color:transparent;}
-.mnav-btn i{font-size:18px;line-height:1;}
-.mnav-btn.active{color:var(--gold);}
-.mnav-btn.mnav-logout{color:var(--red);}
-@media(max-width:700px){
-  #mobile-nav{display:block !important;}
-  .main{padding-bottom:80px !important;}
-  .topbar-nav{display:none !important;}
-}
 
 /* RANK BADGE */
 .rank-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:14px;font-weight:700;letter-spacing:.3px;}
@@ -347,6 +328,7 @@ tr:last-child td{border-bottom:none;}
 .login-stat{background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:14px;padding:18px 22px;}
 .login-stat-label{font-size:15px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-weight:600;}
 .login-stat-value{font-family:'Space Mono',monospace;font-size:22px;color:var(--gold);font-weight:700;}
+.login-right{padding:60px 50px;}
 .login-title{font-family:'Syne',sans-serif;font-size:27px;font-weight:800;margin-bottom:8px;color:var(--text);}
 .login-sub{font-size:16px;color:var(--text2);margin-bottom:32px;font-weight:500;}
 .login-tabs{display:flex;gap:0;margin-bottom:28px;background:var(--bg3);border-radius:12px;padding:4px;}
@@ -529,7 +511,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <label class="form-label">비밀번호</label>
           <input class="form-input" type="password" id="inp-lpwd" placeholder="비밀번호 입력" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
         </div>
-        <button class="btn btn-primary btn-full btn-lg" onclick="doLogin()" ontouchend="event.preventDefault();doLogin();" style="margin-top:4px;">
+        <button class="btn btn-primary btn-full btn-lg" onclick="doLogin()" style="margin-top:4px;">
           <i class="fas fa-sign-in-alt"></i> 로그인
         </button>
 
@@ -595,11 +577,6 @@ td{font-size:14px !important;padding:14px 16px !important;}
     </div>
     <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> 로그아웃</button>
   </div>
-</nav>
-
-<!-- ★ 모바일 하단 네비게이션 -->
-<nav id="mobile-nav">
-  <div id="mobile-nav-inner"></div>
 </nav>
 
 <!-- ═══════════ DASHBOARD ═══════════ -->
@@ -1115,12 +1092,11 @@ td{font-size:14px !important;padding:14px 16px !important;}
 
     <!-- LOGS TAB -->
     <div id="admin-tab-logs" style="display:none;">
-      <!-- ── 거래내역 관리 ── -->
-      <div class="card" style="margin-bottom:16px;">
+      <div class="card">
         <div class="card-header" style="flex-wrap:wrap;gap:10px;">
           <div class="card-title-lg">📋 전체 거래내역 관리</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <input class="form-input" id="log-search" placeholder="회원ID/내용 검색" style="width:160px;padding:8px 12px;font-size:14px;" oninput="searchLogs()">
+            <input class="form-input" id="log-search" placeholder="회원ID/내용 검색" style="width:155px;padding:8px 12px;font-size:14px;" oninput="searchLogs()">
             <select class="form-input form-select" id="log-type-filter" style="width:110px;padding:8px 12px;font-size:14px;" onchange="searchLogs()">
               <option value="all">전체유형</option>
               <option value="투자">투자</option>
@@ -1129,44 +1105,27 @@ td{font-size:14px !important;padding:14px 16px !important;}
               <option value="출금">출금</option>
               <option value="직급수당">직급수당</option>
             </select>
-            <button class="btn btn-primary btn-sm" onclick="openAddTxModal()" style="white-space:nowrap;"><i class="fas fa-plus"></i> 거래 추가</button>
+            <button class="btn btn-primary btn-sm" onclick="openAddTxModal('')" style="min-height:40px;white-space:nowrap;"><i class="fas fa-plus"></i> 거래 추가</button>
           </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>날짜</th><th>회원</th><th>유형</th><th>금액</th><th>수수료</th><th>내용</th><th>상태</th><th style="min-width:100px;">관리</th></tr></thead>
+            <thead><tr><th>날짜</th><th>회원</th><th>유형</th><th>금액</th><th>수수료</th><th>내용</th><th>상태</th><th style="min-width:88px;">관리</th></tr></thead>
             <tbody id="admin-log-body"></tbody>
           </table>
         </div>
-        <div id="log-count" style="padding:10px 0 4px;font-size:14px;color:var(--text3);"></div>
-      </div>
-
-      <!-- ── 시스템 감사 로그 ── -->
-      <div class="card">
-        <div class="card-header" style="flex-wrap:wrap;gap:10px;">
-          <div class="card-title-lg">🔍 시스템 감사 로그</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <input class="form-input" id="audit-search" placeholder="검색" style="width:160px;padding:8px 12px;font-size:14px;" oninput="searchAuditLogs()">
-            <button class="btn btn-danger btn-sm" onclick="clearOldAuditLogs()" style="white-space:nowrap;"><i class="fas fa-trash"></i> 30일 이전 삭제</button>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>시각</th><th>작업자</th><th>액션</th><th>내용</th><th>관리</th></tr></thead>
-            <tbody id="admin-audit-body"></tbody>
-          </table>
-        </div>
+        <div id="log-count" style="padding:8px 0 2px;font-size:13px;color:var(--text3);"></div>
       </div>
     </div>
 
   </div>
 </div>
 
-<!-- ★ 거래내역 편집 모달 -->
+<!-- ★ 거래내역 수정/추가 모달 -->
 <div id="modal-tx-edit" class="modal-overlay hidden" onclick="if(event.target===this)closeTxEdit()">
-  <div class="modal" style="max-width:480px;width:96%;padding:28px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;" id="tx-edit-title">거래내역 수정</div>
+  <div class="modal" style="max-width:500px;width:96%;padding:28px;max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;">
+      <div id="tx-edit-title" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--text);">거래내역 수정</div>
       <button class="btn btn-secondary btn-sm" onclick="closeTxEdit()"><i class="fas fa-times"></i></button>
     </div>
     <div style="display:flex;flex-direction:column;gap:14px;">
@@ -1191,23 +1150,23 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <input class="form-input" id="tx-edit-date" type="date">
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
         <div class="form-group" style="margin:0;">
           <label class="form-label">금액 (원)</label>
-          <input class="form-input mono" id="tx-edit-amount" type="number" placeholder="0">
+          <input class="form-input mono" id="tx-edit-amount" type="number" min="0" placeholder="0" oninput="txAutoNet()">
         </div>
         <div class="form-group" style="margin:0;">
           <label class="form-label">수수료 (원)</label>
-          <input class="form-input mono" id="tx-edit-fee" type="number" placeholder="0">
+          <input class="form-input mono" id="tx-edit-fee" type="number" min="0" placeholder="0" oninput="txAutoNet()">
         </div>
         <div class="form-group" style="margin:0;">
           <label class="form-label">실지급 (원)</label>
-          <input class="form-input mono" id="tx-edit-net" type="number" placeholder="0">
+          <input class="form-input mono" id="tx-edit-net" type="number" min="0" placeholder="자동">
         </div>
       </div>
       <div class="form-group" style="margin:0;">
         <label class="form-label">내용/메모</label>
-        <input class="form-input" id="tx-edit-desc" placeholder="거래 내용">
+        <input class="form-input" id="tx-edit-desc" placeholder="거래 내용 입력">
       </div>
       <div class="form-group" style="margin:0;">
         <label class="form-label">상태</label>
@@ -1219,8 +1178,8 @@ td{font-size:14px !important;padding:14px 16px !important;}
       </div>
     </div>
     <div style="display:flex;gap:10px;margin-top:22px;">
-      <button class="btn btn-primary" style="flex:1;" onclick="saveTxEdit()"><i class="fas fa-save"></i> 저장</button>
-      <button class="btn btn-secondary" onclick="closeTxEdit()">취소</button>
+      <button class="btn btn-primary" style="flex:1;min-height:48px;" onclick="saveTxEdit()"><i class="fas fa-save"></i> 저장</button>
+      <button class="btn btn-secondary" style="min-height:48px;padding:0 20px;" onclick="closeTxEdit()">취소</button>
     </div>
     <input type="hidden" id="tx-edit-id">
   </div>
@@ -1310,11 +1269,11 @@ function _validateSession(){
 // ═══════════════════════════════════════════════════════
 //  DB — Firebase Firestore (클라우드 저장)
 // ═══════════════════════════════════════════════════════
-async function waitFirebase(timeout=20000){
+async function waitFirebase(timeout=8000){
   const start=Date.now();
   while(!window.firebaseReady){
-    if(Date.now()-start>timeout) throw new Error('Firebase 연결 시간 초과');
-    await new Promise(r=>setTimeout(r,200));
+    if(Date.now()-start>timeout) throw new Error('Firebase 연결 실패');
+    await new Promise(r=>setTimeout(r,100));
   }
 }
 async function initDB(){ await waitFirebase(); console.log('[DB] Firebase 준비 완료'); }
@@ -1504,7 +1463,16 @@ function showModal(title,body,cb,btnLabel='확인',btnClass='btn-primary'){
   document.getElementById('modal-confirm').classList.remove('hidden');
 }
 function closeModal(){ document.getElementById('modal-confirm').classList.add('hidden'); modalCallback=null; }
-function confirmModal(){ if(modalCallback) modalCallback(); closeModal(); }
+async function confirmModal(){
+  const btn=document.getElementById('modal-confirm-btn');
+  if(!modalCallback||btn.disabled)return;
+  btn.disabled=true; btn.style.opacity='0.6';
+  const cb=modalCallback;
+  closeModal();
+  try{ await cb(); }
+  catch(e){ console.error(e); toast('처리 중 오류가 발생했습니다','error'); }
+  finally{ btn.disabled=false; btn.style.opacity=''; }
+}
 
 // ═══════════════════════════════════════════════════════
 //  ROUTING
@@ -1515,8 +1483,6 @@ function showPage(name){
   if(pg){pg.style.display='block';pg.classList.add('active');}
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll(`.nav-btn[data-view="${name}"]`).forEach(b=>b.classList.add('active'));
-  document.querySelectorAll('.mnav-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll(`.mnav-btn[data-view="${name}"]`).forEach(b=>b.classList.add('active'));
   currentView=name; window.scrollTo(0,0);
 }
 function goView(name){ showPage(name); renderPage(name); }
@@ -1606,10 +1572,10 @@ async function loginUser(user){
 }
 function doLogout(){
   currentUser=null; _sessionToken=null; _sessionStartTime=null;
+  // ★ 로그아웃 시 로그인 시도 기록 초기화
   sessionStorage.removeItem('mw_login_attempts');
   sessionStorage.removeItem('mw_login_locktime');
   document.getElementById('topbar').style.display='none';
-  const mn=document.getElementById('mobile-nav'); if(mn) mn.style.display='none';
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.getElementById('page-login').style.display='flex';
   document.getElementById('page-login').classList.add('active');
@@ -1668,26 +1634,6 @@ function setupTopbar(){
     b.className='nav-btn'; b.dataset.view=v.id; b.textContent=v.label;
     b.onclick=()=>goView(v.id); nav.appendChild(b);
   });
-  // ★ 모바일 하단 네비 초기화
-  const mInner=document.getElementById('mobile-nav-inner');
-  if(mInner){
-    mInner.innerHTML='';
-    const icons={dashboard:'fa-chart-line',invest:'fa-coins',network:'fa-sitemap',wallet:'fa-paper-plane',reports:'fa-list-alt',profile:'fa-user-circle',admin_dash:'fa-shield-alt'};
-    const labels={dashboard:'대시보드',invest:'투자',network:'조직',wallet:'출금',reports:'내역',profile:'내정보',admin_dash:'관리자'};
-    views.forEach(v=>{
-      const b=document.createElement('button');
-      b.className='mnav-btn'; b.dataset.view=v.id;
-      b.innerHTML=`<i class="fas ${icons[v.id]||'fa-circle'}"></i><span>${labels[v.id]||v.label}</span>`;
-      b.onclick=()=>goView(v.id);
-      mInner.appendChild(b);
-    });
-    const lb=document.createElement('button');
-    lb.className='mnav-btn mnav-logout';
-    lb.innerHTML=`<i class="fas fa-sign-out-alt"></i><span>로그아웃</span>`;
-    lb.onclick=doLogout;
-    mInner.appendChild(lb);
-    const mn=document.getElementById('mobile-nav'); if(mn) mn.style.display='block';
-  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1777,8 +1723,17 @@ async function submitInvestment(){
   const iname=document.getElementById('inp-invest-name').value.trim();
   if(amt<CFG.MIN_INVEST){toast(`최소 투자금액은 ${fmt(CFG.MIN_INVEST)}입니다`,'error');return;}
   if(!iname){toast('입금자명을 입력하세요','error');return;}
+
+  // ★ 중복 신청 차단: 이미 대기 중인 신청이 있으면 막음
+  const allPend=await dbGetAll('pendingInvestments');
+  const alreadyPending=allPend.some(p=>p.userId===currentUser.id);
+  if(alreadyPending){
+    toast('이미 대기 중인 투자 신청이 있습니다. 승인 후 다시 신청해 주세요.','error');
+    return;
+  }
+
   const inv={id:Date.now(),userId:currentUser.id,userName:currentUser.name,amount:amt,depositorName:_esc(iname),memo:_esc(document.getElementById('inp-invest-memo').value.trim()),requestedAt:localDateStr(new Date()),status:'pending'};
-  await dbPut('pendingInvestments',inv);  // id 있으므로 fsPut 사용
+  await dbPut('pendingInvestments',inv);
   await audit('INVEST_REQUEST',`투자신청 ${fmt(amt)}`,currentUser.id);
   document.getElementById('inp-invest-amount').value='';
   document.getElementById('inp-invest-name').value='';
@@ -2172,14 +2127,6 @@ async function saveProfile(){
   toast('프로필이 저장되었습니다','success');
 }
 // ── 회원 상세 모달 함수들 ──
-function switchMmdTab(tab, btn){
-  ['info','finance','tx','account'].forEach(t=>{
-    document.getElementById('mmd-tab-'+t+'-body').style.display = t===tab?'block':'none';
-    document.getElementById('mmd-tab-'+t).classList.toggle('active', t===tab);
-  });
-  if(tab==='tx') renderMemberTxTab(_detailUserId);
-}
-
 async function openMemberDetail(uid){
   _detailUserId=uid;
   const u=await dbGet('users',uid);
@@ -2604,10 +2551,7 @@ async function renderAdmin(){
   if(tab==='members') renderAdminMembers(members);
   if(tab==='investments') renderAdminInvestments(pendInv);
   if(tab==='withdrawals') renderAdminWithdrawals(pendWd);
-  if(tab==='logs'){
-    renderAdminLogs(allTx);
-    dbGetAll('auditLog').then(logs=>renderAuditLogs(logs));
-  }
+  if(tab==='logs') renderAdminLogs(allTx);
 }
 function renderAdminApproval(pendList){
   const el=document.getElementById('admin-approval-list');
@@ -2736,41 +2680,162 @@ function renderAdminWithdrawals(pendWd){
 }
 function renderAdminLogs(allTx){
   const sorted=allTx.sort((a,b)=>b.id-a.id).slice(0,500);
-  const countEl=document.getElementById('log-count');
-  if(countEl) countEl.textContent=`총 ${allTx.length}건 (최대 500건 표시)`;
+  const c=document.getElementById('log-count');
+  if(c) c.textContent=`전체 ${allTx.length}건`;
   document.getElementById('admin-log-body').innerHTML=sorted.length===0
     ?'<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3);">거래내역이 없습니다</td></tr>'
     :sorted.map(t=>`<tr>
     <td style="font-size:13px;color:var(--text3);white-space:nowrap;">${t.date}</td>
-    <td style="font-size:13px;font-family:'Space Mono',monospace;">${_esc(t.userId||'')}</td>
+    <td style="font-size:13px;font-family:monospace;">${_esc(t.userId||'')}</td>
     <td><span style="color:${typeColor(t.type)};font-size:13px;font-weight:700;">${typeLabel(t.type)}</span></td>
     <td class="td-amount" style="font-size:13px;">${fmt(t.amount)}</td>
     <td style="font-size:13px;color:var(--text3);">${t.fee>0?fmt(t.fee):'-'}</td>
-    <td style="font-size:13px;color:var(--text3);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(t.desc||'')}">${_esc(t.desc||'')}</td>
+    <td style="font-size:13px;color:var(--text3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(t.desc||'')}">${_esc(t.desc||'')}</td>
     <td>${statusHtml(t.status)}</td>
-    <td>
-      <div style="display:flex;gap:4px;">
-        <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:12px;" onclick="openTxEditModal('${String(t.id)}')"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:12px;" onclick="deleteTx('${String(t.id)}')"><i class="fas fa-trash"></i></button>
-      </div>
-    </td>
+    <td><div style="display:flex;gap:4px;">
+      <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:12px;" onclick="openTxEditModal('${String(t.id)}')"><i class="fas fa-edit"></i></button>
+      <button class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:12px;" onclick="deleteTx('${String(t.id)}')"><i class="fas fa-trash"></i></button>
+    </div></td>
   </tr>`).join('');
 }
 
-// ── 감사 로그 렌더 ──
-function renderAuditLogs(logs){
-  const tbody=document.getElementById('admin-audit-body');
-  if(!tbody) return;
-  const sorted=logs.sort((a,b)=>b.ts-a.ts).slice(0,300);
-  tbody.innerHTML=sorted.length===0
-    ?'<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text3);">감사 로그가 없습니다</td></tr>'
-    :sorted.map(l=>`<tr>
-    <td style="font-size:12px;color:var(--text3);white-space:nowrap;">${new Date(l.ts).toLocaleString('ko-KR')}</td>
-    <td style="font-size:13px;font-family:monospace;">${_esc(l.by||'system')}</td>
-    <td style="font-size:13px;color:var(--gold);font-weight:700;">${_esc(l.action||'')}</td>
-    <td style="font-size:13px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;" title="${_esc(l.detail||'')}">${_esc(l.detail||'')}</td>
-    <td><button class="btn btn-danger btn-sm" style="padding:3px 7px;font-size:11px;" onclick="deleteAuditLog('${_esc(String(l.id))}')"><i class="fas fa-trash"></i></button></td>
-  </tr>`).join('');
+// ─── 거래내역 검색 (유형 필터 포함) ───
+function searchLogs(){
+  const q=(document.getElementById('log-search')?.value||'').toLowerCase();
+  const tf=document.getElementById('log-type-filter')?.value||'all';
+  dbGetAll('transactions').then(all=>{
+    let r=all;
+    if(q) r=r.filter(t=>(t.userId||'').toLowerCase().includes(q)||(t.desc||'').toLowerCase().includes(q));
+    if(tf!=='all') r=r.filter(t=>t.type===tf);
+    renderAdminLogs(r);
+  });
+}
+
+// ─── 거래내역 수정 모달 열기 ───
+async function openTxEditModal(txId){
+  const tx=await dbGet('transactions',String(txId));
+  if(!tx){toast('거래내역을 찾을 수 없습니다','error');return;}
+  document.getElementById('tx-edit-title').textContent='거래내역 수정';
+  document.getElementById('tx-edit-id').value=String(tx.id);
+  document.getElementById('tx-edit-userId').value=tx.userId||'';
+  document.getElementById('tx-edit-type').value=tx.type||'기타';
+  document.getElementById('tx-edit-date').value=tx.date||localDateStr(new Date());
+  document.getElementById('tx-edit-amount').value=tx.amount||0;
+  document.getElementById('tx-edit-fee').value=tx.fee||0;
+  document.getElementById('tx-edit-net').value=tx.netAmount??tx.amount??0;
+  document.getElementById('tx-edit-desc').value=tx.desc||'';
+  document.getElementById('tx-edit-status').value=tx.status||'completed';
+  document.getElementById('modal-tx-edit').classList.remove('hidden');
+}
+
+// ─── 새 거래 추가 모달 열기 ───
+function openAddTxModal(prefillUid){
+  document.getElementById('tx-edit-title').textContent='거래내역 추가';
+  document.getElementById('tx-edit-id').value='';
+  document.getElementById('tx-edit-userId').value=prefillUid||'';
+  document.getElementById('tx-edit-type').value='ROI';
+  document.getElementById('tx-edit-date').value=localDateStr(new Date());
+  document.getElementById('tx-edit-amount').value='';
+  document.getElementById('tx-edit-fee').value='0';
+  document.getElementById('tx-edit-net').value='';
+  document.getElementById('tx-edit-desc').value='';
+  document.getElementById('tx-edit-status').value='completed';
+  document.getElementById('modal-tx-edit').classList.remove('hidden');
+}
+
+function closeTxEdit(){ document.getElementById('modal-tx-edit').classList.add('hidden'); }
+
+function txAutoNet(){
+  const a=parseInt(document.getElementById('tx-edit-amount').value)||0;
+  const f=parseInt(document.getElementById('tx-edit-fee').value)||0;
+  document.getElementById('tx-edit-net').value=Math.max(0,a-f);
+}
+
+// ─── 거래내역 저장 (수정/추가) ───
+async function saveTxEdit(){
+  const txId=document.getElementById('tx-edit-id').value;
+  const userId=document.getElementById('tx-edit-userId').value.trim();
+  const type=document.getElementById('tx-edit-type').value;
+  const date=document.getElementById('tx-edit-date').value;
+  const amount=parseInt(document.getElementById('tx-edit-amount').value)||0;
+  const fee=parseInt(document.getElementById('tx-edit-fee').value)||0;
+  const net=parseInt(document.getElementById('tx-edit-net').value)||Math.max(0,amount-fee);
+  const desc=document.getElementById('tx-edit-desc').value.trim();
+  const status=document.getElementById('tx-edit-status').value;
+  if(!userId){toast('회원 ID를 입력하세요','error');return;}
+  if(!date){toast('날짜를 선택하세요','error');return;}
+  const ux=await dbGet('users',userId);
+  if(!ux){toast(`회원 [${userId}] 을 찾을 수 없습니다`,'error');return;}
+  const isNew=!txId;
+  const id=isNew?Date.now():(parseInt(txId)||txId);
+  await dbPut('transactions',{id,userId,type,date,amount,fee,netAmount:net,desc,status});
+  await audit(isNew?'TX_ADD':'TX_EDIT',`거래 ${isNew?'추가':'수정'} [${id}] ${userId} ${type} ${fmt(amount)}`,'admin');
+  toast(isNew?'✅ 거래내역 추가 완료':'✅ 거래내역 수정 완료','success');
+  closeTxEdit();
+  if(_detailUserId) renderMemberTxTab(_detailUserId);
+  renderAdmin();
+}
+
+// ─── 거래내역 삭제 ───
+async function deleteTx(txId){
+  showModal('거래내역 삭제','이 거래내역을 영구 삭제합니다. 되돌릴 수 없습니다.',async()=>{
+    await dbDelete('transactions',String(txId));
+    await audit('TX_DELETE',`거래내역 삭제 [${txId}]`,'admin');
+    toast('거래내역이 삭제되었습니다','success');
+    if(_detailUserId) renderMemberTxTab(_detailUserId);
+    renderAdmin();
+  },'삭제','btn-danger');
+}
+
+// ─── switchMmdTab (거래내역 탭 포함) ───
+function switchMmdTab(tab,btn){
+  ['info','finance','tx','account'].forEach(t=>{
+    document.getElementById('mmd-tab-'+t+'-body').style.display=t===tab?'block':'none';
+    document.getElementById('mmd-tab-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='tx') renderMemberTxTab(_detailUserId);
+}
+
+// ─── 회원별 거래내역 탭 렌더 ───
+async function renderMemberTxTab(uid){
+  const body=document.getElementById('mmd-tab-tx-body');
+  if(!body||!uid)return;
+  body.innerHTML='<div style="padding:30px;text-align:center;color:var(--text3);"><i class="fas fa-spinner fa-spin"></i></div>';
+  const all=await dbGetAll('transactions');
+  const txs=all.filter(t=>t.userId===uid).sort((a,b)=>b.id-a.id);
+  body.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <span style="font-size:14px;color:var(--text2);">총 <b style="color:var(--text);">${txs.length}건</b></span>
+      <button class="btn btn-primary btn-sm" onclick="openAddTxModal('${_esc(uid)}')"><i class="fas fa-plus"></i> 거래 추가</button>
+    </div>
+    <div class="table-wrap" style="max-height:360px;overflow-y:auto;">
+      <table>
+        <thead><tr><th>날짜</th><th>유형</th><th>금액</th><th>내용</th><th>상태</th><th>관리</th></tr></thead>
+        <tbody>${txs.length===0
+          ?'<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text3);">거래내역 없음</td></tr>'
+          :txs.map(t=>`<tr>
+          <td style="font-size:13px;color:var(--text3);white-space:nowrap;">${t.date}</td>
+          <td><span style="color:${typeColor(t.type)};font-size:13px;font-weight:700;">${typeLabel(t.type)}</span></td>
+          <td style="font-size:13px;text-align:right;font-family:monospace;">${fmt(t.amount)}</td>
+          <td style="font-size:12px;color:var(--text3);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(t.desc||'')}">${_esc(t.desc||'')}</td>
+          <td>${statusHtml(t.status)}</td>
+          <td><div style="display:flex;gap:3px;">
+            <button class="btn btn-secondary btn-sm" style="padding:3px 7px;font-size:11px;" onclick="openTxEditModal('${String(t.id)}')"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-danger btn-sm" style="padding:3px 7px;font-size:11px;" onclick="deleteTxMember('${String(t.id)}','${_esc(uid)}')"><i class="fas fa-trash"></i></button>
+          </div></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+async function deleteTxMember(txId,uid){
+  showModal('거래내역 삭제','이 거래내역을 영구 삭제합니다.',async()=>{
+    await dbDelete('transactions',String(txId));
+    await audit('TX_DELETE',`거래내역 삭제 [${txId}] 회원:${uid}`,'admin');
+    toast('삭제되었습니다','success');
+    renderMemberTxTab(uid);
+    renderAdmin();
+  },'삭제','btn-danger');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2796,166 +2861,6 @@ function searchMembers(){
     renderAdminMembers(members);
   });
 }
-function searchLogs(){
-  const q=(document.getElementById('log-search')?.value||'').toLowerCase();
-  const typeF=document.getElementById('log-type-filter')?.value||'all';
-  dbGetAll('transactions').then(allTx=>{
-    let filtered=allTx;
-    if(q) filtered=filtered.filter(t=>(t.userId||'').toLowerCase().includes(q)||(t.desc||'').toLowerCase().includes(q));
-    if(typeF!=='all') filtered=filtered.filter(t=>t.type===typeF);
-    renderAdminLogs(filtered);
-  });
-}
-function searchAuditLogs(){
-  const q=(document.getElementById('audit-search')?.value||'').toLowerCase();
-  dbGetAll('auditLog').then(logs=>{
-    const filtered=q?logs.filter(l=>(l.action||'').toLowerCase().includes(q)||(l.detail||'').toLowerCase().includes(q)||(l.by||'').toLowerCase().includes(q)):logs;
-    renderAuditLogs(filtered);
-  });
-}
-
-// ── 거래내역 수정 모달 열기 ──
-async function openTxEditModal(txId){
-  const tx=await dbGet('transactions', String(txId));
-  if(!tx){toast('거래내역을 찾을 수 없습니다','error');return;}
-  document.getElementById('tx-edit-title').textContent='거래내역 수정';
-  document.getElementById('tx-edit-id').value=String(tx.id);
-  document.getElementById('tx-edit-userId').value=tx.userId||'';
-  document.getElementById('tx-edit-type').value=tx.type||'기타';
-  document.getElementById('tx-edit-date').value=tx.date||localDateStr(new Date());
-  document.getElementById('tx-edit-amount').value=tx.amount||0;
-  document.getElementById('tx-edit-fee').value=tx.fee||0;
-  document.getElementById('tx-edit-net').value=tx.netAmount||0;
-  document.getElementById('tx-edit-desc').value=tx.desc||'';
-  document.getElementById('tx-edit-status').value=tx.status||'completed';
-  document.getElementById('modal-tx-edit').classList.remove('hidden');
-}
-
-// ── 새 거래내역 추가 모달 ──
-function openAddTxModal(){
-  document.getElementById('tx-edit-title').textContent='거래내역 추가';
-  document.getElementById('tx-edit-id').value='';
-  document.getElementById('tx-edit-userId').value='';
-  document.getElementById('tx-edit-type').value='ROI';
-  document.getElementById('tx-edit-date').value=localDateStr(new Date());
-  document.getElementById('tx-edit-amount').value='';
-  document.getElementById('tx-edit-fee').value='0';
-  document.getElementById('tx-edit-net').value='';
-  document.getElementById('tx-edit-desc').value='';
-  document.getElementById('tx-edit-status').value='completed';
-  document.getElementById('modal-tx-edit').classList.remove('hidden');
-}
-
-function closeTxEdit(){
-  document.getElementById('modal-tx-edit').classList.add('hidden');
-}
-
-// ── 거래내역 저장 (추가/수정) ──
-async function saveTxEdit(){
-  const txId=document.getElementById('tx-edit-id').value;
-  const userId=document.getElementById('tx-edit-userId').value.trim();
-  const type=document.getElementById('tx-edit-type').value;
-  const date=document.getElementById('tx-edit-date').value;
-  const amount=parseInt(document.getElementById('tx-edit-amount').value)||0;
-  const fee=parseInt(document.getElementById('tx-edit-fee').value)||0;
-  const net=parseInt(document.getElementById('tx-edit-net').value)||amount-fee;
-  const desc=document.getElementById('tx-edit-desc').value.trim();
-  const status=document.getElementById('tx-edit-status').value;
-
-  if(!userId){toast('회원 ID를 입력하세요','error');return;}
-  if(!date){toast('날짜를 입력하세요','error');return;}
-
-  const isNew=!txId;
-  const id=isNew?Date.now():parseInt(txId)||txId;
-
-  await dbPut('transactions',{id, userId, type, date, amount, fee, netAmount:net, desc, status});
-  await audit(isNew?'TX_ADD':'TX_EDIT',`거래내역 ${isNew?'추가':'수정'} [${id}] ${userId} ${type} ${fmt(amount)}`,'admin');
-  toast(isNew?'거래내역이 추가되었습니다':'거래내역이 수정되었습니다','success');
-  closeTxEdit();
-  renderAdmin();
-}
-
-// ── 거래내역 삭제 ──
-async function deleteTx(txId){
-  showModal('거래내역 삭제','이 거래내역을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',async()=>{
-    await dbDelete('transactions', String(txId));
-    await audit('TX_DELETE',`거래내역 삭제 [${txId}]`,'admin');
-    toast('거래내역이 삭제되었습니다','success');
-    renderAdmin();
-  },'삭제','btn-danger');
-}
-
-// ── 감사로그 단건 삭제 ──
-async function deleteAuditLog(logId){
-  showModal('감사로그 삭제','이 감사 로그를 삭제하시겠습니까?',async()=>{
-    await dbDelete('auditLog', String(logId));
-    toast('감사 로그가 삭제되었습니다');
-    searchAuditLogs();
-  },'삭제','btn-danger');
-}
-
-// ── 30일 이전 감사로그 일괄 삭제 ──
-async function clearOldAuditLogs(){
-  const cutoff=Date.now()-(30*24*60*60*1000);
-  showModal('오래된 감사 로그 삭제',`30일 이전(${new Date(cutoff).toLocaleDateString('ko-KR')})의 감사 로그를 모두 삭제하시겠습니까?`,async()=>{
-    const logs=await dbGetAll('auditLog');
-    const old=logs.filter(l=>l.ts<cutoff);
-    for(const l of old) await dbDelete('auditLog',String(l.id));
-    toast(`${old.length}건의 오래된 감사 로그가 삭제되었습니다`,'success');
-    searchAuditLogs();
-  },'삭제','btn-danger');
-}
-
-// ── 회원 개별 거래내역 탭 렌더 ──
-async function renderMemberTxTab(uid){
-  const body=document.getElementById('mmd-tab-tx-body');
-  if(!body) return;
-  body.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);">로딩 중...</div>';
-  const allTx=await dbGetAll('transactions');
-  const myTx=allTx.filter(t=>t.userId===uid).sort((a,b)=>b.id-a.id);
-  body.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:15px;color:var(--text2);">총 <b style="color:var(--text)">${myTx.length}건</b></div>
-      <button class="btn btn-primary btn-sm" onclick="openAddTxForUser('${_esc(uid)}')"><i class="fas fa-plus"></i> 거래 추가</button>
-    </div>
-    <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
-      <table>
-        <thead><tr><th>날짜</th><th>유형</th><th>금액</th><th>내용</th><th>상태</th><th>관리</th></tr></thead>
-        <tbody>
-          ${myTx.length===0
-            ?'<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text3);">거래내역이 없습니다</td></tr>'
-            :myTx.map(t=>`<tr>
-            <td style="font-size:13px;color:var(--text3);">${t.date}</td>
-            <td><span style="color:${typeColor(t.type)};font-size:13px;font-weight:700;">${typeLabel(t.type)}</span></td>
-            <td style="font-size:13px;text-align:right;font-family:monospace;">${fmt(t.amount)}</td>
-            <td style="font-size:12px;color:var(--text3);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(t.desc||'')}">${_esc(t.desc||'')}</td>
-            <td>${statusHtml(t.status)}</td>
-            <td>
-              <div style="display:flex;gap:3px;">
-                <button class="btn btn-secondary btn-sm" style="padding:3px 7px;font-size:11px;" onclick="openTxEditModal('${String(t.id)}')"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-danger btn-sm" style="padding:3px 7px;font-size:11px;" onclick="deleteTxFromMember('${String(t.id)}','${_esc(uid)}')"><i class="fas fa-trash"></i></button>
-              </div>
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-function openAddTxForUser(uid){
-  openAddTxModal();
-  document.getElementById('tx-edit-userId').value=uid;
-}
-
-async function deleteTxFromMember(txId, uid){
-  showModal('거래내역 삭제','이 거래내역을 영구 삭제하시겠습니까?',async()=>{
-    await dbDelete('transactions',String(txId));
-    await audit('TX_DELETE',`거래내역 삭제 [${txId}] 회원:${uid}`,'admin');
-    toast('거래내역이 삭제되었습니다','success');
-    renderMemberTxTab(uid);
-  },'삭제','btn-danger');
-}
 async function saveOverrides(){
   const roi=parseFloat(document.getElementById('ov-roi').value)/100;
   const direct=parseFloat(document.getElementById('ov-direct').value)/100;
@@ -2976,20 +2881,40 @@ async function saveDepositAccount(){
   await saveSetting('DEPOSIT_BANK',bank); await saveSetting('DEPOSIT_ACCOUNT',acc); await saveSetting('DEPOSIT_HOLDER',holder);
   toast('입금 계좌가 저장되었습니다','success');
 }
+// ★ 처리 중인 투자 ID 집합 (중복 승인 방지)
+const _invProcessing = new Set();
+
 async function approveInvestment(id){
   const invId=String(id);
-  showModal('투자 승인','이 투자 신청을 승인하시겠습니까?',async()=>{
+  if(_invProcessing.has(invId)){ toast('이미 처리 중입니다.','error'); return; }
+
+  showModal('투자 승인','이 투자 신청을 승인하시겠습니까?', async()=>{
+    if(_invProcessing.has(invId)){ toast('이미 처리 중입니다.','error'); return; }
+    _invProcessing.add(invId);
+
+    // 버튼 즉시 비활성화
+    const itemEl=document.querySelector(`[data-inv-id="${invId}"]`);
+    if(itemEl) itemEl.querySelectorAll('button').forEach(b=>{b.disabled=true;b.style.opacity='0.4';});
+
     try{
+      // ★ DB에서 재조회 — 이미 처리됐는지 최종 확인
       const inv=await dbGet('pendingInvestments',invId);
-      if(!inv){toast('투자 신청을 찾을 수 없습니다 (이미 처리됨)','error');renderAdmin();return;}
+      if(!inv){
+        toast('이미 처리된 신청입니다.','error');
+        if(itemEl) itemEl.remove();
+        renderAdmin(); return;
+      }
       const user=await dbGet('users',inv.userId);
-      if(!user){toast('회원 정보를 찾을 수 없습니다','error');return;}
+      if(!user){ toast('회원 정보를 찾을 수 없습니다','error'); return; }
+
       const today=localDateStr(new Date());
       user.investment+=inv.amount;
       user.lastInvestmentDate=today;
       await dbPut('users',user);
+
       const txBase=Date.now();
       await dbPut('transactions',{id:txBase,userId:inv.userId,type:'투자',amount:inv.amount,fee:0,netAmount:inv.amount,date:today,status:'completed',desc:'투자 승인 완료'});
+
       if(user.sponsorCode&&user.sponsorCode!=='SYSTEM-ROOT'){
         const sponsor1=await dbGet('users',user.sponsorCode);
         if(sponsor1&&!sponsor1.suspended){
@@ -3000,7 +2925,7 @@ async function approveInvestment(id){
             if(actual1>0){
               sponsor1.wallet+=actual1; sponsor1.roi+=actual1;
               await dbPut('users',sponsor1);
-              await dbPut('transactions',{id:txBase+1+Math.floor(Math.random()*999),userId:sponsor1.id,type:'보너스',amount:actual1,fee:0,netAmount:actual1,date:today,status:'completed',desc:`직추천 수당 1대 (${user.id} 투자금의 ${(CFG.DIRECT_BONUS*100).toFixed(0)}%)`});
+              await dbPut('transactions',{id:txBase+1+Math.floor(Math.random()*9999),userId:sponsor1.id,type:'보너스',amount:actual1,fee:0,netAmount:actual1,date:today,status:'completed',desc:`직추천 수당 1대 (${user.id} 투자금의 ${(CFG.DIRECT_BONUS*100).toFixed(0)}%)`});
             }
           }
           if(sponsor1.sponsorCode&&sponsor1.sponsorCode!=='SYSTEM-ROOT'){
@@ -3013,30 +2938,37 @@ async function approveInvestment(id){
                 if(actual2>0){
                   sponsor2.wallet+=actual2; sponsor2.roi+=actual2;
                   await dbPut('users',sponsor2);
-                  await dbPut('transactions',{id:txBase+2+Math.floor(Math.random()*999),userId:sponsor2.id,type:'보너스',amount:actual2,fee:0,netAmount:actual2,date:today,status:'completed',desc:`소실적 수당 2대 (${user.id} 투자금의 ${(CFG.BINARY_BONUS*100).toFixed(0)}%)`});
+                  await dbPut('transactions',{id:txBase+2+Math.floor(Math.random()*9999),userId:sponsor2.id,type:'보너스',amount:actual2,fee:0,netAmount:actual2,date:today,status:'completed',desc:`소실적 수당 2대 (${user.id} 투자금의 ${(CFG.BINARY_BONUS*100).toFixed(0)}%)`});
                 }
               }
             }
           }
         }
       }
+
       await updateLinePoints(user.id,inv.amount);
       await checkRankBonuses(user.id,today);
+
+      // ★ 마지막에 pending 삭제 (이게 성공해야 완전 처리됨)
       await dbDelete('pendingInvestments',invId);
       await audit('INV_APPROVE',`투자 승인 ${fmt(inv.amount)} 회원:${inv.userId}`,'admin');
       toast(`✅ ${inv.userName||inv.userId} 투자 승인 완료 (${fmt(inv.amount)})`,'success');
-      const itemEl=document.querySelector(`[data-inv-id="${invId}"]`);
+
+      // ★ 승인 완료된 항목 즉시 DOM 제거
       if(itemEl) itemEl.remove();
       const list=document.getElementById('admin-invest-list');
       if(list&&list.children.length===0) list.innerHTML='<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>대기 중인 투자 신청이 없습니다</p></div>';
       renderAdmin();
-    }catch(err){
+
+    } catch(err){
       console.error('투자 승인 오류:',err);
-      toast('승인 처리 중 오류 발생: '+err.message,'error');
+      toast('승인 처리 중 오류: '+err.message,'error');
+      if(itemEl) itemEl.querySelectorAll('button').forEach(b=>{b.disabled=false;b.style.opacity='';});
+    } finally{
+      _invProcessing.delete(invId);
     }
   },'승인','btn-success');
 }
-    // ═══════════════════════════════════════════════
 // processBinaryBonus 제거 — 수당은 approveInvestment에서 직접 처리
 async function updateLinePoints(newUserId,amount){
   // 추천 체인 올라가면서 좌우 포인트 업데이트
@@ -3269,12 +3201,13 @@ function updateNextRoiTimer(){
 //  INIT
 // ═══════════════════════════════════════════════════════
 async function init(){
+  // 로딩 표시
   document.body.insertAdjacentHTML('beforeend',`
     <div id="fb-loading" style="position:fixed;inset:0;background:#07080d;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;padding:20px;text-align:center;">
       <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#d4a853;margin-bottom:20px;letter-spacing:2px;">MEDI WORLD</div>
       <div id="fb-spinner" style="width:44px;height:44px;border:3px solid rgba(212,168,83,0.2);border-top-color:#d4a853;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
       <div id="fb-status" style="margin-top:18px;font-size:16px;color:#6b7280;">서버에 연결하는 중입니다...</div>
-      <button id="fb-retry-btn" onclick="location.reload()" style="display:none;margin-top:24px;padding:14px 32px;background:#d4a853;color:#07080d;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;min-height:52px;">&#128260; 다시 시도</button>
+      <button id="fb-retry-btn" onclick="location.reload()" style="display:none;margin-top:22px;padding:14px 32px;background:#d4a853;color:#07080d;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;">&#128260; 다시 시도</button>
     </div>
   `);
   try{
@@ -3286,7 +3219,7 @@ async function init(){
     const st=document.getElementById('fb-status');
     const sp=document.getElementById('fb-spinner');
     const rb=document.getElementById('fb-retry-btn');
-    if(st){st.textContent='연결 실패. 인터넷 연결을 확인해주세요.';st.style.color='#f05d5d';}
+    if(st){st.textContent='연결 실패. 인터넷 연결을 확인해 주세요.';st.style.color='#f05d5d';}
     if(sp) sp.style.display='none';
     if(rb) rb.style.display='block';
     return;
