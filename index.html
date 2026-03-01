@@ -94,7 +94,8 @@ console.log('[Firebase] 연결 완료 ✅');
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:17px;line-height:1.75;font-weight:500;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:-webkit-fill-available;overflow-x:hidden;font-size:17px;line-height:1.75;font-weight:500;}
+html{height:-webkit-fill-available;}
 body::before{content:'';position:fixed;inset:0;
   background-image:linear-gradient(rgba(212,168,83,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(212,168,83,0.025) 1px,transparent 1px);
   background-size:60px 60px;pointer-events:none;z-index:0;}
@@ -328,6 +329,10 @@ tr:last-child td{border-bottom:none;}
 .login-stat-label{font-size:15px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-weight:600;}
 .login-stat-value{font-family:'Space Mono',monospace;font-size:22px;color:var(--gold);font-weight:700;}
 .login-right{padding:60px 50px;}
+@media(max-width:600px){
+  .login-right{padding:32px 20px !important;}
+  .login-wrap{border-radius:20px !important;}
+}
 .login-title{font-family:'Syne',sans-serif;font-size:27px;font-weight:800;margin-bottom:8px;color:var(--text);}
 .login-sub{font-size:16px;color:var(--text2);margin-bottom:32px;font-weight:500;}
 .login-tabs{display:flex;gap:0;margin-bottom:28px;background:var(--bg3);border-radius:12px;padding:4px;}
@@ -510,7 +515,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <label class="form-label">비밀번호</label>
           <input class="form-input" type="password" id="inp-lpwd" placeholder="비밀번호 입력" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
         </div>
-        <button class="btn btn-primary btn-full btn-lg" onclick="doLogin()" style="margin-top:4px;">
+        <button class="btn btn-primary btn-full btn-lg" onclick="doLogin()" ontouchend="event.preventDefault();doLogin();" style="margin-top:4px;">
           <i class="fas fa-sign-in-alt"></i> 로그인
         </button>
 
@@ -557,7 +562,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <input class="form-input" id="inp-rref" placeholder="추천인 아이디 입력 (없으면 비워두세요)">
           <div class="form-hint">추천인 코드가 없어도 가입할 수 있습니다</div>
         </div>
-        <button class="btn btn-primary btn-full" style="margin-top:4px;" onclick="doRegister()">
+        <button class="btn btn-primary btn-full" style="margin-top:4px;" onclick="doRegister()" ontouchend="event.preventDefault();doRegister();">
           <i class="fas fa-user-plus"></i> 계정 만들기
         </button>
       </div>
@@ -577,6 +582,36 @@ td{font-size:14px !important;padding:14px 16px !important;}
     <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> 로그아웃</button>
   </div>
 </nav>
+
+<!-- ═══════════ 모바일 하단 네비게이션 ═══════════ -->
+<nav id="mobile-bottom-nav" style="display:none;">
+  <div id="mobile-nav-inner"></div>
+</nav>
+<style>
+#mobile-bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg2);border-top:1px solid var(--border);
+  padding:6px 0 calc(6px + env(safe-area-inset-bottom));
+  z-index:200;
+}
+#mobile-nav-inner{
+  display:flex;justify-content:space-around;align-items:center;
+}
+.mob-nav-btn{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:none;color:var(--text3);font-size:10px;
+  font-family:'DM Sans',sans-serif;font-weight:600;padding:6px 8px;
+  cursor:pointer;min-width:52px;letter-spacing:.3px;
+  -webkit-tap-highlight-color:transparent;
+}
+.mob-nav-btn i{font-size:19px;}
+.mob-nav-btn.active{color:var(--gold);}
+.mob-nav-btn.active i{color:var(--gold);}
+@media(min-width:601px){#mobile-bottom-nav{display:none !important;}}
+@media(max-width:600px){
+  .main{padding-bottom:90px !important;}
+}
+</style>
 
 <!-- ═══════════ DASHBOARD ═══════════ -->
 <div id="page-dashboard" class="page">
@@ -1192,10 +1227,16 @@ function _validateSession(){
 // ═══════════════════════════════════════════════════════
 //  DB — Firebase Firestore (클라우드 저장)
 // ═══════════════════════════════════════════════════════
-async function waitFirebase(timeout=8000){
+async function waitFirebase(timeout=15000){
+  // ★ 모바일 느린 네트워크 대응: 타임아웃 15초로 증가
   const start=Date.now();
   while(!window.firebaseReady){
-    if(Date.now()-start>timeout) throw new Error('Firebase 연결 실패');
+    if(Date.now()-start>timeout){
+      // 재시도 1회 더 (모바일 LTE 환경에서 지연 발생 가능)
+      await new Promise(r=>setTimeout(r,3000));
+      if(window.firebaseReady) break;
+      throw new Error('Firebase 연결 실패 — 인터넷 연결을 확인해주세요');
+    }
     await new Promise(r=>setTimeout(r,100));
   }
 }
@@ -1397,6 +1438,9 @@ function showPage(name){
   if(pg){pg.style.display='block';pg.classList.add('active');}
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll(`.nav-btn[data-view="${name}"]`).forEach(b=>b.classList.add('active'));
+  // ★ 모바일 하단 네비 active 상태 업데이트
+  document.querySelectorAll('.mob-nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll(`.mob-nav-btn[data-view="${name}"]`).forEach(b=>b.classList.add('active'));
   currentView=name; window.scrollTo(0,0);
 }
 function goView(name){ showPage(name); renderPage(name); }
@@ -1490,6 +1534,9 @@ function doLogout(){
   sessionStorage.removeItem('mw_login_attempts');
   sessionStorage.removeItem('mw_login_locktime');
   document.getElementById('topbar').style.display='none';
+  // ★ 모바일 하단 네비 숨기기
+  const mobileNav=document.getElementById('mobile-bottom-nav');
+  if(mobileNav) mobileNav.style.display='none';
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.getElementById('page-login').style.display='flex';
   document.getElementById('page-login').classList.add('active');
@@ -1548,6 +1595,28 @@ function setupTopbar(){
     b.className='nav-btn'; b.dataset.view=v.id; b.textContent=v.label;
     b.onclick=()=>goView(v.id); nav.appendChild(b);
   });
+  // ★ 모바일 하단 네비게이션 설정
+  const mobileNav=document.getElementById('mobile-bottom-nav');
+  const mobileInner=document.getElementById('mobile-nav-inner');
+  if(mobileNav && mobileInner){
+    mobileInner.innerHTML='';
+    const mobileIcons={dashboard:'fa-chart-line',invest:'fa-coins',network:'fa-sitemap',wallet:'fa-paper-plane',reports:'fa-list-alt',profile:'fa-user',admin_dash:'fa-shield-alt'};
+    const mobileLabels={dashboard:'대시보드',invest:'투자',network:'조직',wallet:'출금',reports:'내역',profile:'내정보',admin_dash:'관리자'};
+    views.forEach(v=>{
+      const b=document.createElement('button');
+      b.className='mob-nav-btn'; b.dataset.view=v.id;
+      b.innerHTML=`<i class="fas ${mobileIcons[v.id]||'fa-circle'}"></i><span>${mobileLabels[v.id]||v.label}</span>`;
+      b.onclick=()=>goView(v.id);
+      mobileInner.appendChild(b);
+    });
+    // 로그아웃 버튼도 추가
+    const logoutBtn=document.createElement('button');
+    logoutBtn.className='mob-nav-btn';
+    logoutBtn.innerHTML=`<i class="fas fa-sign-out-alt" style="color:var(--red);"></i><span style="color:var(--red);">로그아웃</span>`;
+    logoutBtn.onclick=doLogout;
+    mobileInner.appendChild(logoutBtn);
+    mobileNav.style.display='block';
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2568,8 +2637,8 @@ function renderAdminInvestments(pendInv){
         <div style="font-size:14px;color:var(--text2);margin-top:2px;">입금자: ${_esc(inv.depositorName)} ${inv.memo?'· '+_esc(inv.memo):''}</div>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-success btn-sm" onclick="approveInvestment(${inv.id})"><i class="fas fa-check"></i> 승인</button>
-        <button class="btn btn-danger btn-sm" onclick="rejectInvestment(${inv.id})"><i class="fas fa-times"></i> 거부</button>
+        <button class="btn btn-success btn-sm" onclick="approveInvestment('${inv.id}')"><i class="fas fa-check"></i> 승인</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectInvestment('${inv.id}')"><i class="fas fa-times"></i> 거부</button>
       </div>
     </div>`).join('');
 }
@@ -2585,8 +2654,8 @@ function renderAdminWithdrawals(pendWd){
         <div style="font-size:14px;margin-top:2px;">실지급: <span class="mono" style="color:var(--green);">${fmtFull(wd.net)}</span> · 수수료: ${fmtFull(wd.fee)}</div>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-success btn-sm" onclick="approveWithdrawal(${wd.id})"><i class="fas fa-check"></i> 승인</button>
-        <button class="btn btn-danger btn-sm" onclick="rejectWithdrawal(${wd.id})"><i class="fas fa-times"></i> 거부</button>
+        <button class="btn btn-success btn-sm" onclick="approveWithdrawal('${wd.id}')"><i class="fas fa-check"></i> 승인</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectWithdrawal('${wd.id}')"><i class="fas fa-times"></i> 거부</button>
       </div>
     </div>`).join('');
 }
@@ -2654,14 +2723,18 @@ async function saveDepositAccount(){
 }
 async function approveInvestment(id){
   showModal('투자 승인','이 투자 신청을 승인하시겠습니까?',async()=>{
-    const inv=await dbGet('pendingInvestments',id); if(!inv)return;
+    const inv=await dbGet('pendingInvestments',id);
+    if(!inv){toast('투자 신청을 찾을 수 없습니다','error');renderAdmin();return;}
     const user=await dbGet('users',inv.userId);
+    if(!user){toast('회원 정보를 찾을 수 없습니다','error');return;}
     const today=localDateStr(new Date());
     user.investment+=inv.amount;
     user.lastInvestmentDate=today;
     await dbPut('users',user);
-    const txId=Date.now();
-    await dbPut('transactions',{id:txId,userId:inv.userId,type:'투자',amount:inv.amount,fee:0,netAmount:inv.amount,date:today,status:'completed',desc:'투자 승인 완료'});
+    // ★ BUG FIX: 트랜잭션 ID 충돌 방지 (랜덤 suffix 추가)
+    const txBase=Date.now();
+    const txRand=()=>Math.floor(Math.random()*9999);
+    await dbPut('transactions',{id:txBase,userId:inv.userId,type:'투자',amount:inv.amount,fee:0,netAmount:inv.amount,date:today,status:'completed',desc:'투자 승인 완료'});
     // ═══════════════════════════════════════════════
     // 추천 수당 지급 구조
     //  1대(직접 추천인): 투자금의 5% (DIRECT_BONUS)
@@ -2680,7 +2753,7 @@ async function approveInvestment(id){
             sponsor1.wallet+=actual1; sponsor1.roi+=actual1;
             await dbPut('users',sponsor1);
             await dbPut('transactions',{
-              id:txId+1, userId:sponsor1.id, type:'보너스',
+              id:txBase+1+txRand(), userId:sponsor1.id, type:'보너스',
               amount:actual1, fee:0, netAmount:actual1,
               date:today, status:'completed',
               desc:`직추천 수당 1대 (${user.id} 투자금의 ${(CFG.DIRECT_BONUS*100).toFixed(0)}%)`
@@ -2700,7 +2773,7 @@ async function approveInvestment(id){
                 sponsor2.wallet+=actual2; sponsor2.roi+=actual2;
                 await dbPut('users',sponsor2);
                 await dbPut('transactions',{
-                  id:txId+2, userId:sponsor2.id, type:'보너스',
+                  id:txBase+2+txRand(), userId:sponsor2.id, type:'보너스',
                   amount:actual2, fee:0, netAmount:actual2,
                   date:today, status:'completed',
                   desc:`소실적 수당 2대 (${user.id} 투자금의 ${(CFG.BINARY_BONUS*100).toFixed(0)}%)`
@@ -2782,7 +2855,9 @@ async function checkRankBonuses(newUserId,date){
 }
 async function approveWithdrawal(id){
   showModal('출금 승인','이 출금 신청을 승인하시겠습니까?',async()=>{
-    const wd=await dbGet('pendingWithdrawals',id); if(!wd)return;
+    const wd=await dbGet('pendingWithdrawals',id);
+    if(!wd){toast('출금 신청을 찾을 수 없습니다','error');renderAdmin();return;}
+    // ★ wallet은 출금 신청 시(submitWithdrawal)에 이미 차감됨 → 여기서 재차감 하면 이중 차감!
     const today=localDateStr(new Date());
     await dbPut('transactions',{id:Date.now(),userId:wd.userId,type:'출금',amount:wd.amount,fee:wd.fee,netAmount:wd.net,date:today,status:'completed',desc:'출금 승인 완료'});
     await dbDelete('pendingWithdrawals',id);
@@ -2957,8 +3032,9 @@ async function init(){
   document.body.insertAdjacentHTML('beforeend',`
     <div id="fb-loading" style="position:fixed;inset:0;background:#07080d;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
       <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:#d4a853;margin-bottom:16px;">MEDI WORLD</div>
-      <div style="width:40px;height:40px;border:3px solid rgba(212,168,83,0.2);border-top-color:#d4a853;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-      <div style="margin-top:16px;font-size:15px;color:#4a5068;">서버 연결 중...</div>
+      <div id="fb-spinner" style="width:40px;height:40px;border:3px solid rgba(212,168,83,0.2);border-top-color:#d4a853;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <div id="fb-status" style="margin-top:16px;font-size:15px;color:#4a5068;">서버 연결 중...</div>
+      <button id="fb-retry-btn" onclick="location.reload()" style="display:none;margin-top:20px;padding:12px 28px;background:#d4a853;color:#07080d;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">🔄 다시 시도</button>
       <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
     </div>
   `);
@@ -2968,8 +3044,13 @@ async function init(){
     await seedIfEmpty();
   }catch(e){
     console.error('초기화 오류:', e);
-    document.querySelector('#fb-loading div:nth-child(3)').textContent='연결 실패. 새로고침 해주세요.';
-    document.querySelector('#fb-loading div:nth-child(3)').style.color='#f05d5d';
+    const statusEl = document.getElementById('fb-status');
+    const spinnerEl = document.getElementById('fb-spinner');
+    const retryBtn = document.getElementById('fb-retry-btn');
+    if(statusEl) statusEl.textContent = '연결 실패. 인터넷 연결을 확인하고 다시 시도해주세요.';
+    if(statusEl) statusEl.style.color = '#f05d5d';
+    if(spinnerEl) spinnerEl.style.display = 'none';
+    if(retryBtn) retryBtn.style.display = 'block';
     return;
   }
   document.getElementById('fb-loading').remove();
