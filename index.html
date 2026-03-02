@@ -3440,110 +3440,218 @@ async function approveWithdrawal(id){
 async function runSettlement(){
   const today=new Date();
   const dow=today.getDay();
+  const todayStr=localDateStr(today);
   if(dow===0||dow===6){toast('주말(토/일)은 배당일이 아닙니다','error');return;}
-  showModal('전체 정산 실행',`오늘(${localDateStr(today)}) 전체 회원 ROI ${(CFG.DAILY_ROI*100).toFixed(1)}% 배당을 지급하겠습니까?`,async()=>{
-    const allUsers=await dbGetAll('users');
-    const todayStr=localDateStr(today);
-    let count=0;
-    for(const u of allUsers){
-      if(u.role!=='member'||u.investment===0||u.suspended)continue;
-      const max=u.investment*CFG.MAX_PAYOUT;
-      if(u.roi>=max)continue;
-      const payout=Math.round(u.investment*CFG.DAILY_ROI);
-      const actual=Math.min(payout,max-u.roi);
-      if(actual<=0)continue;
-      u.roi+=actual; u.wallet+=actual; u.lastRoiDate=todayStr;
-      await dbPut('users',u);
-      await dbPut('transactions',{id:Date.now()+count,userId:u.id,type:'ROI',amount:actual,fee:0,netAmount:actual,date:todayStr,status:'completed',desc:`일괄 자동 정산 ROI ${(CFG.DAILY_ROI*100).toFixed(1)}%`});
-      count++;
-    }
-    await audit('SETTLEMENT',`전체 정산 ${count}명 완료`,'admin');
-    toast(`정산 완료 — ${count}명에게 ROI 지급됨`,'success');
-    renderAdmin();
-  },'정산 실행','btn-primary');
+  showModal('전체 정산 실행',
+    `오늘(${todayStr}) 전체 회원 ROI ${(CFG.DAILY_ROI*100).toFixed(1)}% 배당을 지급합니다.<br>` +
+    `<span style="color:var(--text3);font-size:13px;">미지급 이전 날짜도 함께 보정됩니다.</span>`,
+    async()=>{
+      try{
+        const allUsers=await dbGetAll('users');
+        let count=0, totalAmt=0;
+        for(const u of allUsers){
+          if(u.role!=='member') continue;
+          if(u.approvalStatus!=='approved') continue;
+          if(!u.investment||u.investment<=0) continue;
+          if(u.suspended) continue;
+          const paid=await processUserRoi(u.id, true);
+          if(paid>0){ count++; totalAmt+=paid; }
+        }
+        await dbPut('settings',{key:'__scheduler__',value:{lastRun:todayStr,runTime:new Date().toLocaleString('ko-KR'),count,totalAmt,ts:Date.now()}});
+        await audit('SETTLEMENT',`전체 정산 ${count}명 / ${fmt(totalAmt)} 완료`,'admin');
+        toast(`✅ 정산 완료 — ${count}명 / ${fmt(totalAmt)} 지급됨`,'success');
+        await renderAdmin();
+      }catch(e){
+        console.error('[정산 오류]',e);
+        toast('정산 오류: '+e.message,'error');
+      }
+    },'정산 실행','btn-primary');
 }
 
 //  ROI AUTO SCHEDULER (주 5일 월~금)
 // ═══════════════════════════════════════════════════════
-function getPayableDates(lastPaidDate,approvedDate,todayDate){
+function getPayableDates(lastPaidDate, approvedDate, todayDate, includeToday=true){
   const dates=[];
-  const start=new Date(approvedDate); start.setDate(start.getDate()+1);
-  const last=lastPaidDate?new Date(lastPaidDate):null;
+  // ★ 시간값 제거 후 날짜만 비교 (버그 수정 핵심)
+  const start=new Date(approvedDate);
+  start.setDate(start.getDate()+1); // 승인 익일부터
+  start.setHours(0,0,0,0);
+
+  const last=lastPaidDate ? new Date(lastPaidDate) : null;
+  if(last) last.setHours(0,0,0,0);
+
   const end=new Date(todayDate);
+  end.setHours(0,0,0,0);
+  if(!includeToday) end.setDate(end.getDate()-1);
+
   let cur=new Date(start);
+  cur.setHours(0,0,0,0);
+
   while(cur<=end){
     const dow=cur.getDay();
     const curStr=localDateStr(cur);
-    if(dow>=1&&dow<=5&&(!last||cur>last)) dates.push(curStr); // 월~금만
+    if(dow>=1&&dow<=5&&(!last||cur>last)){
+      dates.push(curStr);
+    }
     cur.setDate(cur.getDate()+1);
   }
   return dates;
 }
-async function processUserRoi(userId){
+async function processUserRoi(userId, includeToday=true){
   const u=await dbGet('users',userId);
-  if(!u||u.role!=='member'||u.investment===0||u.suspended)return 0;
+  if(!u) return 0;
+  if(u.role!=='member') return 0;
+  if(u.approvalStatus!=='approved') return 0; // ★ 승인된 회원만
+  if(!u.investment||u.investment<=0) return 0;
+  if(u.suspended) return 0;
+
   const max=u.investment*CFG.MAX_PAYOUT;
-  if(u.roi>=max)return 0;
+  if(u.roi>=max) return 0;
+
   const today=localDateStr(new Date());
-  const approvedDate=u.lastInvestmentDate; if(!approvedDate)return 0;
-  const payableDates=getPayableDates(u.lastRoiDate||null,approvedDate,today);
-  if(payableDates.length===0)return 0;
-  let totalPaid=0; let upd={...u};
-  for(const dateStr of payableDates){
-    if(upd.roi>=max)break;
-    const payout=Math.round(upd.investment*CFG.DAILY_ROI);
-    const actual=Math.min(payout,max-upd.roi);
-    if(actual<=0)break;
-    upd.roi+=actual; upd.wallet+=actual; upd.lastRoiDate=dateStr; totalPaid+=actual;
-    await dbPut('transactions',{id:Date.now()+Math.floor(Math.random()*9999),userId:u.id,type:'ROI',amount:actual,fee:0,netAmount:actual,date:dateStr,status:'completed',desc:`자동 ROI ${(CFG.DAILY_ROI*100).toFixed(1)}% — ${dateStr}`});
-    await new Promise(r=>setTimeout(r,2));
+  const approvedDate=u.lastInvestmentDate;
+  if(!approvedDate) return 0;
+
+  const payableDates=getPayableDates(u.lastRoiDate||null, approvedDate, today, includeToday);
+  if(payableDates.length===0) return 0;
+
+  let totalPaid=0;
+  let upd={...u};
+  const txBase=Date.now();
+
+  for(let i=0; i<payableDates.length; i++){
+    const dateStr=payableDates[i];
+    if(upd.roi>=max) break;
+    const payout=Math.round(upd.investment*(CFG.DAILY_ROI||0.01));
+    const actual=Math.min(payout, max-upd.roi);
+    if(actual<=0) break;
+
+    upd.roi+=actual;
+    upd.wallet+=actual;
+    upd.lastRoiDate=dateStr;
+    totalPaid+=actual;
+
+    // ★ ID 충돌 방지
+    const txId=txBase+(i*10000)+Math.floor(Math.random()*9999);
+    await dbPut('transactions',{
+      id:txId, userId:u.id, type:'ROI',
+      amount:actual, fee:0, netAmount:actual,
+      date:dateStr, status:'completed',
+      desc:`자동 ROI ${(CFG.DAILY_ROI*100).toFixed(1)}% — ${dateStr}`
+    });
+    await new Promise(r=>setTimeout(r,15));
   }
-  if(totalPaid>0) await dbPut('users',upd);
+
+  if(totalPaid>0){
+    await dbPut('users',upd);
+    console.log(`[ROI] ${userId} — ${payableDates.length}일치 / ${fmt(totalPaid)} 지급`);
+  }
   return totalPaid;
 }
 async function catchUpRoi(){
-  if(!currentUser||currentUser.role==='admin')return;
-  const paid=await processUserRoi(currentUser.id);
-  if(paid>0){
-    const u=await dbGet('users',currentUser.id); currentUser=u;
-    toast(`미지급 ROI ${fmt(paid)} 자동 보정 완료`,'success');
-    if(currentView==='dashboard') renderDashboard();
+  if(!currentUser) return;
+  // ★ 전체 회원 미지급 ROI 보정 (관리자 로그인 시에도 실행)
+  try{
+    const allUsers=await dbGetAll('users');
+    let totalCount=0, totalAmt=0;
+
+    for(const u of allUsers){
+      if(u.role!=='member') continue;
+      if(u.approvalStatus!=='approved') continue;
+      if(!u.investment||u.investment<=0) continue;
+      if(u.suspended) continue;
+      const paid=await processUserRoi(u.id, true);
+      if(paid>0){ totalCount++; totalAmt+=paid; }
+    }
+
+    if(totalCount>0){
+      console.log(`[catchUpRoi] ${totalCount}명 / ${fmt(totalAmt)} 보정 완료`);
+    }
+
+    if(currentUser.role!=='admin'){
+      const me=await dbGet('users',currentUser.id);
+      if(me) currentUser=me;
+      if(totalAmt>0) toast(`💰 미지급 ROI ${fmt(totalAmt)} 자동 보정 완료`,'success');
+      if(currentView==='dashboard') renderDashboard();
+    } else {
+      if(totalCount>0){
+        toast(`✅ 미지급 ROI 보정 — ${totalCount}명 / ${fmt(totalAmt)}`,'success');
+        if(currentView==='admin_dash') renderAdmin();
+      }
+    }
+  }catch(e){
+    console.error('[catchUpRoi 오류]', e);
   }
 }
 async function autoSettleAll(label){
-  // 승인된 투자 회원만 자동 정산 (주 5일 월~금 자동 실행)
+  const todayStr=localDateStr(new Date());
+
+  // ★ 중복 실행 방지
+  try{
+    const lastSett=await dbGet('settings','__scheduler__');
+    if(lastSett&&lastSett.value&&lastSett.value.lastRun===todayStr){
+      console.log(`[자동정산] 오늘(${todayStr}) 이미 완료 — 스킵`);
+      return;
+    }
+  }catch(e){}
+
+  console.log(`[자동정산 ${label}] 시작...`);
   const allUsers=await dbGetAll('users');
   let count=0, totalAmt=0;
+
   for(const u of allUsers){
     if(u.role!=='member') continue;
-    if(u.approvalStatus!=='approved') continue; // 미승인 제외
-    if(u.suspended) continue;                   // 정지 회원 제외
-    if(!u.investment||u.investment<=0) continue;// 미투자 제외
-    const paid=await processUserRoi(u.id);
+    if(u.approvalStatus!=='approved') continue;
+    if(u.suspended) continue;
+    if(!u.investment||u.investment<=0) continue;
+    const paid=await processUserRoi(u.id, true);
     if(paid>0){ count++; totalAmt+=paid; }
   }
-  // 정산 로그 저장
+
   const runTime=new Date().toLocaleString('ko-KR');
-  await dbPut('settings',{key:'__scheduler__',value:{lastRun:localDateStr(new Date()),runTime,count,totalAmt,ts:Date.now()}});
+  await dbPut('settings',{key:'__scheduler__',value:{lastRun:todayStr,runTime,count,totalAmt,ts:Date.now()}});
   console.log(`[자동정산 ${label}] ${runTime} — ${count}명 / ${fmt(totalAmt)} 지급 완료`);
+
   if(count>0){
     if(currentUser&&currentUser.role!=='admin'&&currentUser.investment>0){
-      const myPayout=Math.round(currentUser.investment*CFG.DAILY_ROI);
+      const myPayout=Math.round(currentUser.investment*(CFG.DAILY_ROI||0.01));
       toast(`💰 오늘의 ROI ${fmt(myPayout)}이 지급되었습니다!`,'success');
       if(currentView==='dashboard') renderDashboard();
     }
     if(currentUser&&currentUser.role==='admin'){
-      toast(`✅ 자동 정산 완료 — ${count}명 / ${fmt(totalAmt)}`, 'success');
+      toast(`✅ 자동 정산 완료 — ${count}명 / ${fmt(totalAmt)}`,'success');
       renderAdmin();
     }
   }
 }
 let _schedulerTimer=null;
 
-function startScheduler(){
-  // 정확히 다음날 00:00:01에 실행되도록 setTimeout 계산
+async function startScheduler(){
+  // ★ 앱 시작 시 오늘 미정산 여부 확인
+  await checkAndFixMissedRoi();
   scheduleNextRun();
   updateNextRoiTimer();
+}
+
+async function checkAndFixMissedRoi(){
+  const now=new Date();
+  const dow=now.getDay();
+  const todayStr=localDateStr(now);
+  if(dow===0||dow===6){ console.log(`[checkMissed] 주말 — 스킵`); return; }
+  try{
+    const lastSett=await dbGet('settings','__scheduler__');
+    if(lastSett&&lastSett.value&&lastSett.value.lastRun===todayStr){
+      console.log(`[checkMissed] 오늘(${todayStr}) 정산 완료 확인 — OK`);
+      return;
+    }
+    if(now.getHours()===0&&now.getMinutes()<5){
+      console.log(`[checkMissed] 자정 직후 — 스케줄러 대기 중`);
+      return;
+    }
+    console.log(`[checkMissed] 오늘(${todayStr}) 미정산 감지 — 로그인 후 catchUpRoi 보정 예정`);
+  }catch(e){
+    console.warn('[checkMissed] 확인 실패:', e.message);
+  }
 }
 
 function scheduleNextRun(){
