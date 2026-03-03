@@ -2202,15 +2202,6 @@ async function submitWithdrawal(){
   if(!_validateSession())return;
   const u=await dbGet('users',currentUser.id);
   if(u.suspended){toast('계정이 정지되어 출금할 수 없습니다','error');return;}
-
-  // ★ 중복 신청 방지: 이미 대기 중인 출금이 있으면 차단
-  const existingPend=await dbGetAll('pendingWithdrawals');
-  const myPend=existingPend.filter(w=>w.userId===u.id);
-  if(myPend.length>0){
-    toast('이미 출금 신청이 대기 중입니다. 처리 후 다시 신청하세요','error');
-    return;
-  }
-
   if(wdAmountVal<=0){toast('출금 금액을 입력하세요','error');return;}
   if(wdAmountVal>u.wallet){toast('잔액이 부족합니다','error');return;}
 
@@ -2218,27 +2209,28 @@ async function submitWithdrawal(){
   const net=wdAmountVal-fee;
   const wd={
     id:Date.now(),
-    userId:u.id,
-    userName:u.name,
-    amount:wdAmountVal,
-    fee,
-    net,
-    bankName:u.bankName,
-    accountNumber:u.accountNumber,
-    accountHolder:u.accountHolder,
-    requestedAt:localDateStr(new Date()),
-    status:'pending'
+    userId:u.id, userName:u.name,
+    amount:wdAmountVal, fee, net,
+    bankName:u.bankName, accountNumber:u.accountNumber, accountHolder:u.accountHolder,
+    requestedAt:localDateStr(new Date()), status:'pending'
   };
 
-  // ★ wallet 차감 (신청 시점에 차감 → 승인 시 추가 차감 없음)
+  // wallet 차감
   u.wallet-=wdAmountVal;
   await dbPut('users',u);
   currentUser=u;
-
   await dbPut('pendingWithdrawals',wd);
   await audit('WITHDRAW_REQUEST',`출금신청 ${fmt(wdAmountVal)} (수수료 ${fmt(fee)} / 실지급 ${fmt(net)})`,u.id);
-  toast('✅ 출금 신청이 접수되었습니다. 관리자 승인 후 처리됩니다','success');
-  renderWallet();
+
+  // ★ 완료 후 폼 완전 초기화 → 잔액 남으면 바로 재신청 가능
+  wdAmountVal=0;
+  const inp=document.getElementById('wd-amount');
+  if(inp) inp.value='';
+  const prev=document.getElementById('wd-fee-preview');
+  if(prev) prev.style.display='none';
+
+  toast('✅ 출금 신청 완료! 잔액이 남아있으면 추가 신청 가능합니다','success');
+  renderWallet(); // 갱신된 잔액으로 step1 표시
 }
 async function updateBank(){
   if(!_validateSession())return;
@@ -3162,10 +3154,8 @@ async function cancelTxLog(txId){
             user.wallet = Math.max(0, (user.wallet||0) - net);
             user.roi    = Math.max(0, (user.roi||0)    - net);
           } else if(tx.type === '출금'){
-            // ★ 출금 취소: wallet 복원
-            // 신청 시 amount(전액) 차감했으므로 amount 전액 복원
-            // (수수료는 취소 시 돌려줘야 함)
-            user.wallet = (user.wallet||0) + amt;
+            // 출금 취소: wallet 복원
+            user.wallet = (user.wallet||0) + net;
           }
           await dbPut('users', user);
         }
@@ -3455,46 +3445,15 @@ async function checkRankBonuses(newUserId,date){
   }
 }
 async function approveWithdrawal(id){
-  showModal('출금 승인',
-    `이 출금 신청을 승인하시겠습니까?<br>` +
-    `<span style="color:var(--text3);font-size:13px;">승인 시 출금 완료 처리되며 회원 잔액에 반영됩니다.</span>`,
-    async()=>{
-      try{
-        const wd=await dbGet('pendingWithdrawals',id);
-        if(!wd){ toast('출금 신청 정보를 찾을 수 없습니다','error'); return; }
-
-        const today=localDateStr(new Date());
-
-        // ★ 회원 wallet 확인
-        // 출금 신청 시 이미 wallet에서 차감됨
-        // 승인 시 추가 차감 없이 거래내역만 completed로 기록
-        const user=await dbGet('users',wd.userId);
-        if(!user){ toast('회원 정보를 찾을 수 없습니다','error'); return; }
-
-        // 거래내역 추가 (completed)
-        await dbPut('transactions',{
-          id:Date.now(),
-          userId:wd.userId,
-          type:'출금',
-          amount:wd.amount,
-          fee:wd.fee,
-          netAmount:wd.net,
-          date:today,
-          status:'completed',
-          desc:`출금 승인 완료 (${wd.bankName} ${wd.accountNumber})`
-        });
-
-        // pendingWithdrawals 삭제
-        await dbDelete('pendingWithdrawals',id);
-
-        await audit('WD_APPROVE',`출금 승인 ${fmt(wd.amount)} → 실지급 ${fmt(wd.net)} 회원:${wd.userId}`,'admin');
-        toast(`✅ 출금 승인 완료 — ${fmt(wd.net)} 지급 처리됨`,'success');
-        await renderAdmin();
-      }catch(e){
-        console.error('[출금 승인 오류]',e);
-        toast('승인 처리 중 오류: '+e.message,'error');
-      }
-    },'승인','btn-success');
+  showModal('출금 승인','이 출금 신청을 승인하시겠습니까?',async()=>{
+    const wd=await dbGet('pendingWithdrawals',id); if(!wd)return;
+    const today=localDateStr(new Date());
+    await dbPut('transactions',{id:Date.now(),userId:wd.userId,type:'출금',amount:wd.amount,fee:wd.fee,netAmount:wd.net,date:today,status:'completed',desc:'출금 승인 완료'});
+    await dbDelete('pendingWithdrawals',id);
+    await audit('WD_APPROVE',`출금 승인 ${fmt(wd.amount)} 회원:${wd.userId}`,'admin');
+    toast('출금이 승인되었습니다','success');
+    await renderAdmin();
+  },'승인','btn-success');
 }
 async function runSettlement(){
   const today=new Date();
