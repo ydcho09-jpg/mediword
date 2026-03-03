@@ -2222,7 +2222,7 @@ async function submitWithdrawal(){
   await dbPut('pendingWithdrawals',wd);
   await audit('WITHDRAW_REQUEST',`출금신청 ${fmt(wdAmountVal)} (수수료 ${fmt(fee)} / 실지급 ${fmt(net)})`,u.id);
 
-  // ★ 완료 후 폼 완전 초기화 → 잔액 남으면 바로 재신청 가능
+  // ★ 신청 완료 후 폼 완전 초기화 → 잔액 남으면 즉시 재신청 가능
   wdAmountVal=0;
   const inp=document.getElementById('wd-amount');
   if(inp) inp.value='';
@@ -2230,7 +2230,7 @@ async function submitWithdrawal(){
   if(prev) prev.style.display='none';
 
   toast('✅ 출금 신청 완료! 잔액이 남아있으면 추가 신청 가능합니다','success');
-  renderWallet(); // 갱신된 잔액으로 step1 표시
+  renderWallet();
 }
 async function updateBank(){
   if(!_validateSession())return;
