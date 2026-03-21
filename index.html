@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuTy/Sz4uFZAAAAAd1+K5R+EUGvKB5BRFGRKpXB0AFrpfEXW0tn7gNHlxPTFQPAhrgzQAK5GFCtyGnhw==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-ZwR1/gSZM3ai6vCdI+LVF1zSq/5HznD3oD+sCoJrzXJ+yKiwusmDXjJh4moNgseTBMFPuOR/KSHhG5R0WgTkw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKnH4rJT6WPAzaBFIBeLs2UjgO3pV0EpKKxDnVXZEHWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Firebase SDK -->
 <script type="module">
 // ★★★ 여기에 Firebase 설정값을 붙여넣으세요 ★★★
@@ -2270,17 +2270,23 @@ function renderReportTable(myTx,filter){
   </tr>`).join('');
 }
 async function exportMembersExcel(){
-  toast('회원 목록 엑셀 생성 중...','info');
+  toast('회원 목록 다운로드 중...','info');
   try {
     const allUsers = await dbGetAll('users');
-    // 가입일 순서로 정렬
     const members = allUsers
       .filter(u => u.role === 'member')
       .sort((a,b) => (a.registeredAt||'').localeCompare(b.registeredAt||''));
 
-    const RANK_LABELS = ['일반','브론즈','실버','골드','플래티넘','다이아'];
+    const today = localDateStr(new Date());
 
-    // 헤더 정의
+    // ★ XLSX 라이브러리 로드 확인
+    if(typeof XLSX === 'undefined'){
+      // XLSX 없으면 CSV로 폴백
+      console.warn('[exportMembersExcel] XLSX 미로드 → CSV 폴백');
+      _exportMembersCSV(members, today);
+      return;
+    }
+
     const headers = [
       '번호','아이디','이름','이메일','전화번호',
       '추천인','가입일','승인상태','계정상태',
@@ -2290,35 +2296,23 @@ async function exportMembersExcel(){
       '마지막ROI일','마지막투자일','마지막로그인'
     ];
 
-    // 데이터 행 생성
     const rows = members.map((u, i) => {
       const sl = Math.min(u.leftInvest||0, u.rightInvest||0);
       const rankObj = calcRank(sl);
       const maxPayout = u.investment * (CFG.MAX_PAYOUT||3);
       const remaining = Math.max(0, maxPayout - (u.roi||0));
       return [
-        i + 1,
-        u.id || '',
-        u.name || '',
-        u.email || '',
-        u.phone || '',
-        (u.sponsorCode && u.sponsorCode !== 'SYSTEM-ROOT') ? u.sponsorCode : '직가입',
-        u.registeredAt || '',
-        u.approvalStatus === 'approved' ? '승인' : u.approvalStatus === 'pending' ? '대기중' : '거부',
-        u.suspended ? '정지' : '정상',
-        u.investment || 0,
-        u.roi || 0,
-        u.wallet || 0,
-        remaining,
-        u.bankName || '',
-        u.accountNumber || '',
-        u.accountHolder || '',
-        rankObj.label || '일반',
-        u.leftInvest || 0,
-        u.rightInvest || 0,
-        u.lastRoiDate || '',
-        u.lastInvestmentDate || '',
-        u.lastLogin || ''
+        i+1,
+        u.id||'', u.name||'', u.email||'', u.phone||'',
+        (u.sponsorCode&&u.sponsorCode!=='SYSTEM-ROOT')?u.sponsorCode:'직가입',
+        u.registeredAt||'',
+        u.approvalStatus==='approved'?'승인':u.approvalStatus==='pending'?'대기중':'거부',
+        u.suspended?'정지':'정상',
+        u.investment||0, u.roi||0, u.wallet||0, remaining,
+        u.bankName||'', u.accountNumber||'', u.accountHolder||'',
+        rankObj.label||'일반',
+        u.leftInvest||0, u.rightInvest||0,
+        u.lastRoiDate||'', u.lastInvestmentDate||'', u.lastLogin||''
       ];
     });
 
@@ -2327,7 +2321,7 @@ async function exportMembersExcel(){
     const wsData = [headers, ...rows];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-    // 컬럼 너비 설정
+    // 컬럼 너비
     ws['!cols'] = [
       {wch:6},{wch:14},{wch:12},{wch:26},{wch:16},
       {wch:12},{wch:14},{wch:10},{wch:8},
@@ -2337,68 +2331,86 @@ async function exportMembersExcel(){
       {wch:14},{wch:14},{wch:18}
     ];
 
-    // 헤더 행 스타일 (배경색)
-    const range = XLSX.utils.decode_range(ws['!ref']);
-    for(let C = range.s.c; C <= range.e.c; C++){
-      const cellAddr = XLSX.utils.encode_cell({r:0, c:C});
-      if(!ws[cellAddr]) continue;
-      ws[cellAddr].s = {
-        fill:{fgColor:{rgb:'1A1A2E'}},
-        font:{bold:true, color:{rgb:'D4A853'}, sz:12},
-        alignment:{horizontal:'center', vertical:'center'},
-        border:{bottom:{style:'medium', color:{rgb:'D4A853'}}}
-      };
-    }
-
-    // 숫자 컬럼 천 단위 포맷
-    const numCols = [9,10,11,12,17,18]; // 0-indexed
-    for(let R = 1; R <= rows.length; R++){
+    // 숫자 포맷
+    const numCols=[9,10,11,12,17,18];
+    for(let R=1;R<=rows.length;R++){
       for(const C of numCols){
-        const cellAddr = XLSX.utils.encode_cell({r:R, c:C});
-        if(ws[cellAddr] && typeof ws[cellAddr].v === 'number'){
-          ws[cellAddr].z = '#,##0';
-        }
+        const addr=XLSX.utils.encode_cell({r:R,c:C});
+        if(ws[addr]&&typeof ws[addr].v==='number') ws[addr].z='#,##0';
       }
     }
 
     XLSX.utils.book_append_sheet(wb, ws, '회원목록');
 
-    // 요약 시트 추가
-    const today = localDateStr(new Date());
-    const totalInvest = members.reduce((s,u) => s+(u.investment||0), 0);
-    const totalWallet = members.reduce((s,u) => s+(u.wallet||0), 0);
-    const totalRoi = members.reduce((s,u) => s+(u.roi||0), 0);
-    const activeCount = members.filter(u => u.investment > 0 && !u.suspended).length;
-    const pendingCount = members.filter(u => u.approvalStatus === 'pending').length;
-    const suspendedCount = members.filter(u => u.suspended).length;
+    // 요약 시트
+    const totalInvest=members.reduce((s,u)=>s+(u.investment||0),0);
+    const totalWallet=members.reduce((s,u)=>s+(u.wallet||0),0);
+    const totalRoi=members.reduce((s,u)=>s+(u.roi||0),0);
+    const activeCount=members.filter(u=>u.investment>0&&!u.suspended).length;
+    const pendingCount=members.filter(u=>u.approvalStatus==='pending').length;
+    const suspendedCount=members.filter(u=>u.suspended).length;
 
-    const summaryData = [
-      ['MEDI WORLD 회원 현황 요약', ''],
-      ['추출일', today],
-      ['', ''],
-      ['항목', '수치'],
-      ['전체 회원 수', members.length],
-      ['투자 중 회원', activeCount],
-      ['승인 대기', pendingCount],
-      ['계정 정지', suspendedCount],
-      ['', ''],
-      ['총 투자금', totalInvest],
-      ['총 누적ROI', totalRoi],
-      ['총 출금잔액', totalWallet],
-    ];
-    const ws2 = XLSX.utils.aoa_to_sheet(summaryData);
-    ws2['!cols'] = [{wch:20},{wch:20}];
+    const ws2=XLSX.utils.aoa_to_sheet([
+      ['MEDI WORLD 회원 현황 요약',''],
+      ['추출일',today],['',''],['항목','수치'],
+      ['전체 회원 수',members.length],
+      ['투자 중 회원',activeCount],
+      ['승인 대기',pendingCount],
+      ['계정 정지',suspendedCount],['',''],
+      ['총 투자금',totalInvest],
+      ['총 누적ROI',totalRoi],
+      ['총 출금잔액',totalWallet],
+    ]);
+    ws2['!cols']=[{wch:20},{wch:20}];
     XLSX.utils.book_append_sheet(wb, ws2, '요약');
 
-    // 다운로드
-    const filename = `MEDIWORLD_회원목록_${today.replace(/-/g,'')}.xlsx`;
-    XLSX.writeFile(wb, filename);
+    // ★ Blob 방식 다운로드 (writeFile 대신 - 브라우저 호환성 높음)
+    const wbOut = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    const blob = new Blob([wbOut], {type:'application/octet-stream'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `MEDIWORLD_회원목록_${today.replace(/-/g,'')}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+
     toast(`✅ 엑셀 다운로드 완료! (${members.length}명)`, 'success');
 
   } catch(e) {
-    console.error(e);
-    toast('엑셀 생성 중 오류가 발생했습니다', 'error');
+    console.error('[exportMembersExcel 오류]', e);
+    // ★ 오류 시 CSV 폴백
+    try{
+      const allUsers2=await dbGetAll('users');
+      const members2=allUsers2.filter(u=>u.role==='member');
+      _exportMembersCSV(members2, localDateStr(new Date()));
+    }catch(e2){
+      toast('다운로드 오류: '+e.message, 'error');
+    }
   }
+}
+
+// ★ CSV 폴백 함수 (XLSX 없거나 오류 시)
+function _exportMembersCSV(members, today){
+  const header='번호,아이디,이름,이메일,전화번호,추천인,가입일,승인상태,계정상태,투자금,누적ROI,출금잔액,은행명,계좌번호,예금주\n';
+  const rows=members.map((u,i)=>[
+    i+1, u.id||'', u.name||'', u.email||'', u.phone||'',
+    (u.sponsorCode&&u.sponsorCode!=='SYSTEM-ROOT')?u.sponsorCode:'직가입',
+    u.registeredAt||'',
+    u.approvalStatus==='approved'?'승인':u.approvalStatus==='pending'?'대기중':'거부',
+    u.suspended?'정지':'정상',
+    u.investment||0, u.roi||0, u.wallet||0,
+    u.bankName||'', u.accountNumber||'', u.accountHolder||''
+  ].join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+header+rows],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`MEDIWORLD_회원목록_${today.replace(/-/g,'')}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast(`✅ CSV 다운로드 완료! (${members.length}명)`,'success');
 }
 
 async function exportReports(){
@@ -3440,110 +3452,218 @@ async function approveWithdrawal(id){
 async function runSettlement(){
   const today=new Date();
   const dow=today.getDay();
+  const todayStr=localDateStr(today);
   if(dow===0||dow===6){toast('주말(토/일)은 배당일이 아닙니다','error');return;}
-  showModal('전체 정산 실행',`오늘(${localDateStr(today)}) 전체 회원 ROI ${(CFG.DAILY_ROI*100).toFixed(1)}% 배당을 지급하겠습니까?`,async()=>{
-    const allUsers=await dbGetAll('users');
-    const todayStr=localDateStr(today);
-    let count=0;
-    for(const u of allUsers){
-      if(u.role!=='member'||u.investment===0||u.suspended)continue;
-      const max=u.investment*CFG.MAX_PAYOUT;
-      if(u.roi>=max)continue;
-      const payout=Math.round(u.investment*CFG.DAILY_ROI);
-      const actual=Math.min(payout,max-u.roi);
-      if(actual<=0)continue;
-      u.roi+=actual; u.wallet+=actual; u.lastRoiDate=todayStr;
-      await dbPut('users',u);
-      await dbPut('transactions',{id:Date.now()+count,userId:u.id,type:'ROI',amount:actual,fee:0,netAmount:actual,date:todayStr,status:'completed',desc:`일괄 자동 정산 ROI ${(CFG.DAILY_ROI*100).toFixed(1)}%`});
-      count++;
-    }
-    await audit('SETTLEMENT',`전체 정산 ${count}명 완료`,'admin');
-    toast(`정산 완료 — ${count}명에게 ROI 지급됨`,'success');
-    renderAdmin();
-  },'정산 실행','btn-primary');
+  showModal('전체 정산 실행',
+    `오늘(${todayStr}) 전체 회원 ROI ${(CFG.DAILY_ROI*100).toFixed(1)}% 배당을 지급합니다.<br>` +
+    `<span style="color:var(--text3);font-size:13px;">미지급 이전 날짜도 함께 보정됩니다.</span>`,
+    async()=>{
+      try{
+        const allUsers=await dbGetAll('users');
+        let count=0, totalAmt=0;
+        for(const u of allUsers){
+          if(u.role!=='member') continue;
+          if(u.approvalStatus!=='approved') continue;
+          if(!u.investment||u.investment<=0) continue;
+          if(u.suspended) continue;
+          const paid=await processUserRoi(u.id, true);
+          if(paid>0){ count++; totalAmt+=paid; }
+        }
+        await dbPut('settings',{key:'__scheduler__',value:{lastRun:todayStr,runTime:new Date().toLocaleString('ko-KR'),count,totalAmt,ts:Date.now()}});
+        await audit('SETTLEMENT',`전체 정산 ${count}명 / ${fmt(totalAmt)} 완료`,'admin');
+        toast(`✅ 정산 완료 — ${count}명 / ${fmt(totalAmt)} 지급됨`,'success');
+        await renderAdmin();
+      }catch(e){
+        console.error('[정산 오류]',e);
+        toast('정산 오류: '+e.message,'error');
+      }
+    },'정산 실행','btn-primary');
 }
 
 //  ROI AUTO SCHEDULER (주 5일 월~금)
 // ═══════════════════════════════════════════════════════
-function getPayableDates(lastPaidDate,approvedDate,todayDate){
+function getPayableDates(lastPaidDate, approvedDate, todayDate, includeToday=true){
   const dates=[];
-  const start=new Date(approvedDate); start.setDate(start.getDate()+1);
-  const last=lastPaidDate?new Date(lastPaidDate):null;
+  // ★ 시간값 제거 후 날짜만 비교 (버그 수정 핵심)
+  const start=new Date(approvedDate);
+  start.setDate(start.getDate()+1); // 승인 익일부터
+  start.setHours(0,0,0,0);
+
+  const last=lastPaidDate ? new Date(lastPaidDate) : null;
+  if(last) last.setHours(0,0,0,0);
+
   const end=new Date(todayDate);
+  end.setHours(0,0,0,0);
+  if(!includeToday) end.setDate(end.getDate()-1);
+
   let cur=new Date(start);
+  cur.setHours(0,0,0,0);
+
   while(cur<=end){
     const dow=cur.getDay();
     const curStr=localDateStr(cur);
-    if(dow>=1&&dow<=5&&(!last||cur>last)) dates.push(curStr); // 월~금만
+    if(dow>=1&&dow<=5&&(!last||cur>last)){
+      dates.push(curStr);
+    }
     cur.setDate(cur.getDate()+1);
   }
   return dates;
 }
-async function processUserRoi(userId){
+async function processUserRoi(userId, includeToday=true){
   const u=await dbGet('users',userId);
-  if(!u||u.role!=='member'||u.investment===0||u.suspended)return 0;
+  if(!u) return 0;
+  if(u.role!=='member') return 0;
+  if(u.approvalStatus!=='approved') return 0; // ★ 승인된 회원만
+  if(!u.investment||u.investment<=0) return 0;
+  if(u.suspended) return 0;
+
   const max=u.investment*CFG.MAX_PAYOUT;
-  if(u.roi>=max)return 0;
+  if(u.roi>=max) return 0;
+
   const today=localDateStr(new Date());
-  const approvedDate=u.lastInvestmentDate; if(!approvedDate)return 0;
-  const payableDates=getPayableDates(u.lastRoiDate||null,approvedDate,today);
-  if(payableDates.length===0)return 0;
-  let totalPaid=0; let upd={...u};
-  for(const dateStr of payableDates){
-    if(upd.roi>=max)break;
-    const payout=Math.round(upd.investment*CFG.DAILY_ROI);
-    const actual=Math.min(payout,max-upd.roi);
-    if(actual<=0)break;
-    upd.roi+=actual; upd.wallet+=actual; upd.lastRoiDate=dateStr; totalPaid+=actual;
-    await dbPut('transactions',{id:Date.now()+Math.floor(Math.random()*9999),userId:u.id,type:'ROI',amount:actual,fee:0,netAmount:actual,date:dateStr,status:'completed',desc:`자동 ROI ${(CFG.DAILY_ROI*100).toFixed(1)}% — ${dateStr}`});
-    await new Promise(r=>setTimeout(r,2));
+  const approvedDate=u.lastInvestmentDate;
+  if(!approvedDate) return 0;
+
+  const payableDates=getPayableDates(u.lastRoiDate||null, approvedDate, today, includeToday);
+  if(payableDates.length===0) return 0;
+
+  let totalPaid=0;
+  let upd={...u};
+  const txBase=Date.now();
+
+  for(let i=0; i<payableDates.length; i++){
+    const dateStr=payableDates[i];
+    if(upd.roi>=max) break;
+    const payout=Math.round(upd.investment*(CFG.DAILY_ROI||0.01));
+    const actual=Math.min(payout, max-upd.roi);
+    if(actual<=0) break;
+
+    upd.roi+=actual;
+    upd.wallet+=actual;
+    upd.lastRoiDate=dateStr;
+    totalPaid+=actual;
+
+    // ★ ID 충돌 방지
+    const txId=txBase+(i*10000)+Math.floor(Math.random()*9999);
+    await dbPut('transactions',{
+      id:txId, userId:u.id, type:'ROI',
+      amount:actual, fee:0, netAmount:actual,
+      date:dateStr, status:'completed',
+      desc:`자동 ROI ${(CFG.DAILY_ROI*100).toFixed(1)}% — ${dateStr}`
+    });
+    await new Promise(r=>setTimeout(r,15));
   }
-  if(totalPaid>0) await dbPut('users',upd);
+
+  if(totalPaid>0){
+    await dbPut('users',upd);
+    console.log(`[ROI] ${userId} — ${payableDates.length}일치 / ${fmt(totalPaid)} 지급`);
+  }
   return totalPaid;
 }
 async function catchUpRoi(){
-  if(!currentUser||currentUser.role==='admin')return;
-  const paid=await processUserRoi(currentUser.id);
-  if(paid>0){
-    const u=await dbGet('users',currentUser.id); currentUser=u;
-    toast(`미지급 ROI ${fmt(paid)} 자동 보정 완료`,'success');
-    if(currentView==='dashboard') renderDashboard();
+  if(!currentUser) return;
+  // ★ 전체 회원 미지급 ROI 보정 (관리자 로그인 시에도 실행)
+  try{
+    const allUsers=await dbGetAll('users');
+    let totalCount=0, totalAmt=0;
+
+    for(const u of allUsers){
+      if(u.role!=='member') continue;
+      if(u.approvalStatus!=='approved') continue;
+      if(!u.investment||u.investment<=0) continue;
+      if(u.suspended) continue;
+      const paid=await processUserRoi(u.id, true);
+      if(paid>0){ totalCount++; totalAmt+=paid; }
+    }
+
+    if(totalCount>0){
+      console.log(`[catchUpRoi] ${totalCount}명 / ${fmt(totalAmt)} 보정 완료`);
+    }
+
+    if(currentUser.role!=='admin'){
+      const me=await dbGet('users',currentUser.id);
+      if(me) currentUser=me;
+      if(totalAmt>0) toast(`💰 미지급 ROI ${fmt(totalAmt)} 자동 보정 완료`,'success');
+      if(currentView==='dashboard') renderDashboard();
+    } else {
+      if(totalCount>0){
+        toast(`✅ 미지급 ROI 보정 — ${totalCount}명 / ${fmt(totalAmt)}`,'success');
+        if(currentView==='admin_dash') renderAdmin();
+      }
+    }
+  }catch(e){
+    console.error('[catchUpRoi 오류]', e);
   }
 }
 async function autoSettleAll(label){
-  // 승인된 투자 회원만 자동 정산 (주 5일 월~금 자동 실행)
+  const todayStr=localDateStr(new Date());
+
+  // ★ 중복 실행 방지
+  try{
+    const lastSett=await dbGet('settings','__scheduler__');
+    if(lastSett&&lastSett.value&&lastSett.value.lastRun===todayStr){
+      console.log(`[자동정산] 오늘(${todayStr}) 이미 완료 — 스킵`);
+      return;
+    }
+  }catch(e){}
+
+  console.log(`[자동정산 ${label}] 시작...`);
   const allUsers=await dbGetAll('users');
   let count=0, totalAmt=0;
+
   for(const u of allUsers){
     if(u.role!=='member') continue;
-    if(u.approvalStatus!=='approved') continue; // 미승인 제외
-    if(u.suspended) continue;                   // 정지 회원 제외
-    if(!u.investment||u.investment<=0) continue;// 미투자 제외
-    const paid=await processUserRoi(u.id);
+    if(u.approvalStatus!=='approved') continue;
+    if(u.suspended) continue;
+    if(!u.investment||u.investment<=0) continue;
+    const paid=await processUserRoi(u.id, true);
     if(paid>0){ count++; totalAmt+=paid; }
   }
-  // 정산 로그 저장
+
   const runTime=new Date().toLocaleString('ko-KR');
-  await dbPut('settings',{key:'__scheduler__',value:{lastRun:localDateStr(new Date()),runTime,count,totalAmt,ts:Date.now()}});
+  await dbPut('settings',{key:'__scheduler__',value:{lastRun:todayStr,runTime,count,totalAmt,ts:Date.now()}});
   console.log(`[자동정산 ${label}] ${runTime} — ${count}명 / ${fmt(totalAmt)} 지급 완료`);
+
   if(count>0){
     if(currentUser&&currentUser.role!=='admin'&&currentUser.investment>0){
-      const myPayout=Math.round(currentUser.investment*CFG.DAILY_ROI);
+      const myPayout=Math.round(currentUser.investment*(CFG.DAILY_ROI||0.01));
       toast(`💰 오늘의 ROI ${fmt(myPayout)}이 지급되었습니다!`,'success');
       if(currentView==='dashboard') renderDashboard();
     }
     if(currentUser&&currentUser.role==='admin'){
-      toast(`✅ 자동 정산 완료 — ${count}명 / ${fmt(totalAmt)}`, 'success');
+      toast(`✅ 자동 정산 완료 — ${count}명 / ${fmt(totalAmt)}`,'success');
       renderAdmin();
     }
   }
 }
 let _schedulerTimer=null;
 
-function startScheduler(){
-  // 정확히 다음날 00:00:01에 실행되도록 setTimeout 계산
+async function startScheduler(){
+  // ★ 앱 시작 시 오늘 미정산 여부 확인
+  await checkAndFixMissedRoi();
   scheduleNextRun();
   updateNextRoiTimer();
+}
+
+async function checkAndFixMissedRoi(){
+  const now=new Date();
+  const dow=now.getDay();
+  const todayStr=localDateStr(now);
+  if(dow===0||dow===6){ console.log(`[checkMissed] 주말 — 스킵`); return; }
+  try{
+    const lastSett=await dbGet('settings','__scheduler__');
+    if(lastSett&&lastSett.value&&lastSett.value.lastRun===todayStr){
+      console.log(`[checkMissed] 오늘(${todayStr}) 정산 완료 확인 — OK`);
+      return;
+    }
+    if(now.getHours()===0&&now.getMinutes()<5){
+      console.log(`[checkMissed] 자정 직후 — 스케줄러 대기 중`);
+      return;
+    }
+    console.log(`[checkMissed] 오늘(${todayStr}) 미정산 감지 — 로그인 후 catchUpRoi 보정 예정`);
+  }catch(e){
+    console.warn('[checkMissed] 확인 실패:', e.message);
+  }
 }
 
 function scheduleNextRun(){
