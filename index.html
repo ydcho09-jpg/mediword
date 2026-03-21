@@ -54,10 +54,16 @@ window.fsGet = async (col, id) => {
   // ★ 캐시 우회: 항상 서버에서 최신 데이터 읽기
   try {
     const snap = await getDocFromServer(doc(fsdb, col, String(id)));
-    return snap.exists() ? snap.data() : undefined;
+    return snap.exists() ? snap.data() : null;
   } catch(e) {
-    const snap = await getDoc(doc(fsdb, col, String(id)));
-    return snap.exists() ? snap.data() : undefined;
+    // 네트워크 오류 시 캐시 폴백
+    try {
+      const snap = await getDoc(doc(fsdb, col, String(id)));
+      return snap.exists() ? snap.data() : null;
+    } catch(e2) {
+      console.error('[fsGet] 읽기 실패:', col, id, e2.message);
+      return null;
+    }
   }
 };
 window.fsGetAll = async (col) => {
@@ -1519,10 +1525,15 @@ function _validateSession(){
 // ═══════════════════════════════════════════════════════
 //  DB — Firebase Firestore (클라우드 저장)
 // ═══════════════════════════════════════════════════════
-async function waitFirebase(timeout=8000){
+async function waitFirebase(timeout=15000){
+  // ★ 타임아웃 15초로 연장 (모바일/느린 네트워크 대응)
   const start=Date.now();
   while(!window.firebaseReady){
-    if(Date.now()-start>timeout) throw new Error('Firebase 연결 실패');
+    if(Date.now()-start>timeout){
+      console.warn('[waitFirebase] 연결 타임아웃 — fallback 시도');
+      window.firebaseReady=true; // 강제 진행 (Rules가 허용하면 동작)
+      return;
+    }
     await new Promise(r=>setTimeout(r,100));
   }
 }
@@ -1655,13 +1666,29 @@ async function _hashPwdSecure(pw){
   return _HASH_VER + '$' + hashHex;
 }
 async function _verifyPwdSecure(plain, hash){
-  if(hash.startsWith(_HASH_VER)){
-    // 신규 SHA-256 해시 검증
-    const computed = await _hashPwdSecure(plain);
-    return computed === hash;
-  } else {
-    // 구버전 해시 하위호환 (기존 회원 로그인 가능하도록)
-    return _hashPwd(plain) === hash;
+  if(!plain || !hash) return false;
+  // ★ 앞뒤 공백 제거 (모바일 키보드 자동완성 실수 방지)
+  const pw = plain.trim();
+  try{
+    if(hash.startsWith(_HASH_VER)){
+      // 신규 SHA-256 해시 검증
+      const computed = await _hashPwdSecure(pw);
+      if(computed === hash) return true;
+      // ★ 혹시 공백 미처리로 저장된 경우 원본도 시도
+      if(pw !== plain){
+        const computed2 = await _hashPwdSecure(plain);
+        if(computed2 === hash) return true;
+      }
+      return false;
+    } else {
+      // 구버전 해시 하위호환 (기존 회원 로그인 가능하도록)
+      if(_hashPwd(pw) === hash) return true;
+      if(pw !== plain && _hashPwd(plain) === hash) return true;
+      return false;
+    }
+  }catch(e){
+    console.error('[_verifyPwdSecure] 검증 오류:', e.message);
+    return false;
   }
 }
 function _verifyPwd(plain,hash){ return _hashPwd(plain)===hash; }
@@ -1762,10 +1789,10 @@ function switchLoginTab(tab,btn){
 }
 async function doLogin(){
   const id=document.getElementById('inp-lid').value.trim();
-  const pwd=document.getElementById('inp-lpwd').value;
+  const pwd=document.getElementById('inp-lpwd').value.trim(); // ★ trim 추가
   if(!id||!pwd){toast('아이디와 비밀번호를 입력하세요','error');return;}
 
-  // ★ 강화된 브루트포스 방지 (sessionStorage 사용 — 새로고침해도 유지)
+  // ★ 브루트포스 방지
   const _attemptKey = 'mw_login_attempts';
   const _lockKey = 'mw_login_locktime';
   const lockUntil = parseInt(sessionStorage.getItem(_lockKey)||'0');
@@ -1776,22 +1803,42 @@ async function doLogin(){
   }
   const attempts = parseInt(sessionStorage.getItem(_attemptKey)||'0');
   if(attempts >= 5){
-    sessionStorage.setItem(_lockKey, String(Date.now() + 5*60*1000)); // 5분 잠금
+    sessionStorage.setItem(_lockKey, String(Date.now() + 5*60*1000));
     sessionStorage.setItem(_attemptKey, '0');
     toast('⛔ 로그인 시도 5회 초과. 5분간 잠깁니다','error');
     return;
   }
 
-  const user=await dbGet('users',id);
-  // ★ 보안: 존재하지 않는 ID도 동일한 에러 메시지 (ID 존재 여부 노출 방지)
+  // ★ Firebase 연결 확인
+  if(!window.firebaseReady){
+    toast('서버 연결 중입니다. 잠시 후 다시 시도하세요','error');
+    return;
+  }
+
+  let user = null;
+  try{
+    user = await dbGet('users', id);
+  }catch(e){
+    console.error('[doLogin] DB 읽기 오류:', e.message);
+    toast('서버 연결 오류입니다. 새로고침 후 다시 시도하세요','error');
+    return;
+  }
+
+  // ★ 비밀번호 검증 (구버전/신버전 모두 호환)
   const pwdOk = user ? await _verifyPwdSecure(pwd, user.pwd) : false;
-  if(!user||!pwdOk){
+
+  if(!user || !pwdOk){
     const newAttempts = attempts + 1;
     sessionStorage.setItem(_attemptKey, String(newAttempts));
     const remain = 5 - newAttempts;
-    toast(`아이디 또는 비밀번호가 틀립니다 (남은 시도: ${remain}회)`,'error');
+    if(!user){
+      toast(`아이디 또는 비밀번호가 틀립니다 (남은 시도: ${remain}회)`,'error');
+    } else {
+      toast(`비밀번호가 틀립니다 (남은 시도: ${remain}회)`,'error');
+    }
     return;
   }
+
   // 로그인 성공 → 시도 횟수 초기화
   sessionStorage.removeItem(_attemptKey);
   sessionStorage.removeItem(_lockKey);
@@ -1799,7 +1846,6 @@ async function doLogin(){
   if(user.suspended&&user.role!=='admin'){toast('계정이 정지되었습니다. 관리자에게 문의하세요','error');return;}
   if(user.approvalStatus==='pending'&&user.role!=='admin'){toast('⏳ 가입 승인 대기 중입니다. 관리자 승인 후 이용 가능합니다','error');return;}
 
-  // ★ 최초 로그인 시 비밀번호 변경 강제 (관리자 계정)
   if(user._mustChangePwd && user.role==='admin'){
     await loginUser(user);
     toast('⚠️ 초기 비밀번호를 반드시 변경해주세요!','warning');
