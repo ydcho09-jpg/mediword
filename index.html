@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0">
 <title>BOSANG</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -67,12 +67,12 @@ console.log('[Firebase] 연결 완료 ✅');
   --red:#f05d5d;--red-dim:rgba(240,93,93,0.12);
   --blue:#5b8dee;--blue-dim:rgba(91,141,238,0.12);
   --purple:#a78bfa;--purple-dim:rgba(167,139,250,0.12);
-  --text:#ffffff;--text2:#c8cfe0;--text3:#8a94ac;
+  --text:#ffffff;--text2:#d0d8f0;--text3:#9aa4c0;
   --r:16px;--r2:24px;--r3:32px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:17px;line-height:1.75;font-weight:500;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:19px;line-height:1.9;font-weight:500;}
 body::before{content:'';position:fixed;inset:0;
   background-image:linear-gradient(rgba(212,168,83,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(212,168,83,0.025) 1px,transparent 1px);
   background-size:60px 60px;pointer-events:none;z-index:0;}
@@ -89,13 +89,38 @@ h1,h2,h3,.syne{font-family:'Syne',sans-serif;}
 .page.active{display:block;}
 
 /* TOPBAR */
+/* 하단 네비게이션 바 (모바일 전용) */
+#bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(13,15,26,0.97);
+  backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  z-index:200;
+  padding:8px 4px;
+  padding-bottom:max(8px, env(safe-area-inset-bottom));
+}
+.bnav-btn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;flex:1;background:none;border:none;cursor:pointer;
+  color:var(--text3);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
+  padding:8px 4px;border-radius:12px;transition:all .2s;min-height:56px;
+}
+.bnav-btn.active{color:var(--gold);background:var(--gold-dim);}
+.bnav-btn i{font-size:22px;margin-bottom:2px;}
+@media(max-width:600px){
+  #bottom-nav{display:flex !important;}
+  .main{padding-bottom:90px !important;}
+  /* 상단 탭 네비게이션 숨김 */
+  .topbar-nav{display:none !important;}
+}
 #topbar{position:fixed;top:0;left:0;right:0;height:64px;background:rgba(7,8,13,0.93);backdrop-filter:blur(20px);
   border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:200;}
 .topbar-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:2px;color:var(--gold);cursor:pointer;}
 .topbar-logo span{color:var(--text2);font-weight:400;}
 .topbar-nav{display:flex;gap:2px;}
 .nav-btn{background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;
-  color:var(--text2);padding:8px 16px;border-radius:10px;transition:all .2s;letter-spacing:.3px;}
+  color:var(--text2);padding:10px 18px;border-radius:10px;transition:all .2s;letter-spacing:.2px;font-size:16px;}
 .nav-btn:hover{color:var(--text);background:var(--surface);}
 .nav-btn.active{color:var(--gold);background:var(--gold-dim);}
 .topbar-right{display:flex;align-items:center;gap:12px;}
@@ -114,10 +139,10 @@ h1,h2,h3,.syne{font-family:'Syne',sans-serif;}
 .card-sm{border-radius:var(--r);padding:18px;}
 .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
 .card-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text2);letter-spacing:1px;text-transform:uppercase;}
-.card-title-lg{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;color:var(--text);}
+.card-title-lg{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--text);}
 .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:22px 24px;}
-.stat-label{font-size:14px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;}
-.stat-value{font-family:'Space Mono',monospace;font-size:30px;font-weight:700;color:var(--text);line-height:1;}
+.stat-label{font-size:16px;font-weight:700;color:var(--text2);letter-spacing:.3px;text-transform:uppercase;margin-bottom:10px;}
+.stat-value{font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:var(--text);line-height:1;}
 .stat-sub{font-size:14px;color:var(--text2);margin-top:8px;font-weight:600;}
 .stat-badge{display:inline-flex;align-items:center;gap:4px;font-size:15px;font-weight:700;padding:3px 9px;border-radius:20px;font-family:'Space Mono',monospace;}
 .badge-up{background:var(--green-dim);color:var(--green);}
@@ -134,7 +159,7 @@ h1,h2,h3,.syne{font-family:'Syne',sans-serif;}
 
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;
-  font-family:'DM Sans',sans-serif;font-weight:700;font-size:16px;border-radius:var(--r);padding:14px 26px;transition:all .2s;letter-spacing:.3px;}
+  font-family:'DM Sans',sans-serif;font-weight:700;font-size:18px;border-radius:var(--r);padding:16px 28px;transition:all .2s;letter-spacing:.3px;}
 .btn:active{transform:scale(0.97);}
 .btn-primary{background:var(--gold);color:#0a0800;}
 .btn-primary:hover{background:var(--gold2);}
@@ -146,17 +171,17 @@ h1,h2,h3,.syne{font-family:'Syne',sans-serif;}
 .btn-danger:hover{background:var(--red);color:#fff;}
 .btn-purple{background:var(--purple-dim);border:1px solid rgba(167,139,250,0.25);color:var(--purple);}
 .btn-purple:hover{background:var(--purple);color:#fff;}
-.btn-sm{padding:9px 18px;font-size:15px;border-radius:10px;font-weight:700;}
-.btn-lg{padding:18px 36px;font-size:18px;border-radius:18px;}
+.btn-sm{padding:12px 20px;font-size:16px;border-radius:12px;font-weight:700;min-height:48px;}
+.btn-lg{padding:20px 40px;font-size:20px;border-radius:18px;}
 .btn-full{width:100%;}
 .btn-icon{padding:10px;border-radius:10px;width:42px;height:42px;}
 .btn:disabled{opacity:0.4;cursor:not-allowed;}
 
 /* ── FORMS ── */
 .form-group{margin-bottom:20px;}
-.form-label{display:block;font-size:16px;font-weight:700;color:var(--text);margin-bottom:9px;letter-spacing:.3px;}
+.form-label{display:block;font-size:18px;font-weight:800;color:var(--text);margin-bottom:10px;letter-spacing:.2px;}
 .form-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);
-  padding:15px 18px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:17px;font-weight:500;outline:none;transition:all .2s;}
+  padding:17px 20px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:19px;font-weight:500;outline:none;transition:all .2s;}
 .form-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,168,83,0.15);}
 .form-input::placeholder{color:var(--text3);}
 .form-input.error{border-color:var(--red);}
@@ -169,8 +194,8 @@ h1,h2,h3,.syne{font-family:'Syne',sans-serif;}
 .table-wrap{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;}
 thead tr{border-bottom:1px solid var(--border);}
-th{font-size:13px;font-weight:800;color:var(--text2);letter-spacing:.8px;text-transform:uppercase;padding:12px 16px;text-align:left;}
-td{padding:15px 16px;font-size:16px;border-bottom:1px solid var(--border);color:var(--text);}
+th{font-size:15px;font-weight:800;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;padding:14px 16px;text-align:left;}
+td{padding:17px 16px;font-size:17px;border-bottom:1px solid var(--border);color:var(--text);}
 tr:hover td{background:var(--surface);}
 tr:last-child td{border-bottom:none;}
 .td-amount{font-family:'Space Mono',monospace;color:var(--text);font-weight:700;}
@@ -185,8 +210,8 @@ tr:last-child td{border-bottom:none;}
 
 /* ── TABS ── */
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:24px;overflow-x:auto;}
-.tab{background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
-  color:var(--text2);padding:12px 22px;border-bottom:2px solid transparent;letter-spacing:.2px;transition:all .2s;white-space:nowrap;}
+.tab{background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;
+  color:var(--text2);padding:14px 22px;border-bottom:3px solid transparent;letter-spacing:.2px;transition:all .2s;white-space:nowrap;}
 .tab:hover{color:var(--text);}
 .tab.active{color:var(--gold);border-bottom-color:var(--gold);}
 
@@ -372,68 +397,143 @@ td{font-size:14px !important;padding:14px 16px !important;}
 --text2:#aab0c4;
 --text3:#6b7280;
 
+/* ══════════════════════════════════════════
+   태블릿 (901px 이하)
+══════════════════════════════════════════ */
 @media(max-width:900px){
   .login-wrap{grid-template-columns:1fr;}.login-left{display:none;}
-  .dash-row-4{grid-template-columns:1fr 1fr;}.dash-row-3{grid-template-columns:1fr 1fr;}
-  .dash-row-main{grid-template-columns:1fr;}
-  .main{padding:80px 16px 40px;}
-  #topbar{padding:0 14px;}
-  .form-row{grid-template-columns:1fr;}
-}
-@media(max-width:600px){
-  /* ── 모바일 최적화 (노인 친화) ── */
   .dash-row-4{grid-template-columns:1fr 1fr;}
   .dash-row-3{grid-template-columns:1fr 1fr;}
-  .dash-row-2{grid-template-columns:1fr;}
-  .topbar-nav{display:none;}
-  .main{padding:72px 14px 48px !important;}
-  #topbar{padding:0 14px !important;height:60px !important;}
-  .topbar-logo{font-size:18px !important;}
-  .user-name{display:none;}
-  /* 페이지 제목 */
-  .page-title{font-size:23px !important;}
-  .page-subtitle{font-size:15px !important;}
-  /* 카드 */
-  .card{padding:18px !important;border-radius:16px !important;}
-  .card-title-lg{font-size:18px !important;}
-  .card-title{font-size:14px !important;}
-  /* 통계 카드 */
-  .stat-value{font-size:26px !important;}
-  .stat-label{font-size:13px !important;}
-  .stat-sub{font-size:13px !important;}
-  /* 버튼 - 손가락으로 누르기 편하게 */
-  .btn{font-size:15px !important;padding:13px 20px !important;min-height:48px !important;}
-  .btn-sm{font-size:14px !important;padding:10px 15px !important;min-height:44px !important;}
-  .btn-lg{font-size:17px !important;min-height:54px !important;}
-  /* 탭 */
-  .tabs{gap:0px;overflow-x:auto;}
-  .tab{font-size:13px !important;padding:11px 14px !important;min-height:46px !important;}
-  /* 테이블 */
-  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  th{font-size:12px !important;padding:10px 12px !important;}
-  td{font-size:14px !important;padding:13px 12px !important;}
-  /* 입력 폼 - 자동확대 방지 및 터치 편의 */
-  .form-input{font-size:16px !important;padding:14px 16px !important;min-height:52px !important;}
-  .form-label{font-size:15px !important;margin-bottom:8px !important;}
-  /* 모달 */
-  .modal{width:96% !important;max-width:100% !important;margin:8px !important;max-height:88vh !important;overflow-y:auto !important;border-radius:20px !important;}
-  /* 알림 */
-  .alert{font-size:15px !important;padding:14px 16px !important;}
-  /* 상태 배지 */
-  .status{font-size:12px !important;padding:5px 10px !important;}
-  /* 폰트 자동크기 조절 방지 */
-  *{-webkit-text-size-adjust:100% !important;}
-  /* 네트워크 카드 */
-  .net-name{font-size:16px !important;}
-  .net-meta-item{font-size:13px !important;}
+  .dash-row-main{grid-template-columns:1fr;}
+  .main{padding:80px 20px 40px;}
+  #topbar{padding:0 16px;}
+  .form-row{grid-template-columns:1fr;}
 }
-/* 터치 디바이스 버튼 크기 */
+
+/* ══════════════════════════════════════════
+   모바일 노인 친화 (600px 이하)
+   — 큰 글씨, 큰 버튼, 단순 레이아웃
+══════════════════════════════════════════ */
+@media(max-width:600px){
+
+  /* ── 전체 폰트 기본 ── */
+  body{font-size:18px !important;line-height:1.85 !important;}
+
+  /* ── 상단 바 ── */
+  #topbar{padding:0 14px !important;height:64px !important;}
+  .topbar-logo{font-size:22px !important;letter-spacing:3px !important;}
+  .topbar-nav{display:none !important;}
+  .user-name{display:none !important;}
+  .user-avatar{width:40px !important;height:40px !important;font-size:18px !important;}
+  .btn-logout{font-size:15px !important;padding:10px 14px !important;}
+
+  /* ── 메인 여백 ── */
+  .main{padding:76px 14px 60px !important;}
+
+  /* ── 페이지 제목 ── */
+  .page-title{font-size:26px !important;font-weight:800 !important;}
+  .page-subtitle{font-size:16px !important;}
+  .page-header{margin-bottom:20px !important;}
+
+  /* ── 카드 ── */
+  .card{padding:20px !important;border-radius:18px !important;}
+  .card-title-lg{font-size:20px !important;font-weight:800 !important;}
+  .card-title{font-size:15px !important;font-weight:700 !important;}
+
+  /* ── 통계 카드 — 숫자 크게 ── */
+  .dash-row-4{grid-template-columns:1fr 1fr !important;gap:10px !important;}
+  .dash-row-3{grid-template-columns:1fr 1fr !important;gap:10px !important;}
+  .dash-row-2{grid-template-columns:1fr !important;gap:12px !important;}
+  .stat-card{padding:18px 16px !important;}
+  .stat-value{font-size:28px !important;font-weight:800 !important;}
+  .stat-label{font-size:14px !important;font-weight:700 !important;}
+  .stat-sub{font-size:14px !important;}
+
+  /* ── 버튼 — 손가락으로 누르기 편하게 ── */
+  .btn{font-size:17px !important;padding:16px 22px !important;min-height:56px !important;font-weight:800 !important;border-radius:14px !important;}
+  .btn-sm{font-size:15px !important;padding:12px 16px !important;min-height:50px !important;font-weight:700 !important;border-radius:12px !important;}
+  .btn-lg{font-size:19px !important;padding:18px 30px !important;min-height:60px !important;border-radius:16px !important;}
+  .btn-full{width:100% !important;}
+
+  /* ── 탭 — 가로 스크롤 ── */
+  .tabs{overflow-x:auto !important;-webkit-overflow-scrolling:touch;gap:0 !important;border-bottom:2px solid var(--border);}
+  .tab{font-size:15px !important;padding:14px 18px !important;min-height:54px !important;white-space:nowrap !important;}
+
+  /* ── 테이블 ── */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  th{font-size:13px !important;padding:12px 12px !important;white-space:nowrap;}
+  td{font-size:15px !important;padding:15px 12px !important;}
+
+  /* ── 폼 입력 — 노인 터치 편의 ── */
+  .form-group{margin-bottom:22px !important;}
+  .form-label{font-size:18px !important;font-weight:800 !important;margin-bottom:10px !important;}
+  .form-input{font-size:18px !important;padding:18px 18px !important;min-height:58px !important;border-radius:14px !important;}
+  .form-hint{font-size:15px !important;margin-top:8px !important;}
+  .form-error{font-size:15px !important;}
+
+  /* ── 모달 — 전체 화면 ── */
+  .modal-overlay{align-items:flex-end !important;padding:0 !important;}
+  .modal{width:100% !important;max-width:100% !important;margin:0 !important;
+    max-height:92vh !important;overflow-y:auto !important;
+    border-radius:24px 24px 0 0 !important;padding:24px 18px !important;}
+  .modal-title{font-size:20px !important;}
+  .modal-sub{font-size:16px !important;}
+  .modal-actions{flex-direction:column !important;gap:10px !important;}
+  .modal-actions .btn{width:100% !important;}
+
+  /* ── 알림 ── */
+  .alert{font-size:16px !important;padding:16px 18px !important;border-radius:14px !important;line-height:1.7 !important;}
+
+  /* ── 상태 배지 ── */
+  .status{font-size:13px !important;padding:6px 12px !important;}
+  .stat-badge{font-size:13px !important;padding:5px 10px !important;}
+
+  /* ── 거래/보고서 ── */
+  .rank-badge{font-size:14px !important;padding:7px 14px !important;}
+
+  /* ── 네트워크 카드 ── */
+  .net-card{padding:16px !important;}
+  .net-name{font-size:18px !important;font-weight:700 !important;}
+  .net-id{font-size:15px !important;}
+  .net-meta-item{font-size:14px !important;padding:5px 10px !important;}
+
+  /* ── toast 알림 ── */
+  #toast-container{bottom:20px !important;right:10px !important;left:10px !important;}
+  .toast{font-size:16px !important;padding:16px 18px !important;min-width:auto !important;max-width:100% !important;}
+
+  /* ── 로그인 화면 ── */
+  .login-right{padding:30px 20px !important;}
+  .login-title{font-size:26px !important;}
+  .login-sub{font-size:16px !important;}
+  .login-tab{font-size:17px !important;padding:14px !important;}
+
+  /* ── 수익 시뮬레이터 ── */
+  .step-circle{width:40px !important;height:40px !important;font-size:18px !important;}
+  .step-label{font-size:14px !important;}
+
+  /* ── 그리드 강제 단일 컬럼 ── */
+  .form-row{grid-template-columns:1fr !important;}
+  [style*="grid-template-columns:1fr 1fr"]:not(.dash-row-4):not(.dash-row-3){
+    grid-template-columns:1fr !important;
+  }
+
+  /* ── 텍스트 자동확대 방지 ── */
+  html{-webkit-text-size-adjust:100%;}
+  input,select,textarea{font-size:18px !important;}
+}
+
+/* ══════════════════════════════════════════
+   터치 디바이스 — 최소 터치 영역 보장
+══════════════════════════════════════════ */
 @media(hover:none) and (pointer:coarse){
-  .btn{min-height:44px;}
-  .btn-sm{min-height:40px;}
-  .form-input{min-height:48px;}
-  .tab{min-height:44px;}
-  .nav-btn{min-height:44px;}
+  .btn{min-height:52px;}
+  .btn-sm{min-height:48px;}
+  .btn-lg{min-height:58px;}
+  .form-input{min-height:54px;}
+  .tab{min-height:50px;}
+  .nav-btn{min-height:50px;}
+  /* 링크/버튼 터치 영역 확장 */
+  a,button{min-width:44px;}
 }
 </style>
 </head>
@@ -542,6 +642,28 @@ td{font-size:14px !important;padding:14px 16px !important;}
       </div>
     </div>
   </div>
+</div>
+
+<!-- ═══════════ 하단 네비게이션 (모바일 전용) ═══════════ -->
+<div id="bottom-nav" style="display:none;">
+  <button class="bnav-btn active" id="bnav-dashboard" onclick="goView('dashboard');setBnav('dashboard')">
+    <i class="fas fa-home"></i><span>홈</span>
+  </button>
+  <button class="bnav-btn" id="bnav-invest" onclick="goView('invest');setBnav('invest')">
+    <i class="fas fa-coins"></i><span>투자</span>
+  </button>
+  <button class="bnav-btn" id="bnav-network" onclick="goView('network');setBnav('network')">
+    <i class="fas fa-sitemap"></i><span>조직</span>
+  </button>
+  <button class="bnav-btn" id="bnav-wallet" onclick="goView('wallet');setBnav('wallet')">
+    <i class="fas fa-wallet"></i><span>출금</span>
+  </button>
+  <button class="bnav-btn" id="bnav-reports" onclick="goView('reports');setBnav('reports')">
+    <i class="fas fa-list"></i><span>내역</span>
+  </button>
+  <button class="bnav-btn" id="bnav-profile" onclick="goView('profile');setBnav('profile')">
+    <i class="fas fa-user"></i><span>내정보</span>
+  </button>
 </div>
 
 <!-- ═══════════ TOPBAR ═══════════ -->
@@ -736,7 +858,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
               <span class="stat-badge badge-blue">+3.0%</span>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
-              <div><div style="font-size:15px;font-weight:600;">최대 수익 한도</div><div style="font-size:14px;color:var(--text3);">250% 도달 시 모든 수당 중단</div></div>
+              <div><div style="font-size:15px;font-weight:600;">최대 수익 한도</div><div style="font-size:14px;color:var(--text3);">${(CFG.MAX_PAYOUT*100).toFixed(0)}% 도달 시 모든 수당 중단</div></div>
               <span class="stat-badge badge-gold">300%</span>
             </div>
           </div>
@@ -1399,8 +1521,26 @@ let CFG = {
 async function loadSettings(){
   try{
     const s=await dbGetAll('settings');
-    s.forEach(item=>{ if(item && item.key && item.key in CFG) CFG[item.key]=item.value; });
-  }catch(e){ console.warn('설정 로드 실패, 기본값 사용'); }
+    s.forEach(item=>{
+      if(!item||!item.key) return;
+      if(item.key in CFG){
+        // REFERRAL_BONUS는 배열 타입 보장
+        if(item.key==='REFERRAL_BONUS'){
+          CFG.REFERRAL_BONUS = Array.isArray(item.value)
+            ? item.value
+            : [0,0.25,0.15,0.10,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.03,0.03,0.03,0.03,0.03];
+        } else {
+          CFG[item.key] = item.value;
+        }
+      }
+    });
+    // DIRECT_BONUS / BINARY_BONUS를 REFERRAL_BONUS와 동기화
+    if(CFG.REFERRAL_BONUS && CFG.REFERRAL_BONUS.length > 2){
+      CFG.DIRECT_BONUS = CFG.REFERRAL_BONUS[1];
+      CFG.BINARY_BONUS = CFG.REFERRAL_BONUS[2];
+    }
+    console.log('[Settings] 로드 완료 - ROI:'+CFG.DAILY_ROI*100+'% 최대:'+CFG.MAX_PAYOUT*100+'%');
+  }catch(e){ console.warn('설정 로드 실패, 기본값 사용', e); }
 }
 async function saveSetting(key,val){ await dbPut('settings',{id:key, key, value:val}); CFG[key]=val; }
 
@@ -1540,6 +1680,11 @@ function showPage(name){
 }
 function goView(name){ showPage(name); renderPage(name); }
 function goHome(){ if(!currentUser)return; goView(currentUser.role==='admin'?'admin_dash':'dashboard'); }
+function setBnav(view){
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById('bnav-'+view);
+  if(el) el.classList.add('active');
+}
 function renderPage(name){
   if(name==='dashboard') renderDashboard();
   else if(name==='invest') renderInvest();
@@ -1588,6 +1733,7 @@ async function loginUser(user){
   document.getElementById('page-login').style.display='none';
   document.getElementById('page-login').classList.remove('active');
   document.getElementById('topbar').style.display='flex';
+  const bnav=document.getElementById('bottom-nav'); if(bnav&&user.role!=='admin') bnav.style.display='flex';
   goView(user.role==='admin'?'admin_dash':'dashboard');
   toast(`안녕하세요, ${_esc(user.name)}님!`,'success');
   await audit('LOGIN','로그인',user.id);
@@ -1596,6 +1742,7 @@ async function loginUser(user){
 function doLogout(){
   currentUser=null; _sessionToken=null;
   document.getElementById('topbar').style.display='none';
+  const bnav2=document.getElementById('bottom-nav'); if(bnav2) bnav2.style.display='none';
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.getElementById('page-login').style.display='flex';
   document.getElementById('page-login').classList.add('active');
@@ -2748,11 +2895,13 @@ async function renderAdmin(){
   document.getElementById('wd-badge').textContent=pendWd.length>0?pendWd.length:'';
   // 수당 설정
   document.getElementById('ov-roi').value=(CFG.DAILY_ROI*100).toFixed(1);
-  // 소실적 1~15대 수당 입력값 로드
-  const RBNS = CFG.REFERRAL_BONUS || [0,0.25,0.15,0.10,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.03,0.03,0.03,0.03,0.03];
+  // 소실적 1~15대 수당 입력값 로드 (Firebase에서 가져온 CFG 값 반영)
+  const RBNS = (Array.isArray(CFG.REFERRAL_BONUS)&&CFG.REFERRAL_BONUS.length>1)
+    ? CFG.REFERRAL_BONUS
+    : [0,0.25,0.15,0.10,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.03,0.03,0.03,0.03,0.03];
   for(let i=1;i<=15;i++){
     const el=document.getElementById('ov-ref-'+i);
-    if(el) el.value=(RBNS[i]*100).toFixed(1);
+    if(el) el.value=((RBNS[i]||0)*100).toFixed(1);
   }
   // 기존 호환용
   const dEl=document.getElementById('ov-direct');
@@ -2888,7 +3037,7 @@ function renderAdminMembers(members){
       <td><div style="font-weight:600;">${_esc(u.name)}</div><div style="font-size:14px;color:var(--text3);font-family:'Space Mono',monospace;">${_esc(u.id)}</div></td>
       <td style="font-size:14px;color:var(--text3);">${u.sponsorCode&&u.sponsorCode!=='SYSTEM-ROOT'?_esc(u.sponsorCode):'-'}</td>
       <td class="td-amount">${fmt(u.investment)}</td>
-      <td class="td-amount" style="color:var(--gold);">${fmt(u.roi)}${isMaxed?'<span class="stat-badge badge-down" style="margin-left:4px;font-size:9px;">300%</span>':''}</td>
+      <td class="td-amount" style="color:var(--gold);">${fmt(u.roi)}${isMaxed?'<span class="stat-badge badge-down" style="margin-left:4px;font-size:9px;">${(CFG.MAX_PAYOUT*100).toFixed(0)}%</span>':''}</td>
       <td class="td-amount" style="color:var(--green);">${fmt(u.wallet)}</td>
       <td><div class="rank-badge ${rank.class}" style="font-size:15px;">${rank.label}</div></td>
       <td>${u.approvalStatus==='pending'?'<span class="status status-pend">승인대기</span>':u.suspended?'<span class="status status-fail">정지</span>':u.investment>0?'<span class="status status-done">투자중</span>':'<span class="status status-stop">미투자</span>'}</td>
@@ -2973,28 +3122,42 @@ function searchLogs(){
   });
 }
 async function saveOverrides(){
-  const roi=parseFloat(document.getElementById('ov-roi').value)/100;
-  // 1~15대 수당 저장
-  const newRBNS=[0];
+  // ── 1. 입력값 읽기 ──
+  const roi = parseFloat(document.getElementById('ov-roi').value)/100;
+  const maxP = parseFloat(document.getElementById('ov-maxpayout').value)/100;
+  const wdfee = parseFloat(document.getElementById('ov-wdfee').value)/100;
+
+  // ── 2. 소실적 1~15대 수당 읽기 ──
+  const newRBNS = [0]; // 0번 인덱스는 미사용
   for(let i=1;i<=15;i++){
-    const el=document.getElementById('ov-ref-'+i);
-    newRBNS.push(el ? parseFloat(el.value)/100 : CFG.REFERRAL_BONUS[i]||0);
+    const el = document.getElementById('ov-ref-'+i);
+    const val = el ? parseFloat(el.value)/100 : (CFG.REFERRAL_BONUS||[])[i]||0;
+    newRBNS.push(isNaN(val)?0:val);
   }
-  CFG.REFERRAL_BONUS=newRBNS;
-  CFG.DIRECT_BONUS=newRBNS[1];
-  CFG.BINARY_BONUS=newRBNS[2];
+
+  // ── 3. 유효성 검사 ──
+  if(isNaN(roi)||isNaN(maxP)||isNaN(wdfee)){
+    toast('올바른 숫자를 입력하세요','error'); return;
+  }
+
+  // ── 4. CFG 즉시 업데이트 (현재 세션에 바로 적용) ──
+  CFG.DAILY_ROI    = roi;
+  CFG.MAX_PAYOUT   = maxP;
+  CFG.WD_FEE       = wdfee;
+  CFG.REFERRAL_BONUS = newRBNS;
+  CFG.DIRECT_BONUS = newRBNS[1]; // 1대
+  CFG.BINARY_BONUS = newRBNS[2]; // 2대
+
+  // ── 5. Firebase settings 컬렉션에 저장 (다른 회원 로그인 시 자동 적용) ──
+  await saveSetting('DAILY_ROI',    roi);
+  await saveSetting('MAX_PAYOUT',   maxP);
+  await saveSetting('WD_FEE',       wdfee);
   await saveSetting('REFERRAL_BONUS', newRBNS);
   await saveSetting('DIRECT_BONUS', newRBNS[1]);
   await saveSetting('BINARY_BONUS', newRBNS[2]);
-  const direct=newRBNS[1];
-  const binary=newRBNS[2];
-  const maxP=parseFloat(document.getElementById('ov-maxpayout').value)/100;
-  const wdfee=parseFloat(document.getElementById('ov-wdfee').value)/100;
-  if(isNaN(roi)||isNaN(direct)||isNaN(binary)||isNaN(maxP)||isNaN(wdfee)){toast('올바른 숫자를 입력하세요','error');return;}
-  await saveSetting('DAILY_ROI',roi); await saveSetting('DIRECT_BONUS',direct);
-  await saveSetting('BINARY_BONUS',binary); await saveSetting('MAX_PAYOUT',maxP); await saveSetting('WD_FEE',wdfee);
-  await audit('SETTINGS','수당 비율 변경','admin');
-  toast('수당 설정이 저장되었습니다','success');
+
+  await audit('SETTINGS', `수당비율변경 ROI:${(roi*100).toFixed(1)}% 1대:${(newRBNS[1]*100).toFixed(1)}% 최대:${(maxP*100).toFixed(0)}%`, 'admin');
+  toast(`✅ 설정 저장 완료! 모든 회원에게 즉시 적용됩니다`, 'success');
 }
 async function saveDepositAccount(){
   const bank=document.getElementById('admin-bank-name').value.trim();
@@ -3020,7 +3183,10 @@ async function approveInvestment(id){
     //  4~10대:  5%   11~15대: 3%
     // ═══════════════════════════════════════════════
     if(user.sponsorCode&&user.sponsorCode!=='SYSTEM-ROOT'){
-      const RBNS = CFG.REFERRAL_BONUS || [0,0.25,0.15,0.10,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.03,0.03,0.03,0.03,0.03];
+      // ★ 관리자가 설정한 REFERRAL_BONUS 그대로 사용
+      const RBNS = (Array.isArray(CFG.REFERRAL_BONUS)&&CFG.REFERRAL_BONUS.length>1)
+        ? CFG.REFERRAL_BONUS
+        : [0,0.25,0.15,0.10,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.03,0.03,0.03,0.03,0.03];
       let curId = user.sponsorCode;
       for(let gen=1; gen<=15; gen++){
         if(!curId || curId==='SYSTEM-ROOT') break;
