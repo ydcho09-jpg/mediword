@@ -446,7 +446,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
     <div class="login-left">
       <div class="login-brand">
         <div class="login-brand-name" style="font-size:42px;letter-spacing:6px;">BO<span style="color:#fff;">SANG</span></div>
-        <div class="login-brand-sub" style="color:var(--gold);font-size:14px;margin-top:6px;">마케팅 플랜 250% ~ 300%</div>
+        <div class="login-brand-sub" style="color:var(--gold);font-size:14px;margin-top:6px;">마케팅 플랜 200% ~ 250%</div>
         <div style="margin-top:16px;font-size:15px;color:var(--text2);line-height:1.9;font-weight:500;">
           1계정 최대 <b style="color:var(--gold);">2,000만 PV</b><br>
           스타 등급 달성 시 <b style="color:var(--gold);">상품 + 성과금</b> 지급
@@ -458,16 +458,16 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <div class="login-stat-value">1.0% / 일</div>
         </div>
         <div class="login-stat">
-          <div class="login-stat-label">직추천 수당 (1대)</div>
-          <div class="login-stat-value" style="color:var(--green);">5%</div>
+          <div class="login-stat-label">소실적 수당 1~3대</div>
+          <div class="login-stat-value" style="color:var(--green);font-size:15px;">25% / 15% / 10%</div>
         </div>
         <div class="login-stat">
-          <div class="login-stat-label">소실적 수당 (2대)</div>
-          <div class="login-stat-value" style="color:var(--blue);">3%</div>
+          <div class="login-stat-label">소실적 4~15대</div>
+          <div class="login-stat-value" style="color:var(--blue);">5% / 3%</div>
         </div>
         <div class="login-stat">
           <div class="login-stat-label">최대 수익 한도</div>
-          <div class="login-stat-value">250 ~ 300%</div>
+          <div class="login-stat-value">200 ~ 250%</div>
         </div>
       </div>
     </div>
@@ -1008,7 +1008,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
         </div>
         <div class="override-panel">
           <div style="font-size:14px;color:var(--text3);margin-bottom:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;">추천 수당</div>
-          <div class="override-row"><div class="override-label">직추천 수당 (%)</div><input class="override-input" id="ov-direct" type="number" step="0.1" min="0" max="50"><div class="override-unit">%</div></div>
+          <div class="override-row"><div class="override-label">소실적 1대 수당 (%)</div><input class="override-input" id="ov-direct" type="number" step="0.1" min="0" max="50"><div class="override-unit">%</div></div>
           <div class="override-row"><div class="override-label">소실적 2대 수당 (%)</div><input class="override-input" id="ov-binary" type="number" step="0.1" min="0" max="50"><div class="override-unit">%</div></div>
         </div>
         <div class="override-panel">
@@ -1222,15 +1222,20 @@ async function audit(action, detail, userId=null){
 //  SETTINGS (수당 비율 - 관리자 조정 가능)
 // ═══════════════════════════════════════════════════════
 let CFG = {
-  DAILY_ROI:    0.01,    // 1%
-  DIRECT_BONUS: 0.05,    // 5%
-  BINARY_BONUS: 0.03,    // 3%
-  MAX_PAYOUT:   3.00,    // 300%
-  WD_FEE:       0.05,    // 5%
+  DAILY_ROI:    0.01,    // 일일 ROI 1% (주 5일)
+  DIRECT_BONUS: 0.25,    // 소실적 1대 25%
+  BINARY_BONUS: 0.15,    // 소실적 2대 15%
+  MAX_PAYOUT:   2.50,    // 최대 수익 250%
+  MAX_PV:       20000000,
+  WD_FEE:       0.05,
   MIN_INVEST:   1000000,
+  PV_BONUS_RATE: 0.10,
+  PV_BONUS_THRESHOLD: 0.90,
+  SUBLINE_BONUS: 0.04,
   DEPOSIT_BANK: '하나은행',
   DEPOSIT_ACCOUNT: '779-910028-43204',
   DEPOSIT_HOLDER: '에스엠(SM)투자조합',
+  REFERRAL_BONUS: [0,0.25,0.15,0.10,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.03,0.03,0.03,0.03,0.03],
 };
 async function loadSettings(){
   try{
@@ -1357,7 +1362,7 @@ function fmtFull(n){ return '₩'+(Math.round(n||0)).toLocaleString(); }
 function localDateStr(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function isWeekday(d){ const w=d.getDay(); return w>=1&&w<=5; } // 월~금
 function typeColor(t){ const m={ROI:'var(--gold)',보너스:'var(--green)',바이너리:'var(--blue)',직급수당:'var(--purple)',출금:'var(--red)',투자:'var(--text)'}; return m[t]||'var(--text2)'; }
-function typeLabel(t){ const m={ROI:'ROI 배당',보너스:'추천수당',바이너리:'소실적수당',직급수당:'직급수당',출금:'출금',투자:'투자'}; return m[t]||t; }
+function typeLabel(t){ const m={ROI:'ROI 배당',보너스:'소실적수당',바이너리:'소실적수당',직급수당:'직급수당',출금:'출금',투자:'투자'}; return m[t]||t; }
 function statusHtml(s){ const m={completed:'done',pending:'pend',rejected:'fail',suspended:'stop'}; const l={completed:'완료',pending:'대기',rejected:'거부',suspended:'정지'}; return `<span class="status status-${m[s]||'pend'}">${l[s]||s}</span>`; }
 
 // ═══════════════════════════════════════════════════════
@@ -2702,52 +2707,38 @@ async function approveInvestment(id){
     const txId=Date.now();
     await dbPut('transactions',{id:txId,userId:inv.userId,type:'투자',amount:inv.amount,fee:0,netAmount:inv.amount,date:today,status:'completed',desc:'투자 승인 완료'});
     // ═══════════════════════════════════════════════
-    // 추천 수당 지급 구조
-    //  1대(직접 추천인): 투자금의 5% (DIRECT_BONUS)
-    //  2대(추천인의 추천인): 투자금의 3% (BINARY_BONUS)
+    // 소실적 수당 지급 구조 (1~15대)
+    //  1대:    25%   2대:  15%   3대:  10%
+    //  4~10대:  5%   11~15대: 3%
     // ═══════════════════════════════════════════════
     if(user.sponsorCode&&user.sponsorCode!=='SYSTEM-ROOT'){
-
-      // ── 1대 추천인 → 5% ──
-      const sponsor1=await dbGet('users',user.sponsorCode);
-      if(sponsor1&&!sponsor1.suspended){
-        const max1=sponsor1.investment*CFG.MAX_PAYOUT;
-        if(sponsor1.roi<max1||sponsor1.investment===0){
-          const bonus1=Math.floor(inv.amount*CFG.DIRECT_BONUS); // 5%
-          const actual1=sponsor1.investment>0?Math.min(bonus1,max1-sponsor1.roi):bonus1;
-          if(actual1>0){
-            sponsor1.wallet+=actual1; sponsor1.roi+=actual1;
-            await dbPut('users',sponsor1);
-            await dbPut('transactions',{
-              id:txId+1, userId:sponsor1.id, type:'보너스',
-              amount:actual1, fee:0, netAmount:actual1,
-              date:today, status:'completed',
-              desc:`직추천 수당 1대 (${user.id} 투자금의 ${(CFG.DIRECT_BONUS*100).toFixed(0)}%)`
-            });
-          }
-        }
-
-        // ── 2대 추천인 → 3% ──
-        if(sponsor1.sponsorCode&&sponsor1.sponsorCode!=='SYSTEM-ROOT'){
-          const sponsor2=await dbGet('users',sponsor1.sponsorCode);
-          if(sponsor2&&!sponsor2.suspended){
-            const max2=sponsor2.investment*CFG.MAX_PAYOUT;
-            if(sponsor2.roi<max2||sponsor2.investment===0){
-              const bonus2=Math.floor(inv.amount*CFG.BINARY_BONUS); // 3%
-              const actual2=sponsor2.investment>0?Math.min(bonus2,max2-sponsor2.roi):bonus2;
-              if(actual2>0){
-                sponsor2.wallet+=actual2; sponsor2.roi+=actual2;
-                await dbPut('users',sponsor2);
-                await dbPut('transactions',{
-                  id:txId+2, userId:sponsor2.id, type:'보너스',
-                  amount:actual2, fee:0, netAmount:actual2,
-                  date:today, status:'completed',
-                  desc:`소실적 수당 2대 (${user.id} 투자금의 ${(CFG.BINARY_BONUS*100).toFixed(0)}%)`
-                });
-              }
+      const RBNS = CFG.REFERRAL_BONUS || [0,0.25,0.15,0.10,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.03,0.03,0.03,0.03,0.03];
+      let curId = user.sponsorCode;
+      for(let gen=1; gen<=15; gen++){
+        if(!curId || curId==='SYSTEM-ROOT') break;
+        const rate = RBNS[gen] || 0;
+        if(rate <= 0){ const nx=await dbGet('users',curId); curId=nx?.sponsorCode||null; continue; }
+        const sponsor = await dbGet('users', curId);
+        if(!sponsor){ break; }
+        if(!sponsor.suspended && sponsor.investment>0){
+          const maxP = sponsor.investment * CFG.MAX_PAYOUT;
+          if(sponsor.roi < maxP){
+            const bonus = Math.floor(inv.amount * rate);
+            const actual = Math.min(bonus, maxP - sponsor.roi);
+            if(actual > 0){
+              sponsor.wallet += actual;
+              sponsor.roi += actual;
+              await dbPut('users', sponsor);
+              await dbPut('transactions',{
+                id: txId+gen, userId: sponsor.id, type:'보너스',
+                amount: actual, fee:0, netAmount: actual,
+                date: today, status:'completed',
+                desc:`소실적 수당 ${gen}대 (${user.id} 투자금의 ${(rate*100).toFixed(0)}%)`
+              });
             }
           }
         }
+        curId = sponsor.sponsorCode || null;
       }
     }
     // 좌우 포인트 업데이트
