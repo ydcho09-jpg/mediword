@@ -473,7 +473,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
     </div>
     <div class="login-right">
       <div class="login-title">안녕하세요</div>
-      <div class="login-sub">계정에 로그인하거나 추천인 아이디로 가입하세요</div>
+      <div class="login-sub">로그인 또는 추천인 아이디로 회원가입</div>
       <div class="login-tabs">
         <button class="login-tab active" onclick="switchLoginTab('login',this)">로그인</button>
         <button class="login-tab" onclick="switchLoginTab('register',this)">회원가입</button>
@@ -532,9 +532,9 @@ td{font-size:14px !important;padding:14px 16px !important;}
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">추천인 아이디 <span style="color:var(--text3);font-size:14px;">(선택)</span></label>
-          <input class="form-input" id="inp-rref" placeholder="추천인 아이디 입력 (추천인의 로그인 아이디)">
-          <div class="form-hint">💡 추천인의 <b>로그인 아이디</b>를 입력하세요. 없으면 비워두세요.</div>
+          <label class="form-label">추천인 아이디 <span style="color:var(--red);font-size:14px;">✱ 필수</span></label>
+          <input class="form-input" id="inp-rref" placeholder="추천인 아이디를 반드시 입력하세요">
+          <div class="form-hint" style="color:var(--gold);">💡 추천인의 <b>로그인 아이디</b>를 입력하세요. (필수 항목)</div>
         </div>
         <button class="btn btn-primary btn-full" style="margin-top:4px;" onclick="doRegister()">
           <i class="fas fa-user-plus"></i> 계정 만들기
@@ -1295,6 +1295,33 @@ async function seedIfEmpty(){
       for(const u of SEED_USERS) await dbPut('users',u);
       for(const t of SEED_TX) await dbPut('transactions',t);
       console.log('[Seed] 초기 데이터 저장 완료 ✅');
+    } else {
+      // 관리자 계정이 없으면 강제 생성
+      const adminUser = await dbGet('users','admin');
+      if(!adminUser || !adminUser.pwd){
+        console.log('[Seed] admin 계정 생성/복구 중...');
+        const adminData = {
+          id:'admin', pwd:_hashPwd('admin123!'), role:'admin',
+          name:'최고관리자', inviteCode:'SYSTEM-ROOT', sponsorCode:null,
+          wallet:0, investment:0, roi:0,
+          leftPoints:0, rightPoints:0, leftInvest:0, rightInvest:0,
+          paidRanks:[], children:{left:null,right:null},
+          email:'admin@bosang.net', phone:'010-0000-0000',
+          bankName:'', accountNumber:'', accountHolder:'',
+          registeredAt:'2026-01-01', lastLogin:null,
+          suspended:false, approvalStatus:'approved'
+        };
+        await dbPut('users', adminData);
+        console.log('[Seed] admin 계정 생성 완료 ✅');
+      } else if(!adminUser.pwd){
+        // pwd 필드만 없는 경우
+        adminUser.pwd = _hashPwd('admin123!');
+        adminUser.role = 'admin';
+        adminUser.approvalStatus = 'approved';
+        adminUser.suspended = false;
+        await dbPut('users', adminUser);
+        console.log('[Seed] admin 비밀번호 복구 완료 ✅');
+      }
     }
   }catch(e){ console.error('[Seed] 초기화 실패:', e); }
 }
@@ -1445,11 +1472,10 @@ async function doRegister(){
   if(pwd!==pwd2){toast('비밀번호가 일치하지 않습니다','error');return;}
   const existing=await dbGet('users',id);
   if(existing){toast('이미 사용 중인 아이디입니다','error');return;}
-  // 추천인 코드 — 입력 시에만 유효성 검사 (선택사항)
-  if(ref){
-    const refUser=await dbGet('users',ref);
-    if(!refUser||refUser.suspended){toast('유효하지 않은 추천인 코드입니다','error');return;}
-  }
+  // 추천인 코드 — 필수 입력
+  if(!ref){toast('추천인 아이디를 입력하세요 (필수)','error');return;}
+  const refUser=await dbGet('users',ref);
+  if(!refUser||refUser.suspended){toast('유효하지 않은 추천인 아이디입니다. 추천인에게 확인하세요.','error');return;}
   const newUser={
     id, pwd:_hashPwd(pwd), role:'member', name,
     inviteCode:id, sponsorCode:ref||'',
@@ -2979,6 +3005,18 @@ async function init(){
     await initDB();
     await loadSettings();
     await seedIfEmpty();
+    // admin 계정 pwd 항상 확인 및 복구
+    try{
+      const adminCheck = await dbGet('users','admin');
+      if(adminCheck && !adminCheck.pwd){
+        adminCheck.pwd = _hashPwd('admin123!');
+        adminCheck.role = 'admin';
+        adminCheck.approvalStatus = 'approved';
+        adminCheck.suspended = false;
+        await dbPut('users', adminCheck);
+        console.log('[Init] admin pwd 복구 완료 ✅');
+      }
+    }catch(e){ console.warn('[Init] admin 확인 실패:', e); }
   }catch(e){
     console.error('초기화 오류:', e);
     document.querySelector('#fb-loading div:nth-child(3)').textContent='연결 실패. 새로고침 해주세요.';
