@@ -1150,15 +1150,33 @@ td{font-size:14px !important;padding:14px 16px !important;}
         <div class="card-title-lg">⚙️ 수당 비율 실시간 조정</div>
         <button class="btn btn-primary btn-sm" onclick="saveOverrides()"><i class="fas fa-save"></i> 저장 적용</button>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
         <div class="override-panel">
           <div style="font-size:14px;color:var(--text3);margin-bottom:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;">ROI 배당</div>
           <div class="override-row"><div class="override-label">일일 ROI (%)</div><input class="override-input" id="ov-roi" type="number" step="0.1" min="0" max="10"><div class="override-unit">%</div></div>
         </div>
-        <div class="override-panel">
-          <div style="font-size:14px;color:var(--text3);margin-bottom:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;">추천 수당</div>
-          <div class="override-row"><div class="override-label">소실적 1대 수당 (%)</div><input class="override-input" id="ov-direct" type="number" step="0.1" min="0" max="50"><div class="override-unit">%</div></div>
-          <div class="override-row"><div class="override-label">소실적 2대 수당 (%)</div><input class="override-input" id="ov-binary" type="number" step="0.1" min="0" max="50"><div class="override-unit">%</div></div>
+        <div class="override-panel" style="grid-column:1 / -1;">
+          <div style="font-size:14px;color:var(--text3);margin-bottom:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;">소실적 수당 (1~15대)</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+            <div class="override-row"><div class="override-label">1대 (25%)</div><input class="override-input" id="ov-ref-1" type="number" step="0.1" min="0" max="100" value="25"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">2대 (15%)</div><input class="override-input" id="ov-ref-2" type="number" step="0.1" min="0" max="100" value="15"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">3대 (10%)</div><input class="override-input" id="ov-ref-3" type="number" step="0.1" min="0" max="100" value="10"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">4대 (5%)</div><input class="override-input" id="ov-ref-4" type="number" step="0.1" min="0" max="100" value="5"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">5대 (5%)</div><input class="override-input" id="ov-ref-5" type="number" step="0.1" min="0" max="100" value="5"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">6대 (5%)</div><input class="override-input" id="ov-ref-6" type="number" step="0.1" min="0" max="100" value="5"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">7대 (5%)</div><input class="override-input" id="ov-ref-7" type="number" step="0.1" min="0" max="100" value="5"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">8대 (5%)</div><input class="override-input" id="ov-ref-8" type="number" step="0.1" min="0" max="100" value="5"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">9대 (5%)</div><input class="override-input" id="ov-ref-9" type="number" step="0.1" min="0" max="100" value="5"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">10대 (5%)</div><input class="override-input" id="ov-ref-10" type="number" step="0.1" min="0" max="100" value="5"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">11대 (3%)</div><input class="override-input" id="ov-ref-11" type="number" step="0.1" min="0" max="100" value="3"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">12대 (3%)</div><input class="override-input" id="ov-ref-12" type="number" step="0.1" min="0" max="100" value="3"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">13대 (3%)</div><input class="override-input" id="ov-ref-13" type="number" step="0.1" min="0" max="100" value="3"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">14대 (3%)</div><input class="override-input" id="ov-ref-14" type="number" step="0.1" min="0" max="100" value="3"><div class="override-unit">%</div></div>
+            <div class="override-row"><div class="override-label">15대 (3%)</div><input class="override-input" id="ov-ref-15" type="number" step="0.1" min="0" max="100" value="3"><div class="override-unit">%</div></div>
+          </div>
+          <!-- 기존 호환 (숨김) -->
+          <input type="hidden" id="ov-direct" value="25">
+          <input type="hidden" id="ov-binary" value="15">
         </div>
         <div class="override-panel">
           <div style="font-size:14px;color:var(--text3);margin-bottom:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;">기타 설정</div>
@@ -1198,7 +1216,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <canvas id="admin-bar-chart" height="240"></canvas>
         </div>
         <div class="card">
-          <div class="card-header"><div class="card-title-lg">직급별 현황</div></div>
+          <div class="card-header"><div class="card-title-lg">⭐ 스타 등급별 현황</div></div>
           <div id="admin-rank-overview"></div>
         </div>
       </div>
@@ -2730,8 +2748,17 @@ async function renderAdmin(){
   document.getElementById('wd-badge').textContent=pendWd.length>0?pendWd.length:'';
   // 수당 설정
   document.getElementById('ov-roi').value=(CFG.DAILY_ROI*100).toFixed(1);
-  document.getElementById('ov-direct').value=(CFG.DIRECT_BONUS*100).toFixed(1);
-  document.getElementById('ov-binary').value=(CFG.BINARY_BONUS*100).toFixed(1);
+  // 소실적 1~15대 수당 입력값 로드
+  const RBNS = CFG.REFERRAL_BONUS || [0,0.25,0.15,0.10,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.03,0.03,0.03,0.03,0.03];
+  for(let i=1;i<=15;i++){
+    const el=document.getElementById('ov-ref-'+i);
+    if(el) el.value=(RBNS[i]*100).toFixed(1);
+  }
+  // 기존 호환용
+  const dEl=document.getElementById('ov-direct');
+  const bEl=document.getElementById('ov-binary');
+  if(dEl) dEl.value=(CFG.DIRECT_BONUS*100).toFixed(1);
+  if(bEl) bEl.value=(CFG.BINARY_BONUS*100).toFixed(1);
   document.getElementById('ov-maxpayout').value=(CFG.MAX_PAYOUT*100).toFixed(0); // 250
   document.getElementById('ov-wdfee').value=(CFG.WD_FEE*100).toFixed(1);
   // 입금 계좌
@@ -2815,12 +2842,40 @@ function renderAdminOverview(members){
   // 직급 현황
   const rankCounts={}; RANK_TABLE.forEach(r=>rankCounts[r.rank]=0);
   members.forEach(u=>{ const sl=Math.min(u.leftInvest||0,u.rightInvest||0); rankCounts[calcRank(sl).rank]++; });
-  document.getElementById('admin-rank-overview').innerHTML=RANK_TABLE.map(r=>`
-    <div class="rank-row">
-      <div class="rank-badge ${r.class}"><i class="fas fa-star"></i>${r.label}</div>
-      <div style="font-size:14px;color:var(--text2);">${rankCounts[r.rank]}명</div>
-      ${r.rank>0?`<div style="font-size:14px;color:var(--text3);">수당 ${fmt(r.bonus)}</div>`:''}
-    </div>`).join('');
+  const RANK_REWARDS = ['일반','성과금 2%','순금 1돈 (30%)','순금 3돈 (25%)','그랜저 2.5 (20%)','제네시스 G80 (15%)'];
+  const RANK_RATES  = ['','2%','15%','10%','5%','3%'];
+  const RANK_CONDS  = ['','3,000만 PV','1스타×2','2스타×2','3스타×2','4스타×2'];
+  const RANK_ICONS  = ['👤','⭐','⭐⭐','⭐⭐⭐','🌟','💎'];
+  document.getElementById('admin-rank-overview').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:800;color:var(--text2);padding:4px 0;">등급</div>
+      <div style="font-size:13px;font-weight:800;color:var(--text2);padding:4px 0;text-align:right;">달성 회원 수</div>
+    </div>
+    ${RANK_TABLE.map(r=>`
+    <div class="rank-row" style="padding:10px 0;">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;">
+        <div class="rank-badge ${r.class}" style="font-size:13px;padding:5px 12px;white-space:nowrap;">${RANK_ICONS[r.rank]} ${r.label}</div>
+        <div style="flex:1;">
+          ${r.rank>0?`
+          <div style="font-size:13px;color:var(--text2);">추천 ${r.minRef}명 · ${RANK_CONDS[r.rank]}</div>
+          <div style="font-size:12px;color:var(--gold);margin-top:2px;">보상율 ${RANK_RATES[r.rank]} → ${RANK_REWARDS[r.rank]}</div>
+          `:'<div style="font-size:13px;color:var(--text3);">미달성</div>'}
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:22px;font-weight:800;color:${r.rank===0?'var(--text3)':'var(--gold)'};">${rankCounts[r.rank]}</div>
+        <div style="font-size:13px;color:var(--text3);">명</div>
+      </div>
+    </div>`).join('')}
+    <div style="margin-top:12px;padding:12px;background:var(--bg3);border-radius:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:14px;">
+        <div style="color:var(--text2);">총 회원: <b style="color:var(--text);">${members.filter(u=>u.role==='member').length}명</b></div>
+        <div style="color:var(--text2);">투자 중: <b style="color:var(--green);">${members.filter(u=>u.investment>0).length}명</b></div>
+        <div style="color:var(--text2);">스타 달성: <b style="color:var(--gold);">${members.filter(u=>{const rc=members.filter(m=>m.sponsorCode===u.id).length;const tv=(u.leftInvest||0)+(u.rightInvest||0);return rc>=1&&tv>=3000000;}).length}명</b></div>
+        <div style="color:var(--text2);">미투자: <b style="color:var(--text3);">${members.filter(u=>u.role==='member'&&u.investment===0).length}명</b></div>
+      </div>
+    </div>
+  `;
 }
 function renderAdminMembers(members){
   const tbody=document.getElementById('admin-member-body');
@@ -2919,8 +2974,20 @@ function searchLogs(){
 }
 async function saveOverrides(){
   const roi=parseFloat(document.getElementById('ov-roi').value)/100;
-  const direct=parseFloat(document.getElementById('ov-direct').value)/100;
-  const binary=parseFloat(document.getElementById('ov-binary').value)/100;
+  // 1~15대 수당 저장
+  const newRBNS=[0];
+  for(let i=1;i<=15;i++){
+    const el=document.getElementById('ov-ref-'+i);
+    newRBNS.push(el ? parseFloat(el.value)/100 : CFG.REFERRAL_BONUS[i]||0);
+  }
+  CFG.REFERRAL_BONUS=newRBNS;
+  CFG.DIRECT_BONUS=newRBNS[1];
+  CFG.BINARY_BONUS=newRBNS[2];
+  await saveSetting('REFERRAL_BONUS', newRBNS);
+  await saveSetting('DIRECT_BONUS', newRBNS[1]);
+  await saveSetting('BINARY_BONUS', newRBNS[2]);
+  const direct=newRBNS[1];
+  const binary=newRBNS[2];
   const maxP=parseFloat(document.getElementById('ov-maxpayout').value)/100;
   const wdfee=parseFloat(document.getElementById('ov-wdfee').value)/100;
   if(isNaN(roi)||isNaN(direct)||isNaN(binary)||isNaN(maxP)||isNaN(wdfee)){toast('올바른 숫자를 입력하세요','error');return;}
