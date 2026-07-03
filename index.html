@@ -546,7 +546,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
 
 <!-- ═══════════ TOPBAR ═══════════ -->
 <nav id="topbar" style="display:none;">
-  <div class="topbar-logo" onclick="goHome()">MEDI<span>WORLD</span></div>
+  <div class="topbar-logo" onclick="goHome()">BO<span>SANG</span></div>
   <div class="topbar-nav" id="topbar-nav"></div>
   <div class="topbar-right">
     <div class="user-chip">
@@ -666,7 +666,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
         <div class="card-title-lg" style="margin-bottom:24px;">신규 투자 신청</div>
         <div class="alert alert-warning" style="margin-bottom:16px;">
           <i class="fas fa-triangle-exclamation"></i>
-          <div>최소 투자금액 <b>₩1,000,000</b> — 관리자 승인 후 익일부터 배당 시작</div>
+          <div>최소 투자금액 <b>₩1,000,000</b> — 투자금 입금 후 관리자 승인 → 익일부터 배당 시작</div>
         </div>
         <div class="form-group">
           <label class="form-label">투자 금액 (원)</label>
@@ -676,6 +676,32 @@ td{font-size:14px !important;padding:14px 16px !important;}
         <div class="form-group">
           <label class="form-label">입금자명</label>
           <input class="form-input" id="inp-invest-name" placeholder="실제 입금자명 입력">
+        </div>
+        <div class="form-group">
+          <label class="form-label">조직 배치 위치 <span style="color:var(--red);font-size:14px;">✱ 필수</span></label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+            <label id="side-left-label" style="display:flex;align-items:center;gap:10px;background:var(--bg3);border:2px solid var(--border);border-radius:var(--r);padding:16px;cursor:pointer;transition:all .2s;" onclick="selectSide('left')">
+              <input type="radio" name="invest-side" id="inp-iside-left" value="left" style="display:none;">
+              <div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;" id="side-left-dot">
+                <div style="width:10px;height:10px;border-radius:50%;background:transparent;" id="side-left-fill"></div>
+              </div>
+              <div>
+                <div style="font-size:16px;font-weight:800;color:var(--gold);">⬅ 왼쪽 (L)</div>
+                <div style="font-size:13px;color:var(--text2);margin-top:2px;">좌측 팀 배치</div>
+              </div>
+            </label>
+            <label id="side-right-label" style="display:flex;align-items:center;gap:10px;background:var(--bg3);border:2px solid var(--border);border-radius:var(--r);padding:16px;cursor:pointer;transition:all .2s;" onclick="selectSide('right')">
+              <input type="radio" name="invest-side" id="inp-iside-right" value="right" style="display:none;">
+              <div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--green);display:flex;align-items:center;justify-content:center;" id="side-right-dot">
+                <div style="width:10px;height:10px;border-radius:50%;background:transparent;" id="side-right-fill"></div>
+              </div>
+              <div>
+                <div style="font-size:16px;font-weight:800;color:var(--green);">오른쪽 (R) ➡</div>
+                <div style="font-size:13px;color:var(--text2);margin-top:2px;">우측 팀 배치</div>
+              </div>
+            </label>
+          </div>
+          <div class="form-hint" style="margin-top:8px;">💡 투자금이 배치될 팀을 선택하세요. 선택 후 변경 불가.</div>
         </div>
         <div class="form-group">
           <label class="form-label">메모 (선택)</label>
@@ -710,7 +736,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
               <span class="stat-badge badge-blue">+3.0%</span>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
-              <div><div style="font-size:15px;font-weight:600;">최대 수익 한도</div><div style="font-size:14px;color:var(--text3);">300% 도달 시 모든 수당 중단</div></div>
+              <div><div style="font-size:15px;font-weight:600;">최대 수익 한도</div><div style="font-size:14px;color:var(--text3);">250% 도달 시 모든 수당 중단</div></div>
               <span class="stat-badge badge-gold">300%</span>
             </div>
           </div>
@@ -724,7 +750,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <div id="sim-result" style="display:none;margin-top:4px;display:flex;flex-direction:column;gap:8px;">
             <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--text2);">일일 수익</span><b class="mono" id="sim-daily" style="color:var(--gold);">₩0</b></div>
             <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--text2);">월 수익 (22일)</span><b class="mono" id="sim-monthly">₩0</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--text2);">최대 수익 (300%)</span><b class="mono" id="sim-max" style="color:var(--green);">₩0</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--text2);">최대 수익 (200~250%)</span><b class="mono" id="sim-max" style="color:var(--green);">₩0</b></div>
             <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--text2);">원금 회수 예상일</span><b class="mono" id="sim-days">약 0일</b></div>
           </div>
         </div>
@@ -753,7 +779,129 @@ td{font-size:14px !important;padding:14px 16px !important;}
       <div class="stat-card card-purple"><div class="stat-label">소라인 기준</div><div class="stat-value mono" id="net-small-line">₩0</div></div>
     </div>
     <div class="card" style="margin-bottom:20px;">
-      <div class="card-header"><div class="card-title-lg">직급 현황</div></div>
+      <div class="card-header" style="margin-bottom:20px;">
+        <div class="card-title-lg">⭐ 마케팅 플랜 & 스타 등급</div>
+      </div>
+
+      <!-- ① 마케팅 플랜 타이틀 배너 -->
+      <div style="background:linear-gradient(135deg,rgba(212,168,83,0.18),rgba(91,141,238,0.1));border:1px solid rgba(212,168,83,0.5);border-radius:var(--r);padding:18px;margin-bottom:20px;">
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--gold);margin-bottom:12px;">🏆 마케팅 플랜 200% ~ 250%</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:15px;">
+          <div style="color:var(--text2);">📌 1계정 최대 PV: <b style="color:var(--text);">2,000만 PV</b></div>
+          <div style="color:var(--text2);">💰 일일 수익: <b style="color:var(--gold);">1% / 일 (주 5일)</b></div>
+          <div style="color:var(--text2);">🎯 PV 90% 달성: <b style="color:var(--green);">10% 보너스 지급</b></div>
+          <div style="color:var(--text2);">📊 산하 성과: <b style="color:var(--blue);">5% 반영</b></div>
+          <div style="color:var(--text2);">📣 홍보육성 성과: <b style="color:var(--purple);">100% 환산</b></div>
+          <div style="color:var(--text2);">📅 지급일: <b style="color:var(--text);">달성 후 익주 수요일</b></div>
+        </div>
+      </div>
+
+      <!-- ② 스타 등급 체계 테이블 -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:12px;">📋 스타 등급 체계</div>
+        <div class="table-wrap">
+          <table style="width:100%;">
+            <thead>
+              <tr style="background:var(--bg3);">
+                <th style="text-align:center;">추천인 수</th>
+                <th style="text-align:center;">스타 등급</th>
+                <th style="text-align:center;">성과 기준</th>
+                <th style="text-align:center;">보상율</th>
+                <th style="text-align:center;">보상 상품</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align:center;"><b style="color:var(--gold);">1명</b></td>
+                <td style="text-align:center;"><span class="rank-badge rank-1">⭐ 1스타</span></td>
+                <td style="text-align:center;font-size:14px;color:var(--text2);">3,000만 PV</td>
+                <td style="text-align:center;"><b style="color:var(--gold);">2%</b> <span style="font-size:13px;color:var(--text3);">(1%+1%)</span></td>
+                <td style="text-align:center;font-size:14px;">성과금</td>
+              </tr>
+              <tr>
+                <td style="text-align:center;"><b style="color:var(--gold);">2명</b></td>
+                <td style="text-align:center;"><span class="rank-badge rank-2">⭐⭐ 2스타</span></td>
+                <td style="text-align:center;font-size:14px;color:var(--text2);">1스타 × 2</td>
+                <td style="text-align:center;"><b style="color:var(--green);">15%</b></td>
+                <td style="text-align:center;">
+                  <span style="color:var(--gold);font-weight:700;">🥇 순금 1돈</span>
+                  <span style="font-size:12px;color:var(--text3);display:block;">30% 성과금</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="text-align:center;"><b style="color:var(--gold);">3명</b></td>
+                <td style="text-align:center;"><span class="rank-badge rank-3">⭐⭐⭐ 3스타</span></td>
+                <td style="text-align:center;font-size:14px;color:var(--text2);">2스타 × 2</td>
+                <td style="text-align:center;"><b style="color:var(--blue);">10%</b></td>
+                <td style="text-align:center;">
+                  <span style="color:var(--gold);font-weight:700;">🥇 순금 3돈</span>
+                  <span style="font-size:12px;color:var(--text3);display:block;">25% 성과금</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="text-align:center;"><b style="color:var(--gold);">4명</b></td>
+                <td style="text-align:center;"><span class="rank-badge rank-4">🌟 4스타</span></td>
+                <td style="text-align:center;font-size:14px;color:var(--text2);">3스타 × 2</td>
+                <td style="text-align:center;"><b style="color:var(--purple);">5%</b></td>
+                <td style="text-align:center;">
+                  <span style="color:var(--blue);font-weight:700;">🚗 그랜저 2.5</span>
+                  <span style="font-size:12px;color:var(--text3);display:block;">20% 성과금</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="text-align:center;"><b style="color:var(--gold);">5명</b></td>
+                <td style="text-align:center;"><span class="rank-badge rank-5">💎 5스타</span></td>
+                <td style="text-align:center;font-size:14px;color:var(--text2);">4스타 × 2</td>
+                <td style="text-align:center;"><b style="color:var(--red);">3%</b></td>
+                <td style="text-align:center;">
+                  <span style="color:var(--purple);font-weight:700;">🚙 제네시스 G80</span>
+                  <span style="font-size:12px;color:var(--text3);display:block;">15% 성과금</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ③ 보상 상품 카드 -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:12px;">🎁 보상 상품 매핑</div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center;">
+          <div style="background:var(--bg3);border-radius:12px;padding:14px 8px;border:1px solid rgba(212,168,83,0.3);">
+            <div style="font-size:22px;margin-bottom:6px;">🥇</div>
+            <div style="font-size:14px;font-weight:800;color:var(--gold);">순금 1돈</div>
+            <div style="font-size:13px;color:var(--text2);margin-top:4px;">2스타 달성</div>
+            <div style="font-size:18px;font-weight:800;color:var(--gold);margin-top:6px;">30%</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:12px;padding:14px 8px;border:1px solid rgba(212,168,83,0.4);">
+            <div style="font-size:22px;margin-bottom:6px;">🥇</div>
+            <div style="font-size:14px;font-weight:800;color:var(--gold);">순금 3돈</div>
+            <div style="font-size:13px;color:var(--text2);margin-top:4px;">3스타 달성</div>
+            <div style="font-size:18px;font-weight:800;color:var(--gold);margin-top:6px;">25%</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:12px;padding:14px 8px;border:1px solid rgba(91,141,238,0.3);">
+            <div style="font-size:22px;margin-bottom:6px;">🚗</div>
+            <div style="font-size:14px;font-weight:800;color:var(--blue);">그랜저 2.5</div>
+            <div style="font-size:13px;color:var(--text2);margin-top:4px;">4스타 달성</div>
+            <div style="font-size:18px;font-weight:800;color:var(--blue);margin-top:6px;">20%</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:12px;padding:14px 8px;border:1px solid rgba(167,139,250,0.3);">
+            <div style="font-size:22px;margin-bottom:6px;">🚙</div>
+            <div style="font-size:14px;font-weight:800;color:var(--purple);">제네시스 G80</div>
+            <div style="font-size:13px;color:var(--text2);margin-top:4px;">5스타 달성</div>
+            <div style="font-size:18px;font-weight:800;color:var(--purple);margin-top:6px;">15%</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:12px;padding:14px 8px;border:1px solid rgba(240,93,93,0.3);">
+            <div style="font-size:22px;margin-bottom:6px;">🏎️</div>
+            <div style="font-size:14px;font-weight:800;color:var(--red);">벤츠 클래스</div>
+            <div style="font-size:13px;color:var(--text2);margin-top:4px;">5스타 특별</div>
+            <div style="font-size:18px;font-weight:800;color:var(--red);margin-top:6px;">10%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ④ 내 스타 등급 진행 현황 -->
+      <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:12px;">📊 내 등급 진행 현황</div>
       <div id="rank-progress-section"></div>
     </div>
     <div class="card" style="margin-bottom:20px;">
@@ -1564,6 +1712,34 @@ function calcSim(){
   document.getElementById('sim-days').textContent=`약 ${Math.ceil(amt/daily)}일`;
 }
 function calcSimBox(){ const a=parseInt(document.getElementById('sim-amount').value)||0; const sim=document.getElementById('sim-result'); if(a<CFG.MIN_INVEST){sim.style.display='none';return;} sim.style.display='flex'; const d=Math.round(a*CFG.DAILY_ROI); document.getElementById('sim-daily').textContent=fmt(d); document.getElementById('sim-monthly').textContent=fmt(d*22); document.getElementById('sim-max').textContent=fmt(a*CFG.MAX_PAYOUT); document.getElementById('sim-days').textContent=`약 ${Math.ceil(a/d)}일`; }
+// 좌/우 선택 함수
+let _selectedSide = null;
+function selectSide(side){
+  _selectedSide = side;
+  // 왼쪽 스타일
+  const leftLabel = document.getElementById('side-left-label');
+  const leftFill  = document.getElementById('side-left-fill');
+  // 오른쪽 스타일
+  const rightLabel = document.getElementById('side-right-label');
+  const rightFill  = document.getElementById('side-right-fill');
+
+  if(side === 'left'){
+    leftLabel.style.borderColor  = 'var(--gold)';
+    leftLabel.style.background   = 'rgba(212,168,83,0.1)';
+    leftFill.style.background    = 'var(--gold)';
+    rightLabel.style.borderColor = 'var(--border)';
+    rightLabel.style.background  = 'var(--bg3)';
+    rightFill.style.background   = 'transparent';
+  } else {
+    rightLabel.style.borderColor = 'var(--green)';
+    rightLabel.style.background  = 'rgba(61,214,140,0.1)';
+    rightFill.style.background   = 'var(--green)';
+    leftLabel.style.borderColor  = 'var(--border)';
+    leftLabel.style.background   = 'var(--bg3)';
+    leftFill.style.background    = 'transparent';
+  }
+}
+
 async function submitInvestment(){
   if(!_validateSession())return;
   const u=await dbGet('users',currentUser.id);
@@ -1572,13 +1748,23 @@ async function submitInvestment(){
   const iname=document.getElementById('inp-invest-name').value.trim();
   if(amt<CFG.MIN_INVEST){toast(`최소 투자금액은 ${fmt(CFG.MIN_INVEST)}입니다`,'error');return;}
   if(!iname){toast('입금자명을 입력하세요','error');return;}
-  const inv={id:Date.now(),userId:currentUser.id,userName:currentUser.name,amount:amt,depositorName:_esc(iname),memo:_esc(document.getElementById('inp-invest-memo').value.trim()),requestedAt:localDateStr(new Date()),status:'pending'};
+  if(!_selectedSide){toast('좌측(L) 또는 우측(R) 배치를 선택하세요','error');return;}
+  const inv={id:Date.now(),userId:currentUser.id,userName:currentUser.name,amount:amt,depositorName:_esc(iname),memo:_esc(document.getElementById('inp-invest-memo').value.trim()),side:_selectedSide,requestedAt:localDateStr(new Date()),status:'pending'};
   await dbPut('pendingInvestments',inv);  // id 있으므로 fsPut 사용
   await audit('INVEST_REQUEST',`투자신청 ${fmt(amt)}`,currentUser.id);
   document.getElementById('inp-invest-amount').value='';
   document.getElementById('inp-invest-name').value='';
   document.getElementById('inp-invest-memo').value='';
-  toast('투자 신청이 접수되었습니다. 관리자 승인 후 배당이 시작됩니다','success');
+  _selectedSide=null;
+  // 선택 UI 초기화
+  ['left','right'].forEach(s=>{
+    const el=document.getElementById('side-'+s+'-label');
+    const fl=document.getElementById('side-'+s+'-fill');
+    if(el) el.style.borderColor='var(--border)';
+    if(el) el.style.background='var(--bg3)';
+    if(fl) fl.style.background='transparent';
+  });
+  toast('✅ 투자 신청이 접수되었습니다. 관리자 승인 후 배당이 시작됩니다','success');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1601,24 +1787,68 @@ async function renderNetwork(){
   document.getElementById('net-right-pt').textContent=fmt(u.rightInvest||0);
   document.getElementById('net-small-line').textContent=fmt(smallLine);
   document.getElementById('my-invite-code').innerHTML=`<i class="fas fa-copy"></i> ${_esc(u.inviteCode)}`;
-  // 직급 진행
-  const rank=calcRank(smallLine);
-  const nextRank=RANK_TABLE[rank.rank+1];
-  const rankHtml=RANK_TABLE.slice(1).map(r=>{
-    const achieved=smallLine>=r.minSmall;
-    const isPaid=(u.paidRanks||[]).includes(r.rank);
-    return `<div class="rank-row">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div class="rank-badge ${r.class}"><i class="fas fa-star"></i>${r.label}</div>
-        <div style="font-size:14px;color:var(--text2);">소라인 ${fmt(r.minSmall)}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="font-size:15px;font-weight:700;color:var(--gold);">${fmt(r.bonus)}</div>
-        ${achieved?(isPaid?'<span class="stat-badge badge-up"><i class="fas fa-check"></i>지급완료</span>':'<span class="stat-badge badge-pend">지급대기</span>'):('<div style="flex:1;max-width:160px;"><div class="progress-bar"><div class="progress-fill fill-gold" style="width:'+Math.min(100,smallLine/r.minSmall*100).toFixed(1)+'%"></div></div><div style="font-size:15px;color:var(--text3);margin-top:3px;">'+fmt(Math.max(0,r.minSmall-smallLine))+' 더 필요</div></div>')}
+  // ── 내 스타 등급 진행 현황 ──
+  const refCount = downlineAll.length;
+  const totalPV = (u.leftInvest||0)+(u.rightInvest||0);
+  const rank = calcRank(smallLine, refCount, totalPV);
+  const pvPct = Math.min(100, (totalPV/(CFG.MAX_PV||20000000)*100)).toFixed(1);
+  const pvBonus = totalPV >= (CFG.MAX_PV||20000000)*(CFG.PV_BONUS_THRESHOLD||0.9);
+  const STAR_REWARDS = ['','성과금 2%','순금 1돈 (30%)','순금 3돈 (25%)','그랜저 2.5 (20%)','제네시스 G80 (15%)'];
+  const STAR_CONDITIONS = ['','3,000만 PV','1스타 × 2','2스타 × 2','3스타 × 2','4스타 × 2'];
+  const STAR_RATES = ['','2%','15%','10%','5%','3%'];
+  const rankHtml = RANK_TABLE.slice(1).map(r=>{
+    const achieved = refCount>=r.minRef && totalPV>=r.minPV;
+    const isPaid = (u.paidRanks||[]).includes(r.rank);
+    const refPct = Math.min(100,(refCount/(r.minRef||1)*100)).toFixed(0);
+    const pvRPct = Math.min(100,(totalPV/(r.minPV||1)*100)).toFixed(0);
+    const progPct = Math.min(Number(refPct),Number(pvRPct));
+    return `<div class="rank-row" style="padding:14px 0;">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div class="rank-badge ${r.class}" style="font-size:14px;padding:6px 14px;white-space:nowrap;">${r.icon} ${r.label}</div>
+        <div style="flex:1;min-width:120px;">
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px;">
+            보상율 <b style="color:var(--gold);">${STAR_RATES[r.rank]}</b> &nbsp;|&nbsp; <span style="color:var(--text2);">${STAR_REWARDS[r.rank]}</span>
+          </div>
+          <div style="font-size:13px;color:var(--text2);">추천 <b>${r.minRef}명</b> 이상 · 성과기준: ${STAR_CONDITIONS[r.rank]}</div>
+        </div>
+        <div style="min-width:180px;">
+          ${achieved
+            ? (isPaid
+                ? '<span class="stat-badge badge-up"><i class="fas fa-check"></i> 지급완료</span>'
+                : '<span class="stat-badge badge-pend"><i class="fas fa-clock"></i> 익주 수요일 지급</span>')
+            : `<div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text3);margin-bottom:4px;">
+                  <span>추천 ${refCount}/${r.minRef}명</span><span>${progPct}%</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill fill-gold" style="width:${progPct}%"></div></div>
+               </div>`
+          }
+        </div>
       </div>
     </div>`;
   }).join('');
-  document.getElementById('rank-progress-section').innerHTML=rankHtml;
+  document.getElementById('rank-progress-section').innerHTML=`
+    <div style="background:var(--bg3);border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:15px;font-weight:700;color:var(--text2);">내 PV 현황</span>
+        <span class="mono" style="font-size:15px;font-weight:800;color:var(--gold);">${fmt(totalPV)} / ${fmt(CFG.MAX_PV||20000000)}</span>
+      </div>
+      <div class="progress-bar" style="height:10px;margin-bottom:8px;"><div class="progress-fill fill-gold" style="width:${pvPct}%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;flex-wrap:wrap;gap:6px;">
+        <span style="color:var(--text2);">직추천: <b style="color:var(--text);">${refCount}명</b></span>
+        <span style="color:var(--text2);">현재 등급: <b style="color:var(--gold);">${rank.icon||'👤'} ${rank.label}</b></span>
+        ${pvBonus?'<span style="color:var(--green);font-weight:700;"><i class="fas fa-gift"></i> PV 90% 달성 → +10% 보너스!</span>':''}
+      </div>
+    </div>
+    ${rankHtml}
+    <div style="background:var(--bg3);border-radius:var(--r);padding:14px;margin-top:14px;font-size:15px;color:var(--text2);line-height:2.0;">
+      <div style="font-weight:800;color:var(--text);margin-bottom:8px;">📌 추가 규칙</div>
+      <div>🎯 PV 90% 달성 시 → <b style="color:var(--green);">10% 보너스 지급</b></div>
+      <div>📊 산하 성과 반영 → <b style="color:var(--blue);">5%</b></div>
+      <div>📣 홍보육성 성과 → <b style="color:var(--purple);">100% 환산</b></div>
+      <div>📅 지급일 → <b style="color:var(--gold);">달성 후 추천 산정, 익주 수요일 지급</b></div>
+    </div>
+  `;
   // 트리
   const userMap={}; allUsers.forEach(x=>userMap[x.id]=x);
   renderTreeNode(u,userMap);
@@ -2502,7 +2732,7 @@ async function renderAdmin(){
   document.getElementById('ov-roi').value=(CFG.DAILY_ROI*100).toFixed(1);
   document.getElementById('ov-direct').value=(CFG.DIRECT_BONUS*100).toFixed(1);
   document.getElementById('ov-binary').value=(CFG.BINARY_BONUS*100).toFixed(1);
-  document.getElementById('ov-maxpayout').value=(CFG.MAX_PAYOUT*100).toFixed(0);
+  document.getElementById('ov-maxpayout').value=(CFG.MAX_PAYOUT*100).toFixed(0); // 250
   document.getElementById('ov-wdfee').value=(CFG.WD_FEE*100).toFixed(1);
   // 입금 계좌
   document.getElementById('admin-bank-name').value=CFG.DEPOSIT_BANK;
@@ -2763,18 +2993,37 @@ async function approveInvestment(id){
   },'승인','btn-success');
 }
 // processBinaryBonus 제거 — 수당은 approveInvestment에서 직접 처리
-async function updateLinePoints(newUserId,amount){
+async function updateLinePoints(newUserId, amount, side=null){
   // 추천 체인 올라가면서 좌우 포인트 업데이트
+  // side: 투자자가 선택한 'left' 또는 'right' (없으면 자동 판별)
   const newUser=await dbGet('users',newUserId);
   if(!newUser||!newUser.sponsorCode)return;
   const allUsers=await dbGetAll('users');
-  // BFS로 상위 추천인들 찾기 - 최대 10레벨
-  let curId=newUser.sponsorCode;
+
+  // 직접 추천인(1대)에게 side 값으로 배치
+  const directSponsor=await dbGet('users',newUser.sponsorCode);
+  if(directSponsor){
+    const chosenSide = side || 'left'; // 선택 없으면 왼쪽 기본
+    if(chosenSide==='left'){
+      directSponsor.leftInvest=(directSponsor.leftInvest||0)+amount;
+      directSponsor.leftPoints=(directSponsor.leftPoints||0)+amount;
+      // children 업데이트
+      if(!directSponsor.children) directSponsor.children={left:null,right:null};
+      if(!directSponsor.children.left) directSponsor.children.left=newUserId;
+    } else {
+      directSponsor.rightInvest=(directSponsor.rightInvest||0)+amount;
+      directSponsor.rightPoints=(directSponsor.rightPoints||0)+amount;
+      if(!directSponsor.children) directSponsor.children={left:null,right:null};
+      if(!directSponsor.children.right) directSponsor.children.right=newUserId;
+    }
+    await dbPut('users',directSponsor);
+  }
+
+  // 2대 이상 상위: 자동 판별로 포인트 업데이트
+  let curId=directSponsor?.sponsorCode||null;
   for(let i=0;i<10&&curId;i++){
     const cur=await dbGet('users',curId);
     if(!cur)break;
-    // 이 회원의 왼쪽/오른쪽 중 newUserId가 어느쪽?
-    // 단순화: 직접 왼쪽 자식의 하위면 leftInvest, 아니면 rightInvest
     const leftDown=getDownlineIds(cur.children?.left,allUsers);
     if(leftDown.includes(newUserId)||cur.children?.left===newUserId){
       cur.leftInvest=(cur.leftInvest||0)+amount;
