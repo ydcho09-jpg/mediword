@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>BOSANG v5.0</title>
+<title>BOSANG</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -499,7 +499,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
       <div id="lf-register" class="login-form-section">
         <div class="alert alert-warning" style="margin-bottom:16px;">
           <i class="fas fa-key"></i>
-          <div>누구나 가입할 수 있습니다. 가입 후 <b>관리자 승인</b>이 완료되면 서비스를 이용할 수 있습니다.<br>추천인 코드가 있으면 입력하세요 <span style="color:var(--text3);">(선택사항)</span></div>
+          <div>추천인 아이디를 입력하고 가입하시면 바로 이용 가능합니다.</div>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -965,6 +965,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
         <button class="btn btn-success btn-sm" onclick="runSettlement()"><i class="fas fa-bolt"></i> 전체 정산</button>
         <button class="btn btn-secondary btn-sm" onclick="exportReports()"><i class="fas fa-download"></i> 거래 CSV</button>
         <button class="btn btn-sm" onclick="exportMembersExcel()" style="background:var(--green);color:#000;font-weight:800;"><i class="fas fa-file-excel"></i> 회원 엑셀</button>
+        <button class="btn btn-danger btn-sm" onclick="resetAllData()" style="font-weight:800;"><i class="fas fa-trash"></i> 데이터 초기화</button>
       </div>
     </div>
 
@@ -1035,7 +1036,6 @@ td{font-size:14px !important;padding:14px 16px !important;}
     <!-- TABS -->
     <div id="admin-tabs" class="tabs">
       <button class="tab active" onclick="switchAdminTab('overview',this)">📊 개요</button>
-      <button class="tab" onclick="switchAdminTab('approval',this)">✅ 가입승인 <span id="appr-badge" class="stat-badge badge-pend" style="margin-left:4px;"></span></button>
       <button class="tab" onclick="switchAdminTab('members',this)">👥 회원관리</button>
       <button class="tab" onclick="switchAdminTab('investments',this)">💰 투자승인 <span id="inv-badge" class="stat-badge badge-pend" style="margin-left:4px;"></span></button>
       <button class="tab" onclick="switchAdminTab('withdrawals',this)">🏧 출금승인 <span id="wd-badge" class="stat-badge badge-pend" style="margin-left:4px;"></span></button>
@@ -1056,14 +1056,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
       </div>
     </div>
 
-    <!-- MEMBERS TAB -->
-    <!-- APPROVAL TAB -->
-    <div id="admin-tab-approval" style="display:none;">
-      <div class="card">
-        <div class="card-header"><div class="card-title-lg">가입 승인 대기 회원</div></div>
-        <div id="admin-approval-list"></div>
-      </div>
-    </div>
+    <!-- APPROVAL TAB 제거됨 -->
 
     <div id="admin-tab-members" style="display:none;">
       <div class="card">
@@ -1271,27 +1264,8 @@ const SEED_USERS=[
    wallet:0,investment:0,roi:0,leftPoints:0,rightPoints:0,leftInvest:0,rightInvest:0,
    paidRanks:[],children:{left:null,right:null},email:'admin@bosang.net',phone:'010-0000-0000',
    bankName:'',accountNumber:'',accountHolder:'',registeredAt:'2026-01-01',lastLogin:null,suspended:false,approvalStatus:'approved'},
-  {id:'ydcho',pwd:_hashPwd('pass1234!'),role:'member',name:'조영덕',inviteCode:'ydcho',sponsorCode:'admin',
-   wallet:5000000,investment:10000000,roi:1200000,leftPoints:50000000,rightPoints:20000000,
-   leftInvest:50000000,rightInvest:20000000,
-   paidRanks:[],children:{left:'userA',right:'userB'},email:'ydcho@medi.net',phone:'010-1234-5678',
-   bankName:'국민은행',accountNumber:'110-123-456789',accountHolder:'조영덕',
-   registeredAt:'2026-01-10',lastLogin:null,lastInvestmentDate:'2026-01-10',lastRoiDate:null,suspended:false,approvalStatus:'approved'},
-  {id:'userA',pwd:_hashPwd('pass1234!'),role:'member',name:'파트너A',inviteCode:'userA',sponsorCode:'ydcho',
-   wallet:1500000,investment:50000000,roi:500000,leftPoints:0,rightPoints:0,leftInvest:0,rightInvest:0,
-   paidRanks:[],children:{left:null,right:null},email:'',phone:'',bankName:'',accountNumber:'',accountHolder:'',
-   registeredAt:'2026-01-12',lastLogin:null,lastInvestmentDate:'2026-01-12',lastRoiDate:null,suspended:false,approvalStatus:'approved'},
-  {id:'userB',pwd:_hashPwd('pass1234!'),role:'member',name:'파트너B',inviteCode:'userB',sponsorCode:'ydcho',
-   wallet:800000,investment:20000000,roi:200000,leftPoints:0,rightPoints:0,leftInvest:0,rightInvest:0,
-   paidRanks:[],children:{left:null,right:null},email:'',phone:'',bankName:'',accountNumber:'',accountHolder:'',
-   registeredAt:'2026-01-15',lastLogin:null,lastInvestmentDate:'2026-01-15',lastRoiDate:null,suspended:false,approvalStatus:'approved'},
 ];
-const SEED_TX=[
-  {id:1001,userId:'ydcho',type:'투자',amount:10000000,fee:0,netAmount:10000000,date:'2026-01-10',status:'completed',desc:'최초 투자 승인'},
-  {id:1002,userId:'ydcho',type:'ROI',amount:100000,fee:0,netAmount:100000,date:'2026-01-13',status:'completed',desc:'자동 ROI 1.0%'},
-  {id:1003,userId:'ydcho',type:'보너스',amount:2500000,fee:0,netAmount:2500000,date:'2026-01-12',status:'completed',desc:'직추천 수당 (파트너A 5천만 투자 5%)'},
-  {id:1004,userId:'userA',type:'투자',amount:50000000,fee:0,netAmount:50000000,date:'2026-01-12',status:'completed',desc:'투자 승인'},
-];
+const SEED_TX=[];
 async function seedIfEmpty(){
   try{
     const ex=await dbGetAll('users');
@@ -1432,7 +1406,6 @@ async function doLogin(){
   }
   window._loginAttempts=0;
   if(user.suspended&&user.role!=='admin'){toast('계정이 정지되었습니다. 관리자에게 문의하세요','error');return;}
-  if(user.approvalStatus==='pending'&&user.role!=='admin'){toast('⏳ 가입 승인 대기 중입니다. 관리자 승인 후 이용 가능합니다','error');return;}
   await loginUser(user);
 }
 async function quickLogin(id,pwd){
@@ -1489,11 +1462,11 @@ async function doRegister(){
     paidRanks:[], children:{left:null,right:null},
     email, phone, bankName:'', accountNumber:'', accountHolder:'',
     registeredAt:localDateStr(new Date()), lastLogin:null, suspended:false,
-    approvalStatus:'pending',
+    approvalStatus:'approved',
   };
   await dbPut('users',newUser);
-  await audit('REGISTER',`신규 가입 (승인대기) 추천인:${ref||'없음'}`,id);
-  toast('🎉 가입 신청 완료! 관리자 승인 후 로그인하실 수 있습니다','success');
+  await audit('REGISTER',`신규 가입 완료 추천인:${ref||'없음'}`,id);
+  toast('🎉 가입 완료! 바로 로그인하실 수 있습니다','success');
   document.querySelectorAll('.login-tab').forEach((t,i)=>{t.classList.remove('active');if(i===0)t.classList.add('active');});
   document.querySelectorAll('.login-form-section').forEach((s,i)=>{s.classList.remove('active');if(i===0)s.classList.add('active');});
   document.getElementById('inp-lid').value=id;
@@ -1924,6 +1897,47 @@ function renderReportTable(myTx,filter){
     <td>${statusHtml(t.status)}</td>
   </tr>`).join('');
 }
+// ── Firebase 데이터 초기화 (관리자 전용) ──
+async function resetAllData(){
+  showModal('⚠️ 전체 데이터 초기화',
+    '모든 회원(admin 제외), 거래내역, 투자/출금 대기 데이터가 삭제됩니다.\n\n이 작업은 되돌릴 수 없습니다!\n\n정말 초기화하시겠습니까?',
+    async()=>{
+      toast('초기화 중...','info');
+      try{
+        // 회원 삭제 (admin 제외)
+        const users = await dbGetAll('users');
+        for(const u of users){
+          if(u.id!=='admin') await dbDelete('users',u.id);
+        }
+        // 거래내역 삭제
+        const txs = await dbGetAll('transactions');
+        for(const t of txs) await dbDelete('transactions',t.id||t.key);
+        // 투자대기 삭제
+        const invs = await dbGetAll('pendingInvestments');
+        for(const i of invs) await dbDelete('pendingInvestments',i.id||i.key);
+        // 출금대기 삭제
+        const wds = await dbGetAll('pendingWithdrawals');
+        for(const w of wds) await dbDelete('pendingWithdrawals',w.id||w.key);
+        // 감사로그 삭제
+        const logs = await dbGetAll('auditLog');
+        for(const l of logs) await dbDelete('auditLog',l.id||l.key);
+        // admin 계정 투자현황 초기화
+        const admin = await dbGet('users','admin');
+        if(admin){
+          admin.wallet=0; admin.investment=0; admin.roi=0;
+          admin.leftInvest=0; admin.rightInvest=0;
+          admin.leftPoints=0; admin.rightPoints=0;
+          admin.paidRanks=[]; admin.children={left:null,right:null};
+          await dbPut('users',admin);
+        }
+        toast('✅ 전체 초기화 완료!','success');
+        setTimeout(()=>renderAdmin(),500);
+      }catch(e){
+        toast('초기화 중 오류: '+e.message,'error');
+      }
+    },'초기화','btn-danger');
+}
+
 async function exportMembersExcel(){
   toast('회원 목록 엑셀 생성 중...','info');
   try {
@@ -2028,7 +2042,7 @@ async function exportMembersExcel(){
     const suspendedCount = members.filter(u => u.suspended).length;
 
     const summaryData = [
-      ['BOSANG 회원 현황 요약', ''],
+      ['BOSANG 현황 요약', ''],
       ['추출일', today],
       ['', ''],
       ['항목', '수치'],
@@ -2251,10 +2265,7 @@ async function openMemberDetail(uid){
           <span style="color:var(--text2);font-weight:600;">현재 상태</span>
           <span>${statusHtml2}</span>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--bg2);border-radius:12px;">
-          <span style="color:var(--text2);font-weight:600;">가입 승인 상태</span>
-          <span class="mono" style="font-weight:700;">${u.approvalStatus==='approved'?'✅ 승인됨':'⏳ 대기중'}</span>
-        </div>
+
         <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--bg2);border-radius:12px;">
           <span style="color:var(--text2);font-weight:600;">계정 정지 여부</span>
           <span class="mono" style="font-weight:700;color:${u.suspended?'var(--red)':'var(--green)'};">${u.suspended?'🚫 정지됨':'✅ 정상'}</span>
@@ -2484,7 +2495,7 @@ async function renderAdmin(){
   `;
   // 배지
   const pendApproval=allUsers.filter(u=>u.role==='member'&&u.approvalStatus==='pending');
-  document.getElementById('appr-badge').textContent=pendApproval.length>0?pendApproval.length:'';
+  // 가입승인 탭 제거됨
   document.getElementById('inv-badge').textContent=pendInv.length>0?pendInv.length:'';
   document.getElementById('wd-badge').textContent=pendWd.length>0?pendWd.length:'';
   // 수당 설정
@@ -2503,7 +2514,7 @@ async function renderAdmin(){
     const el=document.getElementById('admin-tab-'+t); if(el) el.style.display=t===tab?'block':'none';
   });
   if(tab==='overview') renderAdminOverview(members);
-  if(tab==='approval') renderAdminApproval(pendApproval);
+  // 가입승인 탭 제거됨
   if(tab==='members') renderAdminMembers(members);
   if(tab==='investments') renderAdminInvestments(pendInv);
   if(tab==='withdrawals') renderAdminWithdrawals(pendWd);
@@ -3019,7 +3030,7 @@ async function init(){
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.getElementById('page-login').style.display='flex';
   document.getElementById('page-login').classList.add('active');
-  console.log('[BOSANG v5.0] Firebase 연결 완료 ✅');
+  console.log('[BOSANG] Firebase 연결 완료 ✅');
 }
 init();
 </script>
