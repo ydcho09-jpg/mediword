@@ -598,6 +598,11 @@ td{font-size:14px !important;padding:14px 16px !important;}
         <button class="btn btn-primary btn-full btn-lg" onclick="doLogin()" style="margin-top:4px;">
           <i class="fas fa-sign-in-alt"></i> 로그인
         </button>
+        <div style="margin-top:14px;background:rgba(91,141,238,0.08);border:1px solid rgba(91,141,238,0.2);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--text2);text-align:center;">
+          <i class="fas fa-info-circle" style="color:var(--blue);margin-right:6px;"></i>
+          <b>여러 창에서 동시 로그인 가능</b><br>
+          <span style="font-size:13px;">새 탭(Ctrl+T) 또는 새 창(Ctrl+N)으로 열면<br>각각 다른 계정으로 로그인할 수 있습니다</span>
+        </div>
 
       </div>
 
@@ -1478,6 +1483,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
 // ═══════════════════════════════════════════════════════
 const _esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 let _sessionToken = null;
+let _loginAttempts = 0; // 탭별 독립 로그인 시도 카운터
 function _genToken(){ return Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join(''); }
 function _validateSession(){ if(!_sessionToken || !currentUser){ doLogout(); return false; } return true; }
 
@@ -1722,13 +1728,13 @@ async function doLogin(){
   const pwd=document.getElementById('inp-lpwd').value;
   if(!id||!pwd){toast('아이디와 비밀번호를 입력하세요','error');return;}
   // 브루트포스 방지 (간단)
-  if(window._loginAttempts>5){ toast('로그인 시도가 너무 많습니다. 잠시 후 다시 시도하세요','error'); return; }
+  if(_loginAttempts>5){ toast('로그인 시도가 너무 많습니다. 잠시 후 다시 시도하세요','error'); return; }
   const user=await dbGet('users',id);
   if(!user||!_verifyPwd(pwd,user.pwd)){
-    window._loginAttempts=(window._loginAttempts||0)+1;
+    _loginAttempts=(_loginAttempts||0)+1;
     toast('아이디 또는 비밀번호가 틀립니다','error'); return;
   }
-  window._loginAttempts=0;
+  _loginAttempts=0;
   if(user.suspended&&user.role!=='admin'){toast('계정이 정지되었습니다. 관리자에게 문의하세요','error');return;}
   await loginUser(user);
 }
