@@ -613,6 +613,12 @@ td{font-size:14px !important;padding:14px 16px !important;}
         <div class="lp-brand">BOSANG</div>
       </div>
 
+      <!-- 탭 버튼 -->
+      <div style="display:flex;gap:0;background:rgba(0,0,0,0.3);border-radius:14px;padding:4px;margin-bottom:24px;">
+        <button class="login-tab active" onclick="switchLoginTab('login',this)" style="flex:1;background:var(--gold);color:#000;font-size:18px;font-weight:800;padding:13px;border:none;border-radius:11px;cursor:pointer;">로그인</button>
+        <button class="login-tab" onclick="switchLoginTab('register',this)" style="flex:1;background:none;color:var(--text3);font-size:18px;font-weight:700;padding:13px;border:none;border-radius:11px;cursor:pointer;">회원가입</button>
+      </div>
+
       <!-- LOGIN FORM (기본 표시) -->
       <div id="lf-login" class="login-form-section active">
         <div class="lp-field">
@@ -632,10 +638,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
 
       <!-- REGISTER FORM -->
       <div id="lf-register" class="login-form-section">
-        <div class="lp-logo" style="margin-bottom:20px;">
-          <div class="lp-logo-icon">BS</div>
-          <div class="lp-brand">회원가입</div>
-        </div>
+
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">아이디 *</label>
@@ -1538,7 +1541,24 @@ let CFG = {
   DEPOSIT_BANK: '하나은행',
   DEPOSIT_ACCOUNT: '779-910028-43204',
   DEPOSIT_HOLDER: '에스엠(SM)투자조합',
-  REFERRAL_BONUS: [0,0.25,0.15,0.10,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.03,0.03,0.03,0.03,0.03],
+  REFERRAL_BONUS: [
+    0,     // 0대 (미사용)
+    0.25,  // 1대 25%
+    0.15,  // 2대 15%
+    0.10,  // 3대 10%
+    0.05,  // 4대 5%
+    0.05,  // 5대 5%
+    0.05,  // 6대 5%
+    0.05,  // 7대 5%
+    0.05,  // 8대 5%
+    0.05,  // 9대 5%
+    0.05,  // 10대 5%
+    0.03,  // 11대 3%
+    0.03,  // 12대 3%
+    0.03,  // 13대 3%
+    0.03,  // 14대 3%
+    0.03,  // 15대 3%
+  ],
 };
 async function loadSettings(){
   try{
@@ -1731,10 +1751,22 @@ function renderPage(name){
 //  AUTH
 // ═══════════════════════════════════════════════════════
 function switchLoginTab(tab,btn){
+  // 모든 탭/폼 비활성화
   document.querySelectorAll('.login-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.login-form-section').forEach(s=>s.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('lf-'+tab).classList.add('active');
+  // btn이 있으면 해당 버튼 활성화, 없으면 탭 텍스트로 찾아서 활성화
+  if(btn){
+    btn.classList.add('active');
+  } else {
+    document.querySelectorAll('.login-tab').forEach(t=>{
+      if((tab==='login'&&t.textContent.includes('로그인'))||
+         (tab==='register'&&t.textContent.includes('회원가입')))
+        t.classList.add('active');
+    });
+  }
+  // 해당 폼 표시
+  const formEl = document.getElementById('lf-'+tab);
+  if(formEl) formEl.classList.add('active');
 }
 async function doLogin(){
   const id=document.getElementById('inp-lid').value.trim();
