@@ -325,33 +325,65 @@ tr:last-child td{border-bottom:none;}
 #page-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
 .login-wrap{
   display:flex;align-items:center;justify-content:center;
-  min-height:100vh;padding:20px 16px;
-  background:#08090f;
+  min-height:100vh;padding:24px 16px;
+  background:#07080d;
 }
 .login-left{display:none;}
 .login-right{
   width:100%;max-width:420px;
-  background:var(--bg2);
-  border:1px solid var(--border2);
-  border-radius:28px;
+  background:#0d0f1a;
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:24px;
   padding:36px 28px 32px;
-  box-shadow:0 8px 40px rgba(0,0,0,0.4);
+  box-shadow:0 12px 48px rgba(0,0,0,0.6);
 }
-.login-brand-name{font-family:'Syne',sans-serif;font-weight:900;font-size:36px;color:var(--gold);letter-spacing:5px;display:block;text-align:center;}
-.login-brand-sub{font-size:13px;color:var(--text2);margin-top:6px;display:block;font-weight:500;text-align:center;letter-spacing:1px;}
-.login-brand{text-align:center;margin-bottom:32px;}
-.login-logo-box{
-  width:80px;height:80px;border-radius:24px;
+/* ── 로그인 페이지 전용 스타일 ── */
+.lp-logo{text-align:center;margin-bottom:32px;}
+.lp-logo-icon{
+  width:72px;height:72px;border-radius:20px;
   background:linear-gradient(135deg,#d4a853,#f0cc6a);
   display:flex;align-items:center;justify-content:center;
-  font-family:'Syne',sans-serif;font-size:28px;font-weight:900;color:#0a0800;
+  font-family:'Syne',sans-serif;font-size:24px;font-weight:900;color:#0a0800;
   margin:0 auto 14px;
-  box-shadow:0 10px 36px rgba(212,168,83,0.45);
-  letter-spacing:2px;
+  box-shadow:0 8px 28px rgba(212,168,83,0.4);
+  letter-spacing:1px;
 }
-.login-stats{display:none;}
-.login-title{display:none;}
-.login-sub{display:none;}
+.lp-brand{
+  font-family:'Syne',sans-serif;font-size:28px;font-weight:900;
+  color:var(--gold);letter-spacing:5px;
+}
+.lp-field{margin-bottom:16px;}
+.lp-label{font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.lp-input{
+  width:100%;background:#131629;
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:14px;padding:16px 18px;
+  color:var(--text);font-size:18px;
+  font-family:'DM Sans',sans-serif;
+  outline:none;transition:border .2s;
+  min-height:56px;
+}
+.lp-input:focus{border-color:var(--gold);}
+.lp-input::placeholder{color:#4a5068;}
+.lp-btn{
+  width:100%;background:var(--gold);
+  border:none;border-radius:14px;
+  padding:18px;margin-top:8px;
+  font-family:'DM Sans',sans-serif;
+  font-size:20px;font-weight:800;
+  color:#0a0800;cursor:pointer;
+  letter-spacing:2px;
+  min-height:60px;
+  transition:background .2s;
+  display:block;
+}
+.lp-btn:hover{background:#e8c060;}
+.lp-switch{
+  text-align:center;margin-top:20px;
+  font-size:16px;color:var(--text2);
+}
+.login-brand-name{font-family:'Syne',sans-serif;font-weight:900;font-size:36px;color:var(--gold);letter-spacing:5px;display:block;text-align:center;}
+
 .login-tabs{display:flex;gap:0;margin-bottom:24px;background:rgba(0,0,0,0.35);border-radius:14px;padding:4px;}
 .login-tab{flex:1;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;
   color:var(--text3);padding:13px;border-radius:11px;transition:all .25s;}
@@ -578,35 +610,33 @@ td{font-size:14px !important;padding:14px 16px !important;}
     <div class="login-left"></div>
     <div class="login-right">
 
-      <!-- 로고 (심플) -->
-      <div style="text-align:center;margin-bottom:28px;">
-        <div class="login-logo-box">BS</div>
-        <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:900;color:var(--gold);letter-spacing:4px;margin-top:12px;">BOSANG</div>
+      <!-- 로고 -->
+      <div class="lp-logo">
+        <div class="lp-logo-icon">BS</div>
+        <div class="lp-brand">BOSANG</div>
       </div>
 
-      <!-- 탭 -->
-      <div class="login-tabs">
-        <button class="login-tab active" onclick="switchLoginTab('login',this)">로그인</button>
-        <button class="login-tab" onclick="switchLoginTab('register',this)">회원가입</button>
-      </div>
-
-      <!-- LOGIN FORM -->
+      <!-- LOGIN FORM (기본 표시) -->
       <div id="lf-login" class="login-form-section active">
-        <div class="form-group">
-          <input class="form-input" id="inp-lid" placeholder="아이디" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()" style="font-size:18px;">
+        <div class="lp-field">
+          <div class="lp-label">아이디</div>
+          <input class="lp-input" id="inp-lid" placeholder="아이디" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
         </div>
-        <div class="form-group">
-          <input class="form-input" type="password" id="inp-lpwd" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="font-size:18px;">
+        <div class="lp-field">
+          <div class="lp-label">비밀번호</div>
+          <input class="lp-input" type="password" id="inp-lpwd" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
         </div>
-        <button class="btn btn-primary btn-full btn-lg" onclick="doLogin()" style="margin-top:8px;font-size:20px;letter-spacing:2px;">로그인</button>
-
-
+        <button class="lp-btn" onclick="doLogin()">로그인</button>
+        <div class="lp-switch">
+          계정이 없으신가요? <span onclick="switchLoginTab('register',null)" style="color:var(--gold);font-weight:800;cursor:pointer;">회원가입</span>
+        </div>
       </div>
 
       <!-- REGISTER FORM -->
       <div id="lf-register" class="login-form-section">
-        <div style="font-size:15px;color:var(--text2);margin-bottom:18px;text-align:center;">
-          추천인 아이디로 가입하세요
+        <div class="lp-logo" style="margin-bottom:20px;">
+          <div class="lp-logo-icon">BS</div>
+          <div class="lp-brand">회원가입</div>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -643,9 +673,10 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <input class="form-input" id="inp-rref" placeholder="추천인 아이디를 반드시 입력하세요">
           <div class="form-hint" style="color:var(--gold);">💡 추천인의 <b>로그인 아이디</b>를 입력하세요. (필수 항목)</div>
         </div>
-        <button class="btn btn-primary btn-full" style="margin-top:4px;" onclick="doRegister()">
-          <i class="fas fa-user-plus"></i> 계정 만들기
-        </button>
+        <button class="lp-btn" onclick="doRegister()">계정 만들기</button>
+        <div class="lp-switch">
+          이미 계정이 있으신가요? <span onclick="switchLoginTab('login',null)" style="color:var(--gold);font-weight:800;cursor:pointer;">로그인</span>
+        </div>
       </div>
     </div>
   </div>
