@@ -726,7 +726,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
       <div class="card card-gold">
         <div class="card-header">
           <div class="card-title">수익 진행도</div>
-          <span class="stat-badge badge-gold">300% 한도</span>
+          <span class="stat-badge badge-gold" id="dash-max-badge">한도</span>
         </div>
         <div class="roi-ring-wrap">
           <div class="roi-ring">
@@ -747,7 +747,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
                 <div class="progress-bar"><div class="progress-fill fill-gold" id="dash-roi-bar" style="width:0%"></div></div>
               </div>
               <div style="display:flex;justify-content:space-between;">
-                <span style="font-size:14px;color:var(--text2);">목표 (300%)</span>
+                <span style="font-size:14px;color:var(--text2);" id="dash-goal-label">목표</span>
                 <span class="mono" style="font-size:14px;color:var(--text3);" id="dash-roi-max">₩0</span>
               </div>
               <div style="display:flex;justify-content:space-between;">
@@ -877,7 +877,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
               <div><div style="font-size:15px;font-weight:600;">최대 수익 한도</div><div style="font-size:14px;color:var(--text3);">${(CFG.MAX_PAYOUT*100).toFixed(0)}% 도달 시 모든 수당 중단</div></div>
-              <span class="stat-badge badge-gold">300%</span>
+              <span class="stat-badge badge-gold" id="invest-max-badge">한도</span>
             </div>
           </div>
         </div>
@@ -890,7 +890,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <div id="sim-result" style="display:none;margin-top:4px;display:flex;flex-direction:column;gap:8px;">
             <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--text2);">일일 수익</span><b class="mono" id="sim-daily" style="color:var(--gold);">₩0</b></div>
             <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--text2);">월 수익 (22일)</span><b class="mono" id="sim-monthly">₩0</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--text2);">최대 수익 (200~250%)</span><b class="mono" id="sim-max" style="color:var(--green);">₩0</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--text2);" id="sim-max-label">최대 수익</span><b class="mono" id="sim-max" style="color:var(--green);">₩0</b></div>
             <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--text2);">원금 회수 예상일</span><b class="mono" id="sim-days">약 0일</b></div>
           </div>
         </div>
@@ -1543,7 +1543,6 @@ async function loadSettings(){
     s.forEach(item=>{
       if(!item||!item.key) return;
       if(item.key in CFG){
-        // REFERRAL_BONUS는 배열 타입 보장
         if(item.key==='REFERRAL_BONUS'){
           CFG.REFERRAL_BONUS = Array.isArray(item.value)
             ? item.value
@@ -1553,12 +1552,21 @@ async function loadSettings(){
         }
       }
     });
-    // DIRECT_BONUS / BINARY_BONUS를 REFERRAL_BONUS와 동기화
     if(CFG.REFERRAL_BONUS && CFG.REFERRAL_BONUS.length > 2){
       CFG.DIRECT_BONUS = CFG.REFERRAL_BONUS[1];
       CFG.BINARY_BONUS = CFG.REFERRAL_BONUS[2];
     }
     console.log('[Settings] 로드 완료 - ROI:'+CFG.DAILY_ROI*100+'% 최대:'+CFG.MAX_PAYOUT*100+'%');
+    // 설정 로드 후 화면에 표시된 한도 즉시 갱신
+    const maxPctLabel = (CFG.MAX_PAYOUT*100).toFixed(0) + '%';
+    const elBadge = document.getElementById('dash-max-badge');
+    const elGoal  = document.getElementById('dash-goal-label');
+    const elInvBadge = document.getElementById('invest-max-badge');
+    const elSimLabel = document.getElementById('sim-max-label');
+    if(elBadge)    elBadge.textContent    = maxPctLabel + ' 한도';
+    if(elGoal)     elGoal.textContent     = '목표 (' + maxPctLabel + ')';
+    if(elInvBadge) elInvBadge.textContent = maxPctLabel;
+    if(elSimLabel) elSimLabel.textContent = '최대 수익 (' + maxPctLabel + ')';
   }catch(e){ console.warn('설정 로드 실패, 기본값 사용', e); }
 }
 async function saveSetting(key,val){ await dbPut('settings',{id:key, key, value:val}); CFG[key]=val; }
@@ -1864,6 +1872,16 @@ async function renderDashboard(){
   document.getElementById('dash-roi-remain').textContent=fmtFull(Math.max(0,max-u.roi));
   document.getElementById('dash-roi-bar').style.width=roiPct+'%';
   document.getElementById('roi-pct-text').textContent=roiPct.toFixed(1)+'%';
+  // ── CFG.MAX_PAYOUT 기준으로 한도 표시 동적 업데이트 ──
+  const maxPctLabel = (CFG.MAX_PAYOUT*100).toFixed(0) + '%';
+  const elBadge = document.getElementById('dash-max-badge');
+  const elGoal  = document.getElementById('dash-goal-label');
+  const elInvBadge = document.getElementById('invest-max-badge');
+  const elSimLabel = document.getElementById('sim-max-label');
+  if(elBadge)    elBadge.textContent    = maxPctLabel + ' 한도';
+  if(elGoal)     elGoal.textContent     = '목표 (' + maxPctLabel + ')';
+  if(elInvBadge) elInvBadge.textContent = maxPctLabel;
+  if(elSimLabel) elSimLabel.textContent = '최대 수익 (' + maxPctLabel + ')';
   // 직급
   const smallLine=Math.min(u.leftInvest||0,u.rightInvest||0);
   const rank=calcRank(smallLine);
@@ -1905,7 +1923,7 @@ async function renderInvest(){
       <span style="color:var(--text2);">잔여 한도</span><b class="mono" style="color:var(--green);">${fmtFull(Math.max(0,max-u.roi))}</b>
     </div>
     <div class="progress-bar" style="margin-top:10px;"><div class="progress-fill fill-gold" style="width:${Math.min(100,u.roi/max*100)}%"></div></div>
-    <div style="font-size:15px;color:var(--text3);margin-top:5px;text-align:right;">${(u.roi/max*100).toFixed(1)}% / 300%</div>
+    <div style="font-size:15px;color:var(--text3);margin-top:5px;text-align:right;">${(u.roi/max*100).toFixed(1)}% / ${(CFG.MAX_PAYOUT*100).toFixed(0)}%</div>
   `:'<div class="empty"><i class="fas fa-chart-line"></i><p>투자를 시작하세요</p></div>';
 }
 function calcSim(){
@@ -2128,7 +2146,7 @@ function renderLRTable(tab){
 }
 
 async function loadLRData(u, allUsers){
-  // u.children.left / right 기반으로 하위 전체 재귀 수집
+  // children 기반으로 좌/우 트리 수집
   const getSubTree=async(rootId, visited=new Set())=>{
     if(!rootId||visited.has(rootId)) return [];
     visited.add(rootId);
@@ -2141,10 +2159,11 @@ async function loadLRData(u, allUsers){
     return all;
   };
 
-  const leftRootId=u.children?.left||null;
-  const rightRootId=u.children?.right||null;
+  const leftRootId  = u.children?.left  || null;
+  const rightRootId = u.children?.right || null;
 
   let leftMembers=[], rightMembers=[];
+
   if(leftRootId){
     const leftRoot=allUsers.find(x=>x.id===leftRootId);
     if(leftRoot){ leftMembers=[leftRoot,...(await getSubTree(leftRootId))]; }
@@ -2152,6 +2171,15 @@ async function loadLRData(u, allUsers){
   if(rightRootId){
     const rightRoot=allUsers.find(x=>x.id===rightRootId);
     if(rightRoot){ rightMembers=[rightRoot,...(await getSubTree(rightRootId))]; }
+  }
+
+  // children이 모두 null인데 직추천 회원이 있으면 → 미배치 회원 표시
+  const directMembers = allUsers.filter(x=>x.sponsorCode===u.id&&x.role==='member');
+  const placed = new Set([...(leftRootId?[leftRootId]:[]),...(rightRootId?[rightRootId]:[])]);
+  const unplaced = directMembers.filter(x=>!placed.has(x.id));
+  // 미배치 회원은 일단 leftMembers에 추가 (children 복구 전까지)
+  if(!leftRootId && !rightRootId && unplaced.length>0){
+    leftMembers = unplaced;
   }
 
   // 중복 제거
@@ -2724,6 +2752,23 @@ async function openMemberDetail(uid){
       </div>
     </div>
 
+    <div style="background:var(--bg3);border-radius:var(--r);padding:18px;margin-bottom:12px;">
+      <div style="font-size:16px;font-weight:800;color:var(--blue);margin-bottom:12px;">🌿 좌/우 배치 수동 설정</div>
+      <div style="font-size:14px;color:var(--text2);margin-bottom:10px;">children.left / children.right 직접 지정</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:14px;color:var(--text2);margin-bottom:6px;">⬅ 왼쪽(L) 회원 아이디</div>
+          <input class="form-input" id="edit-child-left" placeholder="왼쪽 회원 아이디" value="${u.children?.left||''}" style="font-size:15px;">
+        </div>
+        <div>
+          <div style="font-size:14px;color:var(--text2);margin-bottom:6px;">오른쪽(R) 회원 아이디 ➡</div>
+          <input class="form-input" id="edit-child-right" placeholder="오른쪽 회원 아이디" value="${u.children?.right||''}" style="font-size:15px;">
+        </div>
+      </div>
+      <button class="btn btn-sm" style="width:100%;background:var(--blue);color:#fff;font-weight:800;" onclick="adminSaveChildren()">
+        <i class="fas fa-sitemap"></i> 좌/우 배치 저장
+      </button>
+    </div>
     <div style="background:var(--bg3);border-radius:var(--r);padding:18px;">
       <div style="font-size:16px;font-weight:800;color:var(--red);margin-bottom:10px;">⚠️ 주의사항</div>
       <div style="font-size:15px;color:var(--text2);line-height:1.8;">
@@ -2775,6 +2820,30 @@ async function adminSaveBankInfo(){
   await dbPut('users',u);
   await audit('ADMIN_EDIT_BANK',`계좌 수정 [${u.id}] ${u.bankName} ${u.accountNumber} ${u.accountHolder}`,'admin');
   toast(`✅ ${u.name} 계좌 정보 저장 완료`,'success');
+  openMemberDetail(_detailUserId);
+}
+
+async function adminSaveChildren(){
+  if(!_detailUserId) return;
+  const u = await dbGet('users', _detailUserId);
+  if(!u){ toast('회원 정보를 불러올 수 없습니다','error'); return; }
+  const leftId  = document.getElementById('edit-child-left').value.trim() || null;
+  const rightId = document.getElementById('edit-child-right').value.trim() || null;
+  // 유효성 검사
+  if(leftId){
+    const lUser = await dbGet('users', leftId);
+    if(!lUser){ toast(`왼쪽 회원 [${leftId}] 이 존재하지 않습니다`, 'error'); return; }
+  }
+  if(rightId){
+    const rUser = await dbGet('users', rightId);
+    if(!rUser){ toast(`오른쪽 회원 [${rightId}] 이 존재하지 않습니다`, 'error'); return; }
+  }
+  if(!u.children) u.children = {left:null, right:null};
+  u.children.left  = leftId;
+  u.children.right = rightId;
+  await dbPut('users', u);
+  await audit('ADMIN_SET_CHILDREN', `좌우배치 설정 [${u.id}] L:${leftId||'없음'} R:${rightId||'없음'}`, 'admin');
+  toast(`✅ ${u.name} 좌/우 배치 저장 완료`, 'success');
   openMemberDetail(_detailUserId);
 }
 
@@ -3258,8 +3327,8 @@ async function approveInvestment(id){
         curId = sponsor.sponsorCode || null;
       }
     }
-    // 좌우 포인트 업데이트
-    await updateLinePoints(user.id,inv.amount);
+    // 좌우 포인트 업데이트 (inv.side: 회원이 선택한 좌/우 값)
+    await updateLinePoints(user.id, inv.amount, inv.side||'left');
     // 직급 수당 체크 (상위 라인 전체)
     await checkRankBonuses(user.id,today);
     await dbDelete('pendingInvestments',id);
@@ -3269,30 +3338,29 @@ async function approveInvestment(id){
   },'승인','btn-success');
 }
 // processBinaryBonus 제거 — 수당은 approveInvestment에서 직접 처리
-async function updateLinePoints(newUserId, amount, side=null){
-  // 추천 체인 올라가면서 좌우 포인트 업데이트
-  // side: 투자자가 선택한 'left' 또는 'right' (없으면 자동 판별)
-  const newUser=await dbGet('users',newUserId);
-  if(!newUser||!newUser.sponsorCode)return;
-  const allUsers=await dbGetAll('users');
+async function updateLinePoints(newUserId, amount, side='left'){
+  // side: 회원이 투자 신청 시 선택한 'left' 또는 'right'
+  const newUser = await dbGet('users', newUserId);
+  if(!newUser || !newUser.sponsorCode) return;
+  const allUsers = await dbGetAll('users');
+  const chosenSide = (side === 'right') ? 'right' : 'left';
 
-  // 직접 추천인(1대)에게 side 값으로 배치
-  const directSponsor=await dbGet('users',newUser.sponsorCode);
+  // ── 1대 직접 추천인: side 값으로 children 배치 + 포인트 업데이트 ──
+  const directSponsor = await dbGet('users', newUser.sponsorCode);
   if(directSponsor){
-    const chosenSide = side || 'left'; // 선택 없으면 왼쪽 기본
-    if(chosenSide==='left'){
-      directSponsor.leftInvest=(directSponsor.leftInvest||0)+amount;
-      directSponsor.leftPoints=(directSponsor.leftPoints||0)+amount;
-      // children 업데이트
-      if(!directSponsor.children) directSponsor.children={left:null,right:null};
-      if(!directSponsor.children.left) directSponsor.children.left=newUserId;
+    if(!directSponsor.children) directSponsor.children = {left:null, right:null};
+    if(chosenSide === 'left'){
+      directSponsor.leftInvest  = (directSponsor.leftInvest||0) + amount;
+      directSponsor.leftPoints  = (directSponsor.leftPoints||0) + amount;
+      // children.left가 비어 있으면 배치, 이미 있으면 유지
+      if(!directSponsor.children.left) directSponsor.children.left = newUserId;
     } else {
-      directSponsor.rightInvest=(directSponsor.rightInvest||0)+amount;
-      directSponsor.rightPoints=(directSponsor.rightPoints||0)+amount;
-      if(!directSponsor.children) directSponsor.children={left:null,right:null};
-      if(!directSponsor.children.right) directSponsor.children.right=newUserId;
+      directSponsor.rightInvest = (directSponsor.rightInvest||0) + amount;
+      directSponsor.rightPoints = (directSponsor.rightPoints||0) + amount;
+      if(!directSponsor.children.right) directSponsor.children.right = newUserId;
     }
-    await dbPut('users',directSponsor);
+    await dbPut('users', directSponsor);
+    console.log(`[Tree] ${newUserId} → ${newUser.sponsorCode} 의 ${chosenSide} 배치`);
   }
 
   // 2대 이상 상위: 자동 판별로 포인트 업데이트
