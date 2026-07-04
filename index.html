@@ -624,7 +624,10 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <input class="lp-input" type="password" id="inp-lpwd" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
         </div>
         <button class="lp-btn" onclick="doLogin()">로그인</button>
-        <!-- 회원가입: 로그인/회원가입 탭으로 이동 -->
+        <div style="text-align:center;margin-top:18px;">
+          <span style="font-size:17px;color:var(--text2);">계정이 없으신가요? </span>
+          <span onclick="switchLoginTab('register',null)" style="font-size:17px;color:var(--gold);font-weight:800;cursor:pointer;text-decoration:underline;">회원가입</span>
+        </div>
       </div>
 
       <!-- REGISTER FORM -->
