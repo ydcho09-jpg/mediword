@@ -72,7 +72,7 @@ console.log('[Firebase] 연결 완료 ✅');
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:19px;line-height:1.9;font-weight:500;}
+html{overflow-x:hidden;max-width:100vw;}body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;max-width:100vw;font-size:19px;line-height:1.9;font-weight:500;}
 body::before{content:'';position:fixed;inset:0;
   background-image:linear-gradient(rgba(212,168,83,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(212,168,83,0.025) 1px,transparent 1px);
   background-size:60px 60px;pointer-events:none;z-index:0;}
@@ -330,7 +330,7 @@ tr:last-child td{border-bottom:none;}
 .login-stat{background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:14px;padding:18px 22px;}
 .login-stat-label{font-size:15px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-weight:600;}
 .login-stat-value{font-family:'Space Mono',monospace;font-size:22px;color:var(--gold);font-weight:700;}
-.login-right{padding:60px 50px;}
+.login-right{padding:60px 50px;width:100%;max-width:100%;}
 .login-title{font-family:'Syne',sans-serif;font-size:27px;font-weight:800;margin-bottom:8px;color:var(--text);}
 .login-sub{font-size:16px;color:var(--text2);margin-bottom:32px;font-weight:500;}
 .login-tabs{display:flex;gap:0;margin-bottom:28px;background:var(--bg3);border-radius:12px;padding:4px;}
@@ -502,7 +502,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
   .toast{font-size:16px !important;padding:16px 18px !important;min-width:auto !important;max-width:100% !important;}
 
   /* ── 로그인 화면 ── */
-  .login-right{padding:30px 20px !important;}
+  .login-right{padding:28px 18px !important;width:100% !important;max-width:100vw !important;}
   .login-title{font-size:26px !important;}
   .login-sub{font-size:16px !important;}
   .login-tab{font-size:17px !important;padding:14px !important;}
@@ -520,6 +520,12 @@ td{font-size:14px !important;padding:14px 16px !important;}
   /* ── 텍스트 자동확대 방지 ── */
   html{-webkit-text-size-adjust:100%;}
   input,select,textarea{font-size:18px !important;}
+
+  /* ── 가로 스크롤 완전 차단 ── */
+  html,body{overflow-x:hidden !important;max-width:100vw !important;}
+  img,video,iframe{max-width:100% !important;}
+  .table-wrap,#network-tree,.tabs{overflow-x:auto !important;}
+  .modal{max-width:100vw !important;}
 }
 
 /* ══════════════════════════════════════════
@@ -614,7 +620,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">비밀번호 *</label>
-            <input class="form-input" type="password" id="inp-rpwd" placeholder="8자 이상">
+            <input class="form-input" type="password" id="inp-rpwd" placeholder="4자 이상">
           </div>
           <div class="form-group">
             <label class="form-label">비밀번호 확인 *</label>
@@ -788,11 +794,11 @@ td{font-size:14px !important;padding:14px 16px !important;}
         <div class="card-title-lg" style="margin-bottom:24px;">신규 투자 신청</div>
         <div class="alert alert-warning" style="margin-bottom:16px;">
           <i class="fas fa-triangle-exclamation"></i>
-          <div>최소 투자금액 <b>₩1,000,000</b> — 투자금 입금 후 관리자 승인 → 익일부터 배당 시작</div>
+          <div>투자금 입금 후 관리자 승인 → 익일부터 배당 시작</div>
         </div>
         <div class="form-group">
           <label class="form-label">투자 금액 (원)</label>
-          <input class="form-input mono" id="inp-invest-amount" type="number" placeholder="1000000" min="1000000" step="100000" oninput="calcSim()">
+          <input class="form-input mono" id="inp-invest-amount" type="number" placeholder="투자금액 입력" min="1" step="1000" oninput="calcSim()">
           <div class="form-hint">₩1,000,000 이상</div>
         </div>
         <div class="form-group">
@@ -1212,7 +1218,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
         <div class="card">
           <div class="card-title-lg" style="margin-bottom:20px;">비밀번호 변경</div>
           <div class="form-group"><label class="form-label">현재 비밀번호</label><input class="form-input" type="password" id="pw-current" placeholder="현재 비밀번호"></div>
-          <div class="form-group"><label class="form-label">새 비밀번호</label><input class="form-input" type="password" id="pw-new" placeholder="8자 이상"></div>
+          <div class="form-group"><label class="form-label">새 비밀번호</label><input class="form-input" type="password" id="pw-new" placeholder="4자 이상"></div>
           <div class="form-group"><label class="form-label">새 비밀번호 확인</label><input class="form-input" type="password" id="pw-confirm" placeholder="재입력"></div>
           <button class="btn btn-primary btn-sm" onclick="changePassword()"><i class="fas fa-lock"></i> 변경</button>
         </div>
@@ -1253,7 +1259,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <input class="form-input" type="password" id="admin-pw-current" placeholder="현재 비밀번호">
         </div>
         <div class="form-group" style="margin:0;">
-          <label class="form-label">새 비밀번호 (8자 이상)</label>
+          <label class="form-label">새 비밀번호 (4자 이상)</label>
           <input class="form-input" type="password" id="admin-pw-new" placeholder="새 비밀번호">
         </div>
         <div class="form-group" style="margin:0;">
@@ -1509,7 +1515,7 @@ let CFG = {
   MAX_PAYOUT:   2.50,    // 최대 수익 250%
   MAX_PV:       20000000,
   WD_FEE:       0.05,
-  MIN_INVEST:   1000000,
+  MIN_INVEST:   0,        // 입금 제한 없음
   PV_BONUS_RATE: 0.10,
   PV_BONUS_THRESHOLD: 0.90,
   SUBLINE_BONUS: 0.04,
@@ -1624,7 +1630,7 @@ function _hashPwd(pw){
 function _verifyPwd(plain,hash){ return _hashPwd(plain)===hash; }
 // 입력 검증
 function _sanitizeId(v){ return /^[a-zA-Z0-9_]{4,20}$/.test(v); }
-function _sanitizePwd(v){ return v.length>=8; }
+function _sanitizePwd(v){ return v.length>=4; }
 
 // ═══════════════════════════════════════════════════════
 //  APP STATE
@@ -1640,6 +1646,13 @@ let _detailUserId=null;
 function fmt(n){ n=Math.round(n||0); if(Math.abs(n)>=100000000) return '₩'+(n/100000000).toFixed(2).replace(/\.?0+$/,'')+'억'; if(Math.abs(n)>=10000000) return '₩'+(n/10000000).toFixed(1).replace(/\.?0+$/,'')+'천만'; if(Math.abs(n)>=10000) return '₩'+(n/10000).toFixed(0)+'만'; return '₩'+n.toLocaleString(); }
 function fmtFull(n){ return '₩'+(Math.round(n||0)).toLocaleString(); }
 function localDateStr(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function localDateTimeStr(d){
+  const date = localDateStr(d);
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  const ss = String(d.getSeconds()).padStart(2,'0');
+  return `${date} ${hh}:${mm}:${ss}`;
+}
 function isWeekday(d){ const w=d.getDay(); return w>=1&&w<=5; } // 월~금
 function typeColor(t){ const m={ROI:'var(--gold)',보너스:'var(--green)',바이너리:'var(--blue)',직급수당:'var(--purple)',출금:'var(--red)',투자:'var(--text)'}; return m[t]||'var(--text2)'; }
 function typeLabel(t){ const m={ROI:'ROI 배당',보너스:'소실적수당',바이너리:'소실적수당',직급수당:'직급수당',출금:'출금',투자:'투자'}; return m[t]||t; }
@@ -1725,7 +1738,7 @@ async function quickLogin(id,pwd){
   await doLogin();
 }
 async function loginUser(user){
-  user.lastLogin=localDateStr(new Date());
+  user.lastLogin=localDateTimeStr(new Date());
   await dbPut('users',user);
   _sessionToken=_genToken();
   currentUser=user;
@@ -1759,7 +1772,7 @@ async function doRegister(){
   // 보안 검증
   if(!id||!name||!pwd){toast('아이디, 이름, 비밀번호는 필수입니다','error');return;}
   if(!_sanitizeId(id)){toast('아이디는 영문/숫자 4~20자입니다','error');return;}
-  if(!_sanitizePwd(pwd)){toast('비밀번호는 8자 이상이어야 합니다','error');return;}
+  if(!_sanitizePwd(pwd)){toast('비밀번호는 4자 이상이어야 합니다','error');return;}
   if(pwd!==pwd2){toast('비밀번호가 일치하지 않습니다','error');return;}
   const existing=await dbGet('users',id);
   if(existing){toast('이미 사용 중인 아이디입니다','error');return;}
@@ -1876,7 +1889,7 @@ function calcSim(){
   document.getElementById('sim-max').textContent=fmt(amt*CFG.MAX_PAYOUT);
   document.getElementById('sim-days').textContent=`약 ${Math.ceil(amt/daily)}일`;
 }
-function calcSimBox(){ const a=parseInt(document.getElementById('sim-amount').value)||0; const sim=document.getElementById('sim-result'); if(a<CFG.MIN_INVEST){sim.style.display='none';return;} sim.style.display='flex'; const d=Math.round(a*CFG.DAILY_ROI); document.getElementById('sim-daily').textContent=fmt(d); document.getElementById('sim-monthly').textContent=fmt(d*22); document.getElementById('sim-max').textContent=fmt(a*CFG.MAX_PAYOUT); document.getElementById('sim-days').textContent=`약 ${Math.ceil(a/d)}일`; }
+function calcSimBox(){ const a=parseInt(document.getElementById('sim-amount').value)||0; const sim=document.getElementById('sim-result'); if(a<=0){sim.style.display='none';return;} sim.style.display='flex'; const d=Math.round(a*CFG.DAILY_ROI); document.getElementById('sim-daily').textContent=fmt(d); document.getElementById('sim-monthly').textContent=fmt(d*22); document.getElementById('sim-max').textContent=fmt(a*CFG.MAX_PAYOUT); document.getElementById('sim-days').textContent=`약 ${Math.ceil(a/d)}일`; }
 // 좌/우 선택 함수
 let _selectedSide = null;
 function selectSide(side){
@@ -1911,10 +1924,10 @@ async function submitInvestment(){
   if(u.suspended){toast('계정이 정지되어 투자할 수 없습니다','error');return;}
   const amt=parseInt(document.getElementById('inp-invest-amount').value)||0;
   const iname=document.getElementById('inp-invest-name').value.trim();
-  if(amt<CFG.MIN_INVEST){toast(`최소 투자금액은 ${fmt(CFG.MIN_INVEST)}입니다`,'error');return;}
+  if(amt<=0){toast('투자금액을 입력하세요','error');return;}
   if(!iname){toast('입금자명을 입력하세요','error');return;}
   if(!_selectedSide){toast('좌측(L) 또는 우측(R) 배치를 선택하세요','error');return;}
-  const inv={id:Date.now(),userId:currentUser.id,userName:currentUser.name,amount:amt,depositorName:_esc(iname),memo:_esc(document.getElementById('inp-invest-memo').value.trim()),side:_selectedSide,requestedAt:localDateStr(new Date()),status:'pending'};
+  const inv={id:Date.now(),userId:currentUser.id,userName:currentUser.name,amount:amt,depositorName:_esc(iname),memo:_esc(document.getElementById('inp-invest-memo').value.trim()),side:_selectedSide,requestedAt:localDateTimeStr(new Date()),status:'pending'};
   await dbPut('pendingInvestments',inv);  // id 있으므로 fsPut 사용
   await audit('INVEST_REQUEST',`투자신청 ${fmt(amt)}`,currentUser.id);
   document.getElementById('inp-invest-amount').value='';
@@ -2229,7 +2242,7 @@ async function submitWithdrawal(){
   const fee=Math.floor(wdAmountVal*CFG.WD_FEE);
   const wd={id:Date.now(),userId:u.id,userName:u.name,amount:wdAmountVal,fee,net:wdAmountVal-fee,
     bankName:u.bankName,accountNumber:u.accountNumber,accountHolder:u.accountHolder,
-    requestedAt:localDateStr(new Date()),status:'pending'};
+    requestedAt:localDateTimeStr(new Date()),status:'pending'};
   await dbPut('pendingWithdrawals',wd);  // id 있으므로 fsPut 사용
   u.wallet-=wdAmountVal;
   await dbPut('users',u); currentUser=u;
@@ -2554,7 +2567,7 @@ async function openMemberDetail(uid){
       </div>
       <div style="margin-top:12px;">
         <div style="font-size:14px;color:var(--text2);margin-bottom:6px;font-weight:700;">새 비밀번호 (변경 시에만 입력)</div>
-        <input class="form-input" id="edit-newpwd" type="password" placeholder="새 비밀번호 (8자 이상, 비워두면 변경 안 함)">
+        <input class="form-input" id="edit-newpwd" type="password" placeholder="새 비밀번호 (4자 이상, 비워두면 변경 안 함)">
       </div>
       <button class="btn btn-primary btn-sm" style="margin-top:14px;width:100%;" onclick="adminSaveBasicInfo()">
         <i class="fas fa-save"></i> 기본 정보 저장
@@ -2713,7 +2726,7 @@ async function adminSaveBasicInfo(){
   u.phone=newPhone;
   if(newSponsor) u.sponsorCode=newSponsor;
   if(newPwd){
-    if(!_sanitizePwd(newPwd)){toast('비밀번호는 8자 이상이어야 합니다','error');return;}
+    if(!_sanitizePwd(newPwd)){toast('비밀번호는 4자 이상이어야 합니다','error');return;}
     u.pwd=_hashPwd(newPwd);
   }
   await dbPut('users',u);
@@ -2842,7 +2855,7 @@ async function changeAdminPassword(){
   const u=await dbGet('users',currentUser.id);
   if(!u){toast('사용자 정보를 불러올 수 없습니다','error');return;}
   if(!_verifyPwd(cur,u.pwd)){toast('현재 비밀번호가 틀립니다','error');return;}
-  if(!_sanitizePwd(nw)){toast('새 비밀번호는 8자 이상이어야 합니다','error');return;}
+  if(!_sanitizePwd(nw)){toast('새 비밀번호는 4자 이상이어야 합니다','error');return;}
   if(nw!==cf){toast('새 비밀번호가 일치하지 않습니다','error');return;}
   u.pwd=_hashPwd(nw);
   await dbPut('users',u);
@@ -2860,7 +2873,7 @@ async function changePassword(){
   const nw=document.getElementById('pw-new').value;
   const cf=document.getElementById('pw-confirm').value;
   if(!_verifyPwd(cur,u.pwd)){toast('현재 비밀번호가 틀립니다','error');return;}
-  if(!_sanitizePwd(nw)){toast('새 비밀번호는 8자 이상이어야 합니다','error');return;}
+  if(!_sanitizePwd(nw)){toast('새 비밀번호는 4자 이상이어야 합니다','error');return;}
   if(nw!==cf){toast('새 비밀번호가 일치하지 않습니다','error');return;}
   u.pwd=_hashPwd(nw);
   await dbPut('users',u); currentUser=u;
@@ -3400,7 +3413,7 @@ async function autoSettleAll(label){
     if(paid>0){ count++; totalAmt+=paid; }
   }
   // 정산 로그 저장
-  const runTime=new Date().toLocaleString('ko-KR');
+  const runTime=localDateTimeStr(new Date());
   await dbPut('settings',{key:'__scheduler__',value:{lastRun:localDateStr(new Date()),runTime,count,totalAmt,ts:Date.now()}});
   console.log(`[자동정산 ${label}] ${runTime} — ${count}명 / ${fmt(totalAmt)} 지급 완료`);
   if(count>0){
@@ -3431,7 +3444,7 @@ function scheduleNextRun(){
   next.setDate(next.getDate()+1);
   next.setHours(0,0,1,0); // 오전 12시 00분 01초
   const msUntilNext=next-now;
-  console.log(`[Scheduler] 다음 정산 예정: ${next.toLocaleString('ko-KR')} (${Math.round(msUntilNext/1000)}초 후)`);
+  console.log(`[Scheduler] 다음 정산 예정: ${localDateTimeStr(next)} (${Math.round(msUntilNext/1000)}초 후)`);
   _schedulerTimer=setTimeout(async()=>{
     const now2=new Date();
     const today=localDateStr(now2);
