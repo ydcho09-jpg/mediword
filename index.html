@@ -1755,10 +1755,13 @@ async function loginUser(user){
   await dbPut('users',user);
   _sessionToken=_genToken();
   currentUser=user;
-  // 새로고침 후 세션 복원을 위해 저장
+  // 새로고침 후 세션 복원 (localStorage 사용 — 탭 독립성 유지)
   try{
-    sessionStorage.setItem('bosang_uid', user.id);
-    sessionStorage.setItem('bosang_ts', Date.now().toString());
+    const tabId = sessionStorage.getItem('bosang_tab') || Math.random().toString(36).slice(2);
+    sessionStorage.setItem('bosang_tab', tabId);
+    localStorage.setItem('bosang_uid_' + tabId, user.id);
+    localStorage.setItem('bosang_ts_' + tabId, Date.now().toString());
+    localStorage.setItem('bosang_role_' + tabId, user.role);
   }catch(e){}
   setupTopbar();
   document.getElementById('page-login').style.display='none';
@@ -1776,7 +1779,15 @@ async function loginUser(user){
 }
 function doLogout(){
   currentUser=null; _sessionToken=null;
-  try{ sessionStorage.removeItem('bosang_uid'); sessionStorage.removeItem('bosang_ts'); }catch(e){}
+  try{
+    const tabId = sessionStorage.getItem('bosang_tab');
+    if(tabId){
+      localStorage.removeItem('bosang_uid_' + tabId);
+      localStorage.removeItem('bosang_ts_' + tabId);
+      localStorage.removeItem('bosang_role_' + tabId);
+    }
+    sessionStorage.removeItem('bosang_tab');
+  }catch(e){}
   document.getElementById('topbar').style.display='none';
   const mh2=document.getElementById('mobile-header');
   if(mh2) mh2.style.display='none';
@@ -3547,21 +3558,31 @@ async function init(){
   document.getElementById('fb-loading').remove();
   startScheduler();
 
-  // ── 새로고침 후 세션 자동 복원 ──
-  const savedUid = sessionStorage.getItem('bosang_uid');
-  const savedTs  = parseInt(sessionStorage.getItem('bosang_ts')||'0');
-  const SESSION_EXPIRE = 8 * 60 * 60 * 1000; // 8시간
+  // ══════════════════════════════════════════
+  // 새로고침 후 세션 자동 복원
+  // ══════════════════════════════════════════
+  try{
+    // 탭 고유 ID 확인
+    let tabId = sessionStorage.getItem('bosang_tab');
+    if(!tabId){
+      // 새 탭이면 새 ID 생성
+      tabId = Math.random().toString(36).slice(2);
+      sessionStorage.setItem('bosang_tab', tabId);
+    }
 
-  if(savedUid && (Date.now() - savedTs) < SESSION_EXPIRE){
-    // 세션이 유효하면 자동 로그인 복원
-    try{
+    const savedUid = localStorage.getItem('bosang_uid_' + tabId);
+    const savedTs  = parseInt(localStorage.getItem('bosang_ts_' + tabId) || '0');
+    const SESSION_EXPIRE = 24 * 60 * 60 * 1000; // 24시간
+
+    if(savedUid && savedTs && (Date.now() - savedTs) < SESSION_EXPIRE){
+      console.log('[Init] 세션 복원 시도:', savedUid);
       const savedUser = await dbGet('users', savedUid);
-      if(savedUser && !savedUser.suspended && savedUser.approvalStatus === 'approved'){
-        console.log('[Init] 세션 복원:', savedUid);
-        _sessionToken = _genToken();
-        // 세션 복원 — lastLogin 업데이트 없이 복원
+      if(savedUser && !savedUser.suspended){
+        // ✅ 세션 복원 성공
         _sessionToken = _genToken();
         currentUser = savedUser;
+        // 저장 시간 갱신
+        localStorage.setItem('bosang_ts_' + tabId, Date.now().toString());
         setupTopbar();
         document.getElementById('page-login').style.display='none';
         document.getElementById('page-login').classList.remove('active');
@@ -3571,24 +3592,26 @@ async function init(){
         if(mhR) mhR.style.display='flex';
         if(mhNR) mhNR.textContent=savedUser.name+' ('+savedUser.id+')';
         goView(savedUser.role==='admin'?'admin_dash':'dashboard');
-        toast(`환영합니다, ${_esc(savedUser.name)}님!`,'success');
         setTimeout(()=>catchUpRoi(),800);
-        console.log('[BOSANG] Firebase 연결 완료 ✅');
-        return; // 로그인 화면 건너뜀
+        console.log('[Init] 세션 복원 완료 ✅:', savedUid);
+        return;
       }
-    }catch(e){
-      console.warn('[Init] 세션 복원 실패:', e);
     }
-    // 복원 실패 시 세션 삭제
-    sessionStorage.removeItem('bosang_uid');
-    sessionStorage.removeItem('bosang_ts');
+    // 세션 만료 or 없음 → 저장된 세션 삭제
+    if(savedUid){
+      localStorage.removeItem('bosang_uid_' + tabId);
+      localStorage.removeItem('bosang_ts_' + tabId);
+      localStorage.removeItem('bosang_role_' + tabId);
+    }
+  }catch(e){
+    console.warn('[Init] 세션 복원 실패:', e);
   }
 
-  // 세션 없으면 로그인 화면
+  // 로그인 화면 표시
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.getElementById('page-login').style.display='flex';
   document.getElementById('page-login').classList.add('active');
-  console.log('[BOSANG] Firebase 연결 완료 ✅');
+  console.log('[BOSANG] 연결 완료 ✅');
 }
 init();
 </script>
