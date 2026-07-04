@@ -89,31 +89,7 @@ h1,h2,h3,.syne{font-family:'Syne',sans-serif;}
 .page.active{display:block;}
 
 /* TOPBAR */
-/* 하단 네비게이션 바 (모바일 전용) */
-#bottom-nav{
-  display:none;
-  position:fixed;bottom:0;left:0;right:0;
-  background:rgba(13,15,26,0.97);
-  backdrop-filter:blur(20px);
-  border-top:1px solid var(--border);
-  z-index:200;
-  padding:8px 4px;
-  padding-bottom:max(8px, env(safe-area-inset-bottom));
-}
-.bnav-btn{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:4px;flex:1;background:none;border:none;cursor:pointer;
-  color:var(--text3);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
-  padding:8px 4px;border-radius:12px;transition:all .2s;min-height:56px;
-}
-.bnav-btn.active{color:var(--gold);background:var(--gold-dim);}
-.bnav-btn i{font-size:22px;margin-bottom:2px;}
-@media(max-width:600px){
-  #bottom-nav{display:flex !important;}
-  .main{padding-bottom:90px !important;}
-  /* 상단 탭 네비게이션 숨김 */
-  .topbar-nav{display:none !important;}
-}
+
 #topbar{position:fixed;top:0;left:0;right:0;height:64px;background:rgba(7,8,13,0.93);backdrop-filter:blur(20px);
   border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:200;}
 .topbar-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:2px;color:var(--gold);cursor:pointer;}
@@ -661,28 +637,6 @@ td{font-size:14px !important;padding:14px 16px !important;}
       </div>
     </div>
   </div>
-</div>
-
-<!-- ═══════════ 하단 네비게이션 (모바일 전용) ═══════════ -->
-<div id="bottom-nav" style="display:none;">
-  <button class="bnav-btn active" id="bnav-dashboard" onclick="goView('dashboard');setBnav('dashboard')">
-    <i class="fas fa-home"></i><span>홈</span>
-  </button>
-  <button class="bnav-btn" id="bnav-invest" onclick="goView('invest');setBnav('invest')">
-    <i class="fas fa-coins"></i><span>투자</span>
-  </button>
-  <button class="bnav-btn" id="bnav-network" onclick="goView('network');setBnav('network')">
-    <i class="fas fa-sitemap"></i><span>조직</span>
-  </button>
-  <button class="bnav-btn" id="bnav-wallet" onclick="goView('wallet');setBnav('wallet')">
-    <i class="fas fa-wallet"></i><span>출금</span>
-  </button>
-  <button class="bnav-btn" id="bnav-reports" onclick="goView('reports');setBnav('reports')">
-    <i class="fas fa-list"></i><span>내역</span>
-  </button>
-  <button class="bnav-btn" id="bnav-profile" onclick="goView('profile');setBnav('profile')">
-    <i class="fas fa-user"></i><span>내정보</span>
-  </button>
 </div>
 
 <!-- ═══════════ TOPBAR ═══════════ -->
@@ -1707,11 +1661,6 @@ function showPage(name){
 }
 function goView(name){ showPage(name); renderPage(name); }
 function goHome(){ if(!currentUser)return; goView(currentUser.role==='admin'?'admin_dash':'dashboard'); }
-function setBnav(view){
-  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
-  const el=document.getElementById('bnav-'+view);
-  if(el) el.classList.add('active');
-}
 function renderPage(name){
   if(name==='dashboard') renderDashboard();
   else if(name==='invest') renderInvest();
@@ -1760,7 +1709,6 @@ async function loginUser(user){
   document.getElementById('page-login').style.display='none';
   document.getElementById('page-login').classList.remove('active');
   document.getElementById('topbar').style.display='flex';
-  const bnav=document.getElementById('bottom-nav'); if(bnav&&user.role!=='admin') bnav.style.display='flex';
   goView(user.role==='admin'?'admin_dash':'dashboard');
   toast(`안녕하세요, ${_esc(user.name)}님!`,'success');
   await audit('LOGIN','로그인',user.id);
@@ -1769,7 +1717,6 @@ async function loginUser(user){
 function doLogout(){
   currentUser=null; _sessionToken=null;
   document.getElementById('topbar').style.display='none';
-  const bnav2=document.getElementById('bottom-nav'); if(bnav2) bnav2.style.display='none';
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.getElementById('page-login').style.display='flex';
   document.getElementById('page-login').classList.add('active');
