@@ -378,10 +378,7 @@ tr:last-child td{border-bottom:none;}
   display:block;
 }
 .lp-btn:hover{background:#e8c060;}
-.lp-switch{
-  text-align:center;margin-top:20px;
-  font-size:16px;color:var(--text2);
-}
+
 .login-brand-name{font-family:'Syne',sans-serif;font-weight:900;font-size:36px;color:var(--gold);letter-spacing:5px;display:block;text-align:center;}
 
 .login-tabs{display:flex;gap:0;margin-bottom:24px;background:rgba(0,0,0,0.35);border-radius:14px;padding:4px;}
@@ -627,9 +624,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <input class="lp-input" type="password" id="inp-lpwd" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
         </div>
         <button class="lp-btn" onclick="doLogin()">로그인</button>
-        <div class="lp-switch">
-          계정이 없으신가요? <span onclick="switchLoginTab('register',null)" style="color:var(--gold);font-weight:800;cursor:pointer;">회원가입</span>
-        </div>
+        <!-- 회원가입: 로그인/회원가입 탭으로 이동 -->
       </div>
 
       <!-- REGISTER FORM -->
