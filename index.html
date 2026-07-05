@@ -1261,6 +1261,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
         <button class="btn btn-sm" onclick="exportMembersExcel()" style="background:var(--green);color:#000;font-weight:800;"><i class="fas fa-file-excel"></i> 회원 엑셀</button>
         <button class="btn btn-danger btn-sm" onclick="resetAllData()" style="font-weight:800;"><i class="fas fa-trash"></i> 데이터 초기화</button>
         <button class="btn btn-sm" onclick="cleanChildrenData()" style="background:var(--purple);color:#fff;font-weight:800;"><i class="fas fa-broom"></i> 트리 정리</button>
+        <button class="btn btn-sm" onclick="loadSimulationData()" style="background:var(--blue);color:#fff;font-weight:800;"><i class="fas fa-flask"></i> 테스트 데이터</button>
       </div>
     </div>
 
@@ -2406,6 +2407,198 @@ function renderReportTable(myTx,filter){
   </tr>`).join('');
 }
 // ── Firebase 데이터 초기화 (관리자 전용) ──
+// ══════════════════════════════════════════
+// 시뮬레이션 데이터 주입
+// 구조:
+//        1 (100만)
+//       / \
+//      2   3
+//     /\ /\
+//    4  5 6  7
+// 모두 100만원 투자
+// ══════════════════════════════════════════
+async function loadSimulationData(){
+  showModal('100명 시뮬레이션 데이터',
+    '완전한 바이너리 트리 구조로 100명을 생성합니다.\n\n' +
+    '  sim001 (루트, admin 추천)\n' +
+    '  ├─ L: sim002  └─ R: sim003\n' +
+    '  각 노드가 좌/우로 분기 (7단계)\n\n' +
+    '모두 100만원 투자 / 비밀번호: sim1234\n' +
+    '기존 sim001~sim100 회원이 있으면 덮어씁니다.',
+  async()=>{
+    const INV = 1000000;
+    const today = localDateStr(new Date());
+    toast('데이터 생성 중... (잠시 기다려주세요)', 'info');
+
+    // 회원 데이터 생성 함수
+    const m = (id,name,sponsor,lc,rc,lInv,rInv)=>{
+      // 직계 자식 수당 계산 (1대)
+      const directRef = [lc,rc].filter(x=>x!==null&&x!==undefined);
+      return {
+        id, pwd:_hashPwd('sim1234'),
+        role:'member', name, inviteCode:id,
+        sponsorCode:sponsor,
+        wallet:0, investment:INV, roi:0,
+        leftInvest:lInv||0, rightInvest:rInv||0,
+        leftPoints:lInv||0, rightPoints:rInv||0,
+        children:{left:lc||null, right:rc||null},
+        paidRanks:[],
+        email:'', phone:'', bankName:'', accountNumber:'', accountHolder:'',
+        registeredAt:today, lastLogin:null,
+        suspended:false, approvalStatus:'approved',
+      };
+    };
+
+    // 100명 바이너리 트리 데이터
+    const members = [
+      m('sim001','테스트001','admin','sim002','sim003',63000000,36000000),
+      m('sim002','테스트002','sim001','sim004','sim005',31000000,31000000),
+      m('sim003','테스트003','sim001','sim006','sim007',20000000,15000000),
+      m('sim004','테스트004','sim002','sim008','sim009',15000000,15000000),
+      m('sim005','테스트005','sim002','sim010','sim011',15000000,15000000),
+      m('sim006','테스트006','sim003','sim012','sim013',12000000,7000000),
+      m('sim007','테스트007','sim003','sim014','sim015',7000000,7000000),
+      m('sim008','테스트008','sim004','sim016','sim017',7000000,7000000),
+      m('sim009','테스트009','sim004','sim018','sim019',7000000,7000000),
+      m('sim010','테스트010','sim005','sim020','sim021',7000000,7000000),
+      m('sim011','테스트011','sim005','sim022','sim023',7000000,7000000),
+      m('sim012','테스트012','sim006','sim024','sim025',7000000,4000000),
+      m('sim013','테스트013','sim006','sim026','sim027',3000000,3000000),
+      m('sim014','테스트014','sim007','sim028','sim029',3000000,3000000),
+      m('sim015','테스트015','sim007','sim030','sim031',3000000,3000000),
+      m('sim016','테스트016','sim008','sim032','sim033',3000000,3000000),
+      m('sim017','테스트017','sim008','sim034','sim035',3000000,3000000),
+      m('sim018','테스트018','sim009','sim036','sim037',3000000,3000000),
+      m('sim019','테스트019','sim009','sim038','sim039',3000000,3000000),
+      m('sim020','테스트020','sim010','sim040','sim041',3000000,3000000),
+      m('sim021','테스트021','sim010','sim042','sim043',3000000,3000000),
+      m('sim022','테스트022','sim011','sim044','sim045',3000000,3000000),
+      m('sim023','테스트023','sim011','sim046','sim047',3000000,3000000),
+      m('sim024','테스트024','sim012','sim048','sim049',3000000,3000000),
+      m('sim025','테스트025','sim012','sim050','sim051',2000000,1000000),
+      m('sim026','테스트026','sim013','sim052','sim053',1000000,1000000),
+      m('sim027','테스트027','sim013','sim054','sim055',1000000,1000000),
+      m('sim028','테스트028','sim014','sim056','sim057',1000000,1000000),
+      m('sim029','테스트029','sim014','sim058','sim059',1000000,1000000),
+      m('sim030','테스트030','sim015','sim060','sim061',1000000,1000000),
+      m('sim031','테스트031','sim015','sim062','sim063',1000000,1000000),
+      m('sim032','테스트032','sim016','sim064','sim065',1000000,1000000),
+      m('sim033','테스트033','sim016','sim066','sim067',1000000,1000000),
+      m('sim034','테스트034','sim017','sim068','sim069',1000000,1000000),
+      m('sim035','테스트035','sim017','sim070','sim071',1000000,1000000),
+      m('sim036','테스트036','sim018','sim072','sim073',1000000,1000000),
+      m('sim037','테스트037','sim018','sim074','sim075',1000000,1000000),
+      m('sim038','테스트038','sim019','sim076','sim077',1000000,1000000),
+      m('sim039','테스트039','sim019','sim078','sim079',1000000,1000000),
+      m('sim040','테스트040','sim020','sim080','sim081',1000000,1000000),
+      m('sim041','테스트041','sim020','sim082','sim083',1000000,1000000),
+      m('sim042','테스트042','sim021','sim084','sim085',1000000,1000000),
+      m('sim043','테스트043','sim021','sim086','sim087',1000000,1000000),
+      m('sim044','테스트044','sim022','sim088','sim089',1000000,1000000),
+      m('sim045','테스트045','sim022','sim090','sim091',1000000,1000000),
+      m('sim046','테스트046','sim023','sim092','sim093',1000000,1000000),
+      m('sim047','테스트047','sim023','sim094','sim095',1000000,1000000),
+      m('sim048','테스트048','sim024','sim096','sim097',1000000,1000000),
+      m('sim049','테스트049','sim024','sim098','sim099',1000000,1000000),
+      m('sim050','테스트050','sim025','sim100',null,1000000,0),
+      m('sim051','테스트051','sim025',null,null,0,0),
+      m('sim052','테스트052','sim026',null,null,0,0),
+      m('sim053','테스트053','sim026',null,null,0,0),
+      m('sim054','테스트054','sim027',null,null,0,0),
+      m('sim055','테스트055','sim027',null,null,0,0),
+      m('sim056','테스트056','sim028',null,null,0,0),
+      m('sim057','테스트057','sim028',null,null,0,0),
+      m('sim058','테스트058','sim029',null,null,0,0),
+      m('sim059','테스트059','sim029',null,null,0,0),
+      m('sim060','테스트060','sim030',null,null,0,0),
+      m('sim061','테스트061','sim030',null,null,0,0),
+      m('sim062','테스트062','sim031',null,null,0,0),
+      m('sim063','테스트063','sim031',null,null,0,0),
+      m('sim064','테스트064','sim032',null,null,0,0),
+      m('sim065','테스트065','sim032',null,null,0,0),
+      m('sim066','테스트066','sim033',null,null,0,0),
+      m('sim067','테스트067','sim033',null,null,0,0),
+      m('sim068','테스트068','sim034',null,null,0,0),
+      m('sim069','테스트069','sim034',null,null,0,0),
+      m('sim070','테스트070','sim035',null,null,0,0),
+      m('sim071','테스트071','sim035',null,null,0,0),
+      m('sim072','테스트072','sim036',null,null,0,0),
+      m('sim073','테스트073','sim036',null,null,0,0),
+      m('sim074','테스트074','sim037',null,null,0,0),
+      m('sim075','테스트075','sim037',null,null,0,0),
+      m('sim076','테스트076','sim038',null,null,0,0),
+      m('sim077','테스트077','sim038',null,null,0,0),
+      m('sim078','테스트078','sim039',null,null,0,0),
+      m('sim079','테스트079','sim039',null,null,0,0),
+      m('sim080','테스트080','sim040',null,null,0,0),
+      m('sim081','테스트081','sim040',null,null,0,0),
+      m('sim082','테스트082','sim041',null,null,0,0),
+      m('sim083','테스트083','sim041',null,null,0,0),
+      m('sim084','테스트084','sim042',null,null,0,0),
+      m('sim085','테스트085','sim042',null,null,0,0),
+      m('sim086','테스트086','sim043',null,null,0,0),
+      m('sim087','테스트087','sim043',null,null,0,0),
+      m('sim088','테스트088','sim044',null,null,0,0),
+      m('sim089','테스트089','sim044',null,null,0,0),
+      m('sim090','테스트090','sim045',null,null,0,0),
+      m('sim091','테스트091','sim045',null,null,0,0),
+      m('sim092','테스트092','sim046',null,null,0,0),
+      m('sim093','테스트093','sim046',null,null,0,0),
+      m('sim094','테스트094','sim047',null,null,0,0),
+      m('sim095','테스트095','sim047',null,null,0,0),
+      m('sim096','테스트096','sim048',null,null,0,0),
+      m('sim097','테스트097','sim048',null,null,0,0),
+      m('sim098','테스트098','sim049',null,null,0,0),
+      m('sim099','테스트099','sim049',null,null,0,0),
+      m('sim100','테스트100','sim050',null,null,0,0),
+    ];
+
+    // Firebase 저장 (10명씩 배치)
+    let saved=0;
+    const txBase=Date.now();
+    for(let i=0;i<members.length;i++){
+      await dbPut('users', members[i]);
+      // 거래내역 생성
+      await dbPut('transactions',{
+        id:txBase+i, userId:members[i].id, type:'투자',
+        amount:INV, fee:0, netAmount:INV,
+        date:today, status:'completed',
+        desc:'시뮬레이션 투자'
+      });
+      saved++;
+      if(saved%10===0) toast(`저장 중... ${saved}/100명`, 'info');
+    }
+
+    // admin에게 sim001 직추천 수당 (25%)
+    const adminU=await dbGet('users','admin');
+    if(adminU){
+      const bonus=Math.floor(INV*(CFG.REFERRAL_BONUS?.[1]||0.25));
+      adminU.wallet=(adminU.wallet||0)+bonus;
+      adminU.roi=(adminU.roi||0)+bonus;
+      await dbPut('users',adminU);
+      await dbPut('transactions',{
+        id:txBase+200, userId:'admin', type:'보너스',
+        amount:bonus, fee:0, netAmount:bonus,
+        date:today, status:'completed',
+        desc:`소실적 수당 1대 (sim001 투자금의${(CFG.REFERRAL_BONUS?.[1]||0.25)*100}%)`
+      });
+    }
+
+    // sim001에게 sim002,sim003 수당 (25%)
+    const sim001=await dbGet('users','sim001');
+    if(sim001){
+      const bonus2=Math.floor(INV*(CFG.REFERRAL_BONUS?.[1]||0.25))*2;
+      sim001.wallet=(sim001.wallet||0)+bonus2;
+      sim001.roi=(sim001.roi||0)+bonus2;
+      await dbPut('users',sim001);
+    }
+
+    await audit('SIM_DATA',`시뮬레이션 ${saved}명 생성`,'admin');
+    toast(`✅ 시뮬레이션 완료! ${saved}명 생성\nID: sim001~sim100 / 비밀번호: sim1234`, 'success');
+    setTimeout(()=>renderAdmin(), 500);
+  }, '100명 생성', 'btn-primary');
+}
+
 // Firebase children 데이터 정리 (중복/순환 제거)
 async function cleanChildrenData(){
   showModal('데이터 정리','모든 회원의 children(좌/우 배치) 데이터를 초기화합니다. 관리자에서 다시 설정해야 합니다.',async()=>{
