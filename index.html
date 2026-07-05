@@ -1260,6 +1260,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
         <button class="btn btn-secondary btn-sm" onclick="exportReports()"><i class="fas fa-download"></i> 거래 CSV</button>
         <button class="btn btn-sm" onclick="exportMembersExcel()" style="background:var(--green);color:#000;font-weight:800;"><i class="fas fa-file-excel"></i> 회원 엑셀</button>
         <button class="btn btn-danger btn-sm" onclick="resetAllData()" style="font-weight:800;"><i class="fas fa-trash"></i> 데이터 초기화</button>
+        <button class="btn btn-sm" onclick="cleanChildrenData()" style="background:var(--purple);color:#fff;font-weight:800;"><i class="fas fa-broom"></i> 트리 정리</button>
       </div>
     </div>
 
@@ -2035,10 +2036,13 @@ async function renderNetwork(){
   const u=await dbGet('users',currentUser.id); currentUser=u;
   const allUsers=await dbGetAll('users');
   // 하위 전체 집계
+  const _dl_visited=new Set();
   function getDownlineIds(uid,acc=[]){
+    if(_dl_visited.has(uid)) return acc;
+    _dl_visited.add(uid);
     const ur=allUsers.find(x=>x.id===uid); if(!ur)return acc;
     const directs=allUsers.filter(x=>x.sponsorCode===uid&&x.role==='member');
-    directs.forEach(d=>{ acc.push(d.id); getDownlineIds(d.id,acc); });
+    directs.forEach(d=>{ if(!acc.includes(d.id)){ acc.push(d.id); getDownlineIds(d.id,acc); }});
     return acc;
   }
   const downlineAll=allUsers.filter(x=>x.sponsorCode===u.id&&x.role==='member');
@@ -2236,8 +2240,11 @@ async function loadLRData(u, allUsers){
 
 function renderTreeNode(u,userMap){
   const tree=document.getElementById('network-tree');
+  const visited=new Set(); // 순환참조 방지
   const build=(uid,depth)=>{
-    if(!uid||depth>4)return'';
+    if(!uid||depth>6)return'';
+    if(visited.has(uid))return''; // 이미 렌더링된 노드 건너뜀
+    visited.add(uid);
     const user=userMap[uid]; if(!user)return'';
     const isSelf=uid===currentUser.id;
     const left=build(user.children?.left,depth+1);
@@ -2399,6 +2406,21 @@ function renderReportTable(myTx,filter){
   </tr>`).join('');
 }
 // ── Firebase 데이터 초기화 (관리자 전용) ──
+// Firebase children 데이터 정리 (중복/순환 제거)
+async function cleanChildrenData(){
+  showModal('데이터 정리','모든 회원의 children(좌/우 배치) 데이터를 초기화합니다. 관리자에서 다시 설정해야 합니다.',async()=>{
+    const allUsers = await dbGetAll('users');
+    for(const u of allUsers){
+      if(u.role !== 'member') continue;
+      u.children = {left:null, right:null};
+      await dbPut('users', u);
+    }
+    await audit('CLEAN_CHILDREN','children 데이터 전체 초기화','admin');
+    toast('✅ children 데이터 초기화 완료! 관리자에서 좌/우 배치를 다시 설정해주세요.','success');
+    renderAdmin();
+  },'초기화','btn-danger');
+}
+
 async function resetAllData(){
   showModal('⚠️ 전체 데이터 초기화',
     '모든 회원(admin 제외), 거래내역, 투자/출금 대기 데이터가 삭제됩니다.\n\n이 작업은 되돌릴 수 없습니다!\n\n정말 초기화하시겠습니까?',
