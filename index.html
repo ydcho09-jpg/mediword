@@ -2423,7 +2423,7 @@ async function loadSimulationData(){
     '  sim001 (루트, admin 추천)\n' +
     '  ├─ L: sim002  └─ R: sim003\n' +
     '  각 노드가 좌/우로 분기 (7단계)\n\n' +
-    '모두 100만원 투자 / 비밀번호: sim1234\n' +
+    '모두 100만원 투자\n비밀번호: 1234 (숫자 네 자리)\n' +
     '기존 sim001~sim100 회원이 있으면 덮어씁니다.',
   async()=>{
     const INV = 1000000;
@@ -2435,7 +2435,7 @@ async function loadSimulationData(){
       // 직계 자식 수당 계산 (1대)
       const directRef = [lc,rc].filter(x=>x!==null&&x!==undefined);
       return {
-        id, pwd:_hashPwd('sim1234'),
+        id, pwd:_hashPwd('1234'),
         role:'member', name, inviteCode:id,
         sponsorCode:sponsor,
         wallet:0, investment:INV, roi:0,
