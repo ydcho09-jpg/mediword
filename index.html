@@ -1903,6 +1903,36 @@ async function doRegister(){
     approvalStatus:'approved',
   };
   await dbPut('users',newUser);
+
+  // 후원인의 children에 자동 배치 (바이너리 트리 구성)
+  const sUser = await dbGet('users', sponsorId);
+  if(sUser){
+    if(!sUser.children) sUser.children = {left:null, right:null};
+    if(!sUser.children.left){
+      sUser.children.left = id;
+    } else if(!sUser.children.right){
+      sUser.children.right = id;
+    }
+    // 꽉 찼으면 BFS로 빈 자리 찾기
+    else {
+      const allU = await dbGetAll('users');
+      const vis = new Set();
+      const q = [sponsorId];
+      while(q.length){
+        const cur = q.shift();
+        if(!cur||vis.has(cur)) continue;
+        vis.add(cur);
+        const cu = await dbGet('users',cur);
+        if(!cu) continue;
+        if(!cu.children) cu.children={left:null,right:null};
+        if(!cu.children.left){ cu.children.left=id; await dbPut('users',cu); break; }
+        if(!cu.children.right){ cu.children.right=id; await dbPut('users',cu); break; }
+        q.push(cu.children.left); q.push(cu.children.right);
+      }
+    }
+    await dbPut('users', sUser);
+  }
+
   await audit('REGISTER',`신규 가입 추천인:${referrerCode} 후원인:${sponsorId}`,id);
   toast('🎉 가입 완료! 바로 로그인하실 수 있습니다','success');
   document.querySelectorAll('.login-tab').forEach((t,i)=>{t.classList.remove('active');if(i===0)t.classList.add('active');});
@@ -2080,7 +2110,10 @@ async function renderNetwork(){
   document.getElementById('net-left-pt').textContent=fmt(u.leftInvest||0);
   document.getElementById('net-right-pt').textContent=fmt(u.rightInvest||0);
   document.getElementById('net-small-line').textContent=fmt(smallLine);
-  document.getElementById('my-invite-code').innerHTML=`<i class="fas fa-copy"></i> ${_esc(u.inviteCode)}`;
+  document.getElementById('my-invite-code').innerHTML=`<i class="fas fa-copy"></i> 내 추천 ID: ${_esc(u.id)}`;
+  // 후원인 표시
+  const puEl = document.getElementById('my-placed-under');
+  if(puEl) puEl.textContent = u.placedUnder || u.sponsorCode || '-';
   // ── 내 스타 등급 진행 현황 ──
   const refCount = downlineAll.length;
   const totalPV = (u.leftInvest||0)+(u.rightInvest||0);
@@ -2432,18 +2465,26 @@ function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
   if(!wrap) return;
   wrap.innerHTML = '';
 
-  // ── 각 uid의 자식 목록 생성 ──
-  // children.left/right 우선, 없으면 placedUnder/sponsorCode 기반
+  // ── 후원 조직도: placedUnder 기반으로 자식 찾기 ──
+  // placedUnder가 uid인 회원을 가입일 순으로 L, R 배치
   function kids(uid){
-    const u = userMap[uid]; if(!u) return [];
-    if(u.children?.left || u.children?.right){
+    // 1순위: placedUnder===uid 인 회원들
+    const byPlaced = Object.values(userMap)
+      .filter(x => x.placedUnder===uid && x.role==='member')
+      .sort((a,b)=>(a.registeredAt||'').localeCompare(b.registeredAt||''));
+    if(byPlaced.length > 0) return byPlaced.slice(0,2).map(x=>x.id);
+
+    // 2순위: children.left/right (수동 설정)
+    const u = userMap[uid];
+    if(u?.children?.left || u?.children?.right){
       return [u.children.left, u.children.right].filter(Boolean);
     }
-    // placedUnder 또는 sponsorCode로 이 uid를 후원인/추천인으로 갖는 회원
+
+    // 3순위: sponsorCode===uid (추천인 기반, placedUnder 없는 구버전)
     return Object.values(userMap)
-      .filter(x => (x.placedUnder===uid || x.sponsorCode===uid) && x.role==='member')
+      .filter(x => x.sponsorCode===uid && !x.placedUnder && x.role==='member')
       .sort((a,b)=>(a.registeredAt||'').localeCompare(b.registeredAt||''))
-      .slice(0,2) // 최대 2명 (바이너리)
+      .slice(0,2)
       .map(x=>x.id);
   }
 
@@ -3257,7 +3298,7 @@ async function renderProfile(){
   document.getElementById('prof-last-login').textContent=u.lastLogin||'기록 없음';
   document.getElementById('profile-info').innerHTML=`
     <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);"><span style="font-size:14px;color:var(--text3);">아이디</span><span class="mono" style="font-size:15px;">${_esc(u.id)}</span></div>
-    <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);"><span style="font-size:14px;color:var(--text3);">초대 코드</span><span class="mono" style="font-size:15px;color:var(--gold);">${_esc(u.inviteCode)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);"><span style="font-size:14px;color:var(--text3);">후원인</span><span class="mono" style="font-size:15px;color:var(--gold);">${_esc(u.placedUnder||u.sponsorCode||'-')}</span></div>
     <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);"><span style="font-size:14px;color:var(--text3);">추천인</span><span style="font-size:15px;">${u.sponsorCode==='SYSTEM-ROOT'||!u.sponsorCode?'직가입':_esc(u.sponsorCode)}</span></div>
     <div style="display:flex;justify-content:space-between;padding:12px 0;"><span style="font-size:14px;color:var(--text3);">가입일</span><span style="font-size:15px;">${u.registeredAt}</span></div>
   `;
@@ -3323,8 +3364,8 @@ async function openMemberDetail(uid){
           <input class="form-input" id="edit-sponsor" value="${_esc(u.sponsorCode&&u.sponsorCode!=='SYSTEM-ROOT'?u.sponsorCode:'')}" placeholder="추천인 아이디">
         </div>
         <div>
-          <div style="font-size:14px;color:var(--text2);margin-bottom:6px;font-weight:700;">초대 코드</div>
-          <input class="form-input" value="${_esc(u.inviteCode||u.id)}" disabled style="opacity:0.5;">
+          <div style="font-size:14px;color:var(--text2);margin-bottom:6px;font-weight:700;">후원인 코드</div>
+          <input class="form-input" id="edit-placed-under" value="${_esc(u.placedUnder||u.sponsorCode||'')}" placeholder="후원인 아이디">
         </div>
       </div>
       <div style="margin-top:12px;">
@@ -3498,12 +3539,14 @@ async function adminSaveBasicInfo(){
   const newEmail=document.getElementById('edit-email').value.trim();
   const newPhone=document.getElementById('edit-phone').value.trim();
   const newSponsor=document.getElementById('edit-sponsor').value.trim();
+  const newPlacedUnder=(document.getElementById('edit-placed-under')?.value||'').trim();
   const newPwd=document.getElementById('edit-newpwd').value;
   if(!newName){toast('이름을 입력하세요','error');return;}
   u.name=newName;
   u.email=newEmail;
   u.phone=newPhone;
   if(newSponsor) u.sponsorCode=newSponsor;
+  if(newPlacedUnder) u.placedUnder=newPlacedUnder;
   if(newPwd){
     if(!_sanitizePwd(newPwd)){toast('비밀번호는 4자 이상이어야 합니다','error');return;}
     u.pwd=_hashPwd(newPwd);
