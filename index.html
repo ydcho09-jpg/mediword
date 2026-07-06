@@ -670,9 +670,9 @@ td{font-size:14px !important;padding:14px 16px !important;}
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">추천인 아이디 <span style="color:var(--red);font-size:14px;">✱ 필수</span></label>
-          <input class="form-input" id="inp-rref" placeholder="추천인 아이디를 반드시 입력하세요">
-          <div class="form-hint" style="color:var(--gold);">💡 추천인의 <b>로그인 아이디</b>를 입력하세요. (필수 항목)</div>
+          <label class="form-label">후원인 아이디 <span style="color:var(--red);font-size:14px;">✱ 필수</span></label>
+          <input class="form-input" id="inp-rref" placeholder="후원인 아이디를 입력하세요 (후원인의 하부에 배치됩니다)">
+          <div class="form-hint" style="color:var(--gold);">💡 후원인 아이디를 입력하면 해당 후원인의 하부 조직에 배치됩니다.</div>
         </div>
         <button class="lp-btn" onclick="doRegister()">계정 만들기</button>
         <div class="lp-switch">
@@ -823,32 +823,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <label class="form-label">입금자명</label>
           <input class="form-input" id="inp-invest-name" placeholder="실제 입금자명 입력">
         </div>
-        <div class="form-group">
-          <label class="form-label">조직 배치 위치 <span style="color:var(--red);font-size:14px;">✱ 필수</span></label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
-            <label id="side-left-label" style="display:flex;align-items:center;gap:10px;background:var(--bg3);border:2px solid var(--border);border-radius:var(--r);padding:16px;cursor:pointer;transition:all .2s;" onclick="selectSide('left')">
-              <input type="radio" name="invest-side" id="inp-iside-left" value="left" style="display:none;">
-              <div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;" id="side-left-dot">
-                <div style="width:10px;height:10px;border-radius:50%;background:transparent;" id="side-left-fill"></div>
-              </div>
-              <div>
-                <div style="font-size:16px;font-weight:800;color:var(--gold);">⬅ 왼쪽 (L)</div>
-                <div style="font-size:13px;color:var(--text2);margin-top:2px;">좌측 팀 배치</div>
-              </div>
-            </label>
-            <label id="side-right-label" style="display:flex;align-items:center;gap:10px;background:var(--bg3);border:2px solid var(--border);border-radius:var(--r);padding:16px;cursor:pointer;transition:all .2s;" onclick="selectSide('right')">
-              <input type="radio" name="invest-side" id="inp-iside-right" value="right" style="display:none;">
-              <div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--green);display:flex;align-items:center;justify-content:center;" id="side-right-dot">
-                <div style="width:10px;height:10px;border-radius:50%;background:transparent;" id="side-right-fill"></div>
-              </div>
-              <div>
-                <div style="font-size:16px;font-weight:800;color:var(--green);">오른쪽 (R) ➡</div>
-                <div style="font-size:13px;color:var(--text2);margin-top:2px;">우측 팀 배치</div>
-              </div>
-            </label>
-          </div>
-          <div class="form-hint" style="margin-top:8px;">💡 투자금이 배치될 팀을 선택하세요. 선택 후 변경 불가.</div>
-        </div>
+
         <div class="form-group">
           <label class="form-label">메모 (선택)</label>
           <input class="form-input" id="inp-invest-memo" placeholder="특이사항 기재">
@@ -1354,6 +1329,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
       <button class="tab" onclick="switchAdminTab('investments',this)">💰 투자승인 <span id="inv-badge" class="stat-badge badge-pend" style="margin-left:4px;"></span></button>
       <button class="tab" onclick="switchAdminTab('withdrawals',this)">🏧 출금승인 <span id="wd-badge" class="stat-badge badge-pend" style="margin-left:4px;"></span></button>
       <button class="tab" onclick="switchAdminTab('logs',this)">📋 거래로그</button>
+      <button class="tab" onclick="switchAdminTab('tree',this)">🌳 조직도</button>
     </div>
 
     <!-- OVERVIEW TAB -->
@@ -1412,6 +1388,22 @@ td{font-size:14px !important;padding:14px 16px !important;}
     </div>
 
     <!-- LOGS TAB -->
+    <!-- TREE TAB -->
+    <div id="admin-tab-tree" style="display:none;">
+      <div class="card">
+        <div class="card-header" style="margin-bottom:16px;">
+          <div class="card-title-lg">🌳 전체 조직도</div>
+        </div>
+        <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <input class="form-input" id="admin-tree-root" placeholder="루트 아이디 (비우면 sim001)" style="max-width:220px;padding:10px 14px;font-size:16px;">
+          <button class="btn btn-primary btn-sm" onclick="renderAdminTree()"><i class="fas fa-search"></i> 보기</button>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('admin-tree-root').value='';renderAdminTree()"><i class="fas fa-globe"></i> 전체</button>
+          <span style="font-size:14px;color:var(--text2);">드래그로 이동 | 휠로 확대/축소</span>
+        </div>
+        <div id="admin-network-tree" style="overflow:hidden;position:relative;background:var(--bg3);border-radius:var(--r);min-height:500px;cursor:grab;"></div>
+      </div>
+    </div>
+
     <div id="admin-tab-logs" style="display:none;">
       <div class="card">
         <div class="card-header">
@@ -1851,10 +1843,10 @@ async function doRegister(){
   if(pwd!==pwd2){toast('비밀번호가 일치하지 않습니다','error');return;}
   const existing=await dbGet('users',id);
   if(existing){toast('이미 사용 중인 아이디입니다','error');return;}
-  // 추천인 코드 — 필수 입력
-  if(!ref){toast('추천인 아이디를 입력하세요 (필수)','error');return;}
+  // 후원인 — 필수 입력
+  if(!ref){toast('후원인 아이디를 입력하세요 (필수)','error');return;}
   const refUser=await dbGet('users',ref);
-  if(!refUser||refUser.suspended){toast('유효하지 않은 추천인 아이디입니다. 추천인에게 확인하세요.','error');return;}
+  if(!refUser||refUser.suspended){toast('유효하지 않은 후원인 아이디입니다. 후원인에게 확인하세요.','error');return;}
   const newUser={
     id, pwd:_hashPwd(pwd), role:'member', name,
     inviteCode:id, sponsorCode:ref||'',
@@ -2011,22 +2003,13 @@ async function submitInvestment(){
   const iname=document.getElementById('inp-invest-name').value.trim();
   if(amt<100000){toast('최소 투자금액은 ₩100,000(10만원)입니다','error');return;}
   if(!iname){toast('입금자명을 입력하세요','error');return;}
-  if(!_selectedSide){toast('좌측(L) 또는 우측(R) 배치를 선택하세요','error');return;}
-  const inv={id:Date.now(),userId:currentUser.id,userName:currentUser.name,amount:amt,depositorName:_esc(iname),memo:_esc(document.getElementById('inp-invest-memo').value.trim()),side:_selectedSide,requestedAt:localDateTimeStr(new Date()),status:'pending'};
+  const inv={id:Date.now(),userId:currentUser.id,userName:currentUser.name,amount:amt,depositorName:_esc(iname),memo:_esc(document.getElementById('inp-invest-memo').value.trim()),side:'auto',requestedAt:localDateTimeStr(new Date()),status:'pending'};
   await dbPut('pendingInvestments',inv);  // id 있으므로 fsPut 사용
   await audit('INVEST_REQUEST',`투자신청 ${fmt(amt)}`,currentUser.id);
   document.getElementById('inp-invest-amount').value='';
   document.getElementById('inp-invest-name').value='';
   document.getElementById('inp-invest-memo').value='';
-  _selectedSide=null;
-  // 선택 UI 초기화
-  ['left','right'].forEach(s=>{
-    const el=document.getElementById('side-'+s+'-label');
-    const fl=document.getElementById('side-'+s+'-fill');
-    if(el) el.style.borderColor='var(--border)';
-    if(el) el.style.background='var(--bg3)';
-    if(fl) fl.style.background='transparent';
-  });
+
   toast('✅ 투자 신청이 접수되었습니다. 관리자 승인 후 배당이 시작됩니다','success');
 }
 
@@ -2239,32 +2222,157 @@ async function loadLRData(u, allUsers){
   renderLRTable('all');
 }
 
-function renderTreeNode(u,userMap){
-  const tree=document.getElementById('network-tree');
-  const visited=new Set(); // 순환참조 방지
-  const build=(uid,depth)=>{
-    if(!uid||depth>6)return'';
-    if(visited.has(uid))return''; // 이미 렌더링된 노드 건너뜀
+// ══════════════════════════════════════════
+// 공통 트리 렌더 함수 (드래그/터치 이동 + 균형 레이아웃)
+// ══════════════════════════════════════════
+function renderTreeNode(u, userMap){
+  renderTree('network-tree', u.id, userMap, currentUser?.id);
+}
+
+async function renderAdminTree(){
+  const rootInput = document.getElementById('admin-tree-root');
+  const rootId = (rootInput?.value||'').trim();
+  const allUsers = await dbGetAll('users');
+  const userMap = {};
+  allUsers.forEach(u=>{ userMap[u.id]=u; });
+  const startId = rootId && userMap[rootId] ? rootId
+    : (allUsers.find(u=>u.role==='member')?.id || null);
+  if(!startId){ toast('회원이 없습니다','error'); return; }
+  renderTree('admin-network-tree', startId, userMap, null);
+}
+
+function renderTree(containerId, rootId, userMap, selfId){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+
+  // ── 노드 HTML 생성 (균형 레이아웃) ──
+  const NODE_W = 140, NODE_H = 80, H_GAP = 20, V_GAP = 60;
+  const visited = new Set();
+
+  // 트리 너비 계산 (균형용)
+  function treeWidth(uid, depth){
+    if(!uid || depth>7 || visited.has(uid)) return NODE_W + H_GAP;
     visited.add(uid);
-    const user=userMap[uid]; if(!user)return'';
-    const isSelf=uid===currentUser.id;
-    const left=build(user.children?.left,depth+1);
-    const right=build(user.children?.right,depth+1);
-    const hasC=left||right;
-    return `<div style="display:flex;flex-direction:column;align-items:center;">
-      <div class="tree-node${isSelf?' self':''}${user.suspended?' suspended':''}">
-        <div class="tree-node-name">${_esc(user.name)}</div>
-        <div class="tree-node-id">${_esc(user.id)}</div>
-        ${user.investment>0?`<div class="tree-node-amount">${fmt(user.investment)}</div>`:''}
-      </div>
-      ${hasC?`<div style="width:1px;height:20px;background:var(--border);"></div>
-        <div style="display:flex;align-items:flex-start;gap:32px;">
-          ${left?`<div style="display:flex;flex-direction:column;align-items:center;"><div style="height:20px;width:1px;background:var(--border);"></div>${left}</div>`:''}
-          ${right?`<div style="display:flex;flex-direction:column;align-items:center;"><div style="height:20px;width:1px;background:var(--border);"></div>${right}</div>`:''}
-        </div>`:''}
+    const user = userMap[uid]; if(!user) return NODE_W + H_GAP;
+    const lw = treeWidth(user.children?.left, depth+1);
+    const rw = treeWidth(user.children?.right, depth+1);
+    visited.delete(uid);
+    return Math.max(NODE_W + H_GAP, lw + rw);
+  }
+
+  // 노드 위치 계산
+  const positions = {};
+  const visited2 = new Set();
+  function calcPos(uid, x, y, depth){
+    if(!uid || depth>7 || visited2.has(uid)) return;
+    visited2.add(uid);
+    const user = userMap[uid]; if(!user) return;
+    positions[uid] = {x, y};
+    const lc = user.children?.left;
+    const rc = user.children?.right;
+    const lw = treeWidth(lc, depth+1);
+    const rw = treeWidth(rc, depth+1);
+    const totalW = lw + rw;
+    if(lc) calcPos(lc, x - rw/2, y + NODE_H + V_GAP, depth+1);
+    if(rc) calcPos(rc, x + lw/2, y + NODE_H + V_GAP, depth+1);
+  }
+  calcPos(rootId, 0, 0, 0);
+
+  // 전체 범위 계산
+  const xs = Object.values(positions).map(p=>p.x);
+  const ys = Object.values(positions).map(p=>p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const totalW = maxX - minX + NODE_W + H_GAP*2;
+  const totalH = maxY - minY + NODE_H + V_GAP*2;
+  const offsetX = -minX + H_GAP;
+  const offsetY = -minY + V_GAP;
+
+  // SVG 라인 + HTML 노드 생성
+  const visited3 = new Set();
+  let lines = '';
+  let nodes = '';
+  for(const [uid, pos] of Object.entries(positions)){
+    if(visited3.has(uid)) continue;
+    visited3.add(uid);
+    const user = userMap[uid]; if(!user) continue;
+    const cx = pos.x + offsetX + NODE_W/2;
+    const cy = pos.y + offsetY + NODE_H/2;
+    const nx = pos.x + offsetX;
+    const ny = pos.y + offsetY;
+    const isSelf = uid === selfId;
+    const color = isSelf ? 'var(--gold)' : user.suspended ? 'var(--red)' : 'var(--border2)';
+    const bgColor = isSelf ? 'rgba(212,168,83,0.12)' : 'var(--bg2)';
+
+    // 자식 라인
+    for(const side of ['left','right']){
+      const childId = user.children?.[side];
+      if(childId && positions[childId]){
+        const cp = positions[childId];
+        const x1 = pos.x + offsetX + NODE_W/2;
+        const y1 = pos.y + offsetY + NODE_H;
+        const x2 = cp.x + offsetX + NODE_W/2;
+        const y2 = cp.y + offsetY;
+        const lColor = side==='left' ? '#d4a853' : '#3dd68c';
+        lines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${lColor}" stroke-width="1.5" opacity="0.5"/>`;
+        // L/R 라벨
+        const mx = (x1+x2)/2, my = (y1+y2)/2;
+        lines += `<text x="${mx}" y="${my}" fill="${lColor}" font-size="11" text-anchor="middle" dy="-3" opacity="0.8">${side==='left'?'L':'R'}</text>`;
+      }
+    }
+
+    nodes += `<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NODE_W}px;height:${NODE_H}px;
+      background:${bgColor};border:1.5px solid ${color};border-radius:12px;
+      padding:8px 10px;box-sizing:border-box;cursor:pointer;"
+      onclick="alert('${_esc(user.name)} (${_esc(uid)})\n투자: ${fmt(user.investment||0)}\n잔액: ${fmt(user.wallet||0)}')">
+      <div style="font-size:13px;font-weight:800;color:${isSelf?'var(--gold)':'var(--text)'};overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${_esc(user.name)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:1px;">${_esc(uid)}</div>
+      ${user.investment>0?`<div style="font-size:12px;color:var(--gold);margin-top:3px;font-weight:700;">${fmt(user.investment)}</div>`:''}
     </div>`;
-  };
-  tree.innerHTML=`<div style="display:flex;justify-content:center;">${build(u.id,0)}</div>`;
+  }
+
+  const svgW = Math.max(totalW, 300);
+  const svgH = Math.max(totalH, 200);
+
+  container.innerHTML = `
+    <div id="${containerId}-inner" style="position:relative;width:${svgW}px;height:${svgH}px;">
+      <svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;" viewBox="0 0 ${svgW} ${svgH}">
+        ${lines}
+      </svg>
+      ${nodes}
+    </div>`;
+
+  // ── 드래그/터치 이동 ──
+  initTreeDrag(container);
+}
+
+function initTreeDrag(container){
+  let isDrag=false, startX=0, startY=0, scrollLeft=0, scrollTop=0;
+  // 마우스 드래그
+  container.addEventListener('mousedown', e=>{
+    isDrag=true; startX=e.pageX; startY=e.pageY;
+    scrollLeft=container.scrollLeft; scrollTop=container.scrollTop;
+    container.style.cursor='grabbing';
+  });
+  document.addEventListener('mousemove', e=>{
+    if(!isDrag) return;
+    container.scrollLeft = scrollLeft - (e.pageX - startX);
+    container.scrollTop  = scrollTop  - (e.pageY - startY);
+  });
+  document.addEventListener('mouseup', ()=>{ isDrag=false; container.style.cursor='grab'; });
+  // 터치 드래그
+  let tStartX=0, tStartY=0, tScrollL=0, tScrollT=0;
+  container.addEventListener('touchstart', e=>{
+    tStartX=e.touches[0].pageX; tStartY=e.touches[0].pageY;
+    tScrollL=container.scrollLeft; tScrollT=container.scrollTop;
+  },{passive:true});
+  container.addEventListener('touchmove', e=>{
+    container.scrollLeft = tScrollL - (e.touches[0].pageX - tStartX);
+    container.scrollTop  = tScrollT - (e.touches[0].pageY - tStartY);
+  },{passive:true});
+  // overflow 설정
+  container.style.overflow='auto';
+  container.style.cursor='grab';
 }
 function copyInvite(){ navigator.clipboard.writeText(currentUser.id).then(()=>toast('내 추천 아이디가 복사되었습니다: '+currentUser.id,'success')); }
 
@@ -3588,21 +3696,27 @@ async function approveInvestment(id){
   },'승인','btn-success');
 }
 // processBinaryBonus 제거 — 수당은 approveInvestment에서 직접 처리
-async function updateLinePoints(newUserId, amount, side='left'){
-  // side: 회원이 투자 신청 시 선택한 'left' 또는 'right'
+async function updateLinePoints(newUserId, amount, side='auto'){
   const newUser = await dbGet('users', newUserId);
   if(!newUser || !newUser.sponsorCode) return;
   const allUsers = await dbGetAll('users');
-  const chosenSide = (side === 'right') ? 'right' : 'left';
 
-  // ── 1대 직접 추천인: side 값으로 children 배치 + 포인트 업데이트 ──
   const directSponsor = await dbGet('users', newUser.sponsorCode);
   if(directSponsor){
     if(!directSponsor.children) directSponsor.children = {left:null, right:null};
+    // auto: 빈 쪽에 자동 배치 (left 우선)
+    let chosenSide;
+    if(side === 'right') chosenSide = 'right';
+    else if(side === 'left') chosenSide = 'left';
+    else {
+      // 자동: 빈 쪽에 배치, 둘 다 비어있으면 left
+      if(!directSponsor.children.left) chosenSide = 'left';
+      else if(!directSponsor.children.right) chosenSide = 'right';
+      else chosenSide = 'left'; // 둘 다 있으면 left
+    }
     if(chosenSide === 'left'){
       directSponsor.leftInvest  = (directSponsor.leftInvest||0) + amount;
       directSponsor.leftPoints  = (directSponsor.leftPoints||0) + amount;
-      // children.left가 비어 있으면 배치, 이미 있으면 유지
       if(!directSponsor.children.left) directSponsor.children.left = newUserId;
     } else {
       directSponsor.rightInvest = (directSponsor.rightInvest||0) + amount;
@@ -3610,7 +3724,7 @@ async function updateLinePoints(newUserId, amount, side='left'){
       if(!directSponsor.children.right) directSponsor.children.right = newUserId;
     }
     await dbPut('users', directSponsor);
-    console.log(`[Tree] ${newUserId} → ${newUser.sponsorCode} 의 ${chosenSide} 배치`);
+    console.log(`[Tree] ${newUserId} → ${newUser.sponsorCode} 의 ${chosenSide} 자동배치`);
   }
 
   // 2대 이상 상위: 자동 판별로 포인트 업데이트
