@@ -2266,104 +2266,110 @@ function renderTree(containerId, rootId, userMap, selfId){
   const container = document.getElementById(containerId);
   if(!container) return;
 
-  // ── 노드 HTML 생성 (균형 레이아웃) ──
-  const NODE_W = 140, NODE_H = 80, H_GAP = 20, V_GAP = 60;
-  const visited = new Set();
+  const NW=150, NH=78, HGAP=30, VGAP=70;
 
-  // 트리 너비 계산 (균형용)
-  function treeWidth(uid, depth){
-    if(!uid || depth>7 || visited.has(uid)) return NODE_W + H_GAP;
-    visited.add(uid);
-    const user = userMap[uid]; if(!user) return NODE_W + H_GAP;
-    const lw = treeWidth(user.children?.left, depth+1);
-    const rw = treeWidth(user.children?.right, depth+1);
-    visited.delete(uid);
-    return Math.max(NODE_W + H_GAP, lw + rw);
+  // ── 1단계: 서브트리 리프 개수 계산 (균형 배치용) ──
+  const leafCount = {};
+  const vis1 = new Set();
+  function countLeaves(uid){
+    if(!uid || vis1.has(uid)) return 0;
+    vis1.add(uid);
+    const u = userMap[uid]; if(!u) return 0;
+    const lc = u.children?.left, rc = u.children?.right;
+    if(!lc && !rc) return 1;
+    const l = lc ? countLeaves(lc) : 0;
+    const r = rc ? countLeaves(rc) : 0;
+    leafCount[uid] = l + r;
+    return l + r || 1;
   }
+  countLeaves(rootId);
 
-  // 노드 위치 계산
-  const positions = {};
-  const visited2 = new Set();
-  function calcPos(uid, x, y, depth){
-    if(!uid || depth>7 || visited2.has(uid)) return;
-    visited2.add(uid);
-    const user = userMap[uid]; if(!user) return;
-    positions[uid] = {x, y};
-    const lc = user.children?.left;
-    const rc = user.children?.right;
-    const lw = treeWidth(lc, depth+1);
-    const rw = treeWidth(rc, depth+1);
-    const totalW = lw + rw;
-    if(lc) calcPos(lc, x - rw/2, y + NODE_H + V_GAP, depth+1);
-    if(rc) calcPos(rc, x + lw/2, y + NODE_H + V_GAP, depth+1);
-  }
-  calcPos(rootId, 0, 0, 0);
-
-  // 전체 범위 계산
-  const xs = Object.values(positions).map(p=>p.x);
-  const ys = Object.values(positions).map(p=>p.y);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
-  const totalW = maxX - minX + NODE_W + H_GAP*2;
-  const totalH = maxY - minY + NODE_H + V_GAP*2;
-  const offsetX = -minX + H_GAP;
-  const offsetY = -minY + V_GAP;
-
-  // SVG 라인 + HTML 노드 생성
-  const visited3 = new Set();
-  let lines = '';
-  let nodes = '';
-  for(const [uid, pos] of Object.entries(positions)){
-    if(visited3.has(uid)) continue;
-    visited3.add(uid);
-    const user = userMap[uid]; if(!user) continue;
-    const cx = pos.x + offsetX + NODE_W/2;
-    const cy = pos.y + offsetY + NODE_H/2;
-    const nx = pos.x + offsetX;
-    const ny = pos.y + offsetY;
-    const isSelf = uid === selfId;
-    const color = isSelf ? 'var(--gold)' : user.suspended ? 'var(--red)' : 'var(--border2)';
-    const bgColor = isSelf ? 'rgba(212,168,83,0.12)' : 'var(--bg2)';
-
-    // 자식 라인
-    for(const side of ['left','right']){
-      const childId = user.children?.[side];
-      if(childId && positions[childId]){
-        const cp = positions[childId];
-        const x1 = pos.x + offsetX + NODE_W/2;
-        const y1 = pos.y + offsetY + NODE_H;
-        const x2 = cp.x + offsetX + NODE_W/2;
-        const y2 = cp.y + offsetY;
-        const lColor = side==='left' ? '#d4a853' : '#3dd68c';
-        lines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${lColor}" stroke-width="1.5" opacity="0.5"/>`;
-        // L/R 라벨
-        const mx = (x1+x2)/2, my = (y1+y2)/2;
-        lines += `<text x="${mx}" y="${my}" fill="${lColor}" font-size="11" text-anchor="middle" dy="-3" opacity="0.8">${side==='left'?'L':'R'}</text>`;
-      }
+  // ── 2단계: 노드 위치 계산 (Reingold-Tilford 간소화) ──
+  const pos = {};
+  const vis2 = new Set();
+  function place(uid, depth, left){
+    if(!uid || vis2.has(uid)) return left;
+    vis2.add(uid);
+    const u = userMap[uid]; if(!u) return left;
+    const lc = u.children?.left, rc = u.children?.right;
+    let x;
+    if(!lc && !rc){
+      x = left;
+      pos[uid] = {x, y: depth*(NH+VGAP)};
+      return left + NW + HGAP;
     }
+    let cur = left;
+    if(lc) cur = place(lc, depth+1, cur);
+    const midL = lc && pos[lc] ? pos[lc].x : cur;
+    const startR = cur;
+    if(rc) cur = place(rc, depth+1, cur);
+    const midR = rc && pos[rc] ? pos[rc].x : startR;
+    x = lc && rc ? (midL + midR) / 2 : (lc ? midL : midR);
+    pos[uid] = {x, y: depth*(NH+VGAP)};
+    return cur;
+  }
+  place(rootId, 0, 0);
 
-    nodes += `<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NODE_W}px;height:${NODE_H}px;
-      background:${bgColor};border:1.5px solid ${color};border-radius:12px;
-      padding:8px 10px;box-sizing:border-box;cursor:pointer;"
-      onclick="toast('${_esc(user.name)} (${_esc(uid)}) · 투자: ${fmt(user.investment||0)} · 잔액: ${fmt(user.wallet||0)}','info')">
-      <div style="font-size:13px;font-weight:800;color:${isSelf?'var(--gold)':'var(--text)'};overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${_esc(user.name)}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:1px;">${_esc(uid)}</div>
-      ${user.investment>0?`<div style="font-size:12px;color:var(--gold);margin-top:3px;font-weight:700;">${fmt(user.investment)}</div>`:''}
+  // ── 3단계: 전체 범위 ──
+  const allPos = Object.values(pos);
+  if(allPos.length === 0){ container.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);">데이터가 없습니다</div>'; return; }
+  const minX = Math.min(...allPos.map(p=>p.x));
+  const maxX = Math.max(...allPos.map(p=>p.x));
+  const maxY = Math.max(...allPos.map(p=>p.y));
+  const offX = -minX + HGAP;
+  const offY = VGAP;
+  const canvasW = Math.max(maxX - minX + NW + HGAP*2, 400);
+  const canvasH = maxY + NH + VGAP*2;
+
+  // ── 4단계: SVG 연결선 ──
+  let lines = '';
+  const vis3 = new Set();
+  for(const [uid, p] of Object.entries(pos)){
+    if(vis3.has(uid)) continue; vis3.add(uid);
+    const u = userMap[uid]; if(!u) continue;
+    for(const side of ['left','right']){
+      const cid = u.children?.[side];
+      if(!cid || !pos[cid]) continue;
+      const cp = pos[cid];
+      const x1 = p.x  + offX + NW/2, y1 = p.y  + offY + NH;
+      const x2 = cp.x + offX + NW/2, y2 = cp.y + offY;
+      const col = side==='left' ? '#d4a853' : '#3dd68c';
+      // 곡선 연결선
+      const my = (y1+y2)/2;
+      lines += `<path d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}" stroke="${col}" stroke-width="1.5" fill="none" opacity="0.6"/>`;
+      lines += `<text x="${(x1+x2)/2}" y="${(y1+y2)/2}" fill="${col}" font-size="12" text-anchor="middle" font-weight="bold" opacity="0.9">${side==='left'?'L':'R'}</text>`;
+    }
+  }
+
+  // ── 5단계: 노드 HTML ──
+  let nodes = '';
+  for(const [uid, p] of Object.entries(pos)){
+    const u = userMap[uid]; if(!u) continue;
+    const nx = p.x + offX, ny = p.y + offY;
+    const isSelf = uid === selfId;
+    const borderCol = isSelf ? '#d4a853' : u.suspended ? '#f05d5d' : 'rgba(255,255,255,0.12)';
+    const bgCol = isSelf ? 'rgba(212,168,83,0.15)' : 'rgba(13,15,26,0.95)';
+    const nameCol = isSelf ? '#d4a853' : '#ffffff';
+    const invText = u.investment>0 ? `<div style="font-size:12px;color:#d4a853;margin-top:3px;font-weight:700;">₩${(u.investment/10000).toFixed(0)}만</div>` : '';
+    nodes += `<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;min-height:${NH}px;
+      background:${bgCol};border:2px solid ${borderCol};border-radius:14px;
+      padding:10px 12px;box-sizing:border-box;cursor:pointer;transition:transform .1s;"
+      onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"
+      onclick="toast('👤 ${_esc(u.name)} (${_esc(uid)}) | 투자: ${fmt(u.investment||0)} | 잔액: ${fmt(u.wallet||0)}','info')">
+      <div style="font-size:13px;font-weight:800;color:${nameCol};overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${_esc(u.name)}</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:2px;">${_esc(uid)}</div>
+      ${invText}
     </div>`;
   }
 
-  const svgW = Math.max(totalW, 300);
-  const svgH = Math.max(totalH, 200);
-
   container.innerHTML = `
-    <div id="${containerId}-inner" style="position:relative;width:${svgW}px;height:${svgH}px;">
-      <svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;" viewBox="0 0 ${svgW} ${svgH}">
+    <div id="${containerId}-inner" style="position:relative;width:${canvasW}px;height:${canvasH}px;min-width:${canvasW}px;">
+      <svg style="position:absolute;top:0;left:0;width:${canvasW}px;height:${canvasH}px;pointer-events:none;">
         ${lines}
       </svg>
       ${nodes}
     </div>`;
 
-  // ── 드래그/터치 이동 ──
   initTreeDrag(container);
 }
 
