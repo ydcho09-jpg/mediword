@@ -2230,14 +2230,35 @@ function renderTreeNode(u, userMap){
 }
 
 async function renderAdminTree(){
+  const container = document.getElementById('admin-network-tree');
+  if(!container) return;
+  container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text2);">조직도 로딩 중...</div>';
+
   const rootInput = document.getElementById('admin-tree-root');
   const rootId = (rootInput?.value||'').trim();
   const allUsers = await dbGetAll('users');
   const userMap = {};
   allUsers.forEach(u=>{ userMap[u.id]=u; });
-  const startId = rootId && userMap[rootId] ? rootId
-    : (allUsers.find(u=>u.role==='member')?.id || null);
-  if(!startId){ toast('회원이 없습니다','error'); return; }
+
+  // 루트: 입력값 → admin의 직접 하부 첫 번째 → 전체 회원 첫 번째
+  let startId = null;
+  if(rootId && userMap[rootId]){
+    startId = rootId;
+  } else {
+    // admin 하부에서 찾기
+    const adminChildren = allUsers.filter(u=>u.role==='member'&&u.sponsorCode==='admin');
+    if(adminChildren.length>0){
+      startId = adminChildren[0].id;
+    } else {
+      const anyMember = allUsers.find(u=>u.role==='member');
+      startId = anyMember?.id || null;
+    }
+  }
+
+  if(!startId){
+    container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">표시할 회원이 없습니다</div>';
+    return;
+  }
   renderTree('admin-network-tree', startId, userMap, null);
 }
 
@@ -2324,7 +2345,7 @@ function renderTree(containerId, rootId, userMap, selfId){
     nodes += `<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NODE_W}px;height:${NODE_H}px;
       background:${bgColor};border:1.5px solid ${color};border-radius:12px;
       padding:8px 10px;box-sizing:border-box;cursor:pointer;"
-      onclick="alert('${_esc(user.name)} (${_esc(uid)})\n투자: ${fmt(user.investment||0)}\n잔액: ${fmt(user.wallet||0)}')">
+      onclick="toast('${_esc(user.name)} (${_esc(uid)}) · 투자: ${fmt(user.investment||0)} · 잔액: ${fmt(user.wallet||0)}','info')">
       <div style="font-size:13px;font-weight:800;color:${isSelf?'var(--gold)':'var(--text)'};overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${_esc(user.name)}</div>
       <div style="font-size:11px;color:var(--text3);margin-top:1px;">${_esc(uid)}</div>
       ${user.investment>0?`<div style="font-size:12px;color:var(--gold);margin-top:3px;font-weight:700;">${fmt(user.investment)}</div>`:''}
@@ -3565,12 +3586,17 @@ function renderAdminLogs(allTx){
 //  ADMIN ACTIONS
 // ═══════════════════════════════════════════════════════
 function switchAdminTab(tab,btn){
-  ['overview','approval','members','investments','withdrawals','logs'].forEach(t=>{
+  ['overview','approval','members','investments','withdrawals','logs','tree'].forEach(t=>{
     const el=document.getElementById('admin-tab-'+t); if(el) el.style.display=t===tab?'block':'none';
   });
   document.querySelectorAll('#admin-tabs .tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active'); adminCurrentTab=tab;
-  renderAdmin();
+  if(tab==='tree'){
+    // 조직도 탭: renderAdmin 호출 없이 바로 renderAdminTree
+    renderAdminTree();
+  } else {
+    renderAdmin();
+  }
 }
 function searchMembers(){
   const q=document.getElementById('member-search').value.toLowerCase();
