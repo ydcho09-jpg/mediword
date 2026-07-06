@@ -2266,6 +2266,127 @@ function renderTree(containerId, rootId, userMap, selfId){
   const container = document.getElementById(containerId);
   if(!container) return;
 
+  // ── children이 없으면 sponsorCode 기반으로 자동 구성 ──
+  // 각 회원의 직접 추천인 목록을 children으로 변환
+  function getChildren(uid){
+    const u = userMap[uid]; if(!u) return {left:null, right:null};
+    // children이 설정돼 있으면 사용
+    if(u.children?.left || u.children?.right) return {left:u.children.left||null, right:u.children.right||null};
+    // 없으면 sponsorCode 기반으로 자동 구성
+    const directs = Object.values(userMap).filter(x=>x.sponsorCode===uid && x.role==='member');
+    return {left: directs[0]?.id||null, right: directs[1]?.id||null};
+  }
+
+  const NW=150, NH=72, HGAP=28, VGAP=65;
+
+  // ── 서브트리 너비 계산 ──
+  const widthCache = {};
+  const wVis = new Set();
+  function getWidth(uid, depth){
+    if(!uid || depth>8) return NW + HGAP;
+    if(wVis.has(uid)) return NW + HGAP;
+    if(widthCache[uid] !== undefined) return widthCache[uid];
+    wVis.add(uid);
+    const {left:lc, right:rc} = getChildren(uid);
+    const lw = lc ? getWidth(lc, depth+1) : 0;
+    const rw = rc ? getWidth(rc, depth+1) : 0;
+    const w = lc||rc ? Math.max(NW+HGAP, lw+rw) : NW+HGAP;
+    widthCache[uid] = w;
+    wVis.delete(uid);
+    return w;
+  }
+
+  // ── 노드 위치 배정 ──
+  const pos = {};
+  const pVis = new Set();
+  function place(uid, cx, y, depth){
+    if(!uid || depth>8 || pVis.has(uid)) return;
+    pVis.add(uid);
+    pos[uid] = {x: cx - NW/2, y};
+    const {left:lc, right:rc} = getChildren(uid);
+    const lw = lc ? getWidth(lc, depth+1) : 0;
+    const rw = rc ? getWidth(rc, depth+1) : 0;
+    const childY = y + NH + VGAP;
+    if(lc && rc){
+      place(lc, cx - rw/2, childY, depth+1);
+      place(rc, cx + lw/2, childY, depth+1);
+    } else if(lc){
+      place(lc, cx, childY, depth+1);
+    } else if(rc){
+      place(rc, cx, childY, depth+1);
+    }
+  }
+
+  const rootWidth = getWidth(rootId, 0);
+  place(rootId, rootWidth/2, 0, 0);
+
+  // ── 캔버스 크기 ──
+  const allPos = Object.values(pos);
+  if(!allPos.length){ container.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);">조직도 데이터가 없습니다</div>'; return; }
+  const minX = Math.min(...allPos.map(p=>p.x));
+  const maxX = Math.max(...allPos.map(p=>p.x));
+  const maxY = Math.max(...allPos.map(p=>p.y));
+  const offX = Math.max(0, -minX) + HGAP;
+  const offY = VGAP;
+  const canvasW = maxX - minX + NW + HGAP*2;
+  const canvasH = maxY + NH + VGAP*2;
+
+  // ── SVG 연결선 ──
+  let svg = '';
+  for(const [uid, p] of Object.entries(pos)){
+    const u = userMap[uid]; if(!u) continue;
+    const {left:lc, right:rc} = getChildren(uid);
+    const x1 = p.x + offX + NW/2;
+    const y1 = p.y + offY + NH - 4;
+    for(const [side, cid] of [['left',lc],['right',rc]]){
+      if(!cid || !pos[cid]) continue;
+      const cp = pos[cid];
+      const x2 = cp.x + offX + NW/2;
+      const y2 = cp.y + offY + 4;
+      const my = (y1+y2)/2;
+      const col = side==='left' ? '#d4a853aa' : '#3dd68caa';
+      svg += `<path d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}" stroke="${col}" stroke-width="2" fill="none"/>`;
+      const lx=(x1+x2)/2, ly=(y1+y2)/2;
+      svg += `<rect x="${lx-8}" y="${ly-8}" width="16" height="16" rx="8" fill="${col}"/>`;
+      svg += `<text x="${lx}" y="${ly+4}" fill="white" font-size="10" font-weight="bold" text-anchor="middle">${side==='left'?'L':'R'}</text>`;
+    }
+  }
+
+  // ── 노드 HTML ──
+  let html = '';
+  for(const [uid, p] of Object.entries(pos)){
+    const u = userMap[uid]; if(!u) continue;
+    const nx = p.x + offX, ny = p.y + offY;
+    const isSelf = uid === selfId;
+    const bc = isSelf ? '#d4a853' : u.suspended ? '#f05d5d' : 'rgba(255,255,255,0.15)';
+    const bg = isSelf ? 'rgba(212,168,83,0.18)' : '#0d0f1a';
+    const nc = isSelf ? '#d4a853' : '#fff';
+    const inv = u.investment>0 ? `<div style="font-size:12px;color:#d4a853;font-weight:700;margin-top:3px;">₩${Math.round(u.investment/10000)}만</div>` : '';
+    html += `<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;
+      background:${bg};border:2px solid ${bc};border-radius:12px;
+      padding:9px 12px;box-sizing:border-box;cursor:pointer;
+      transition:box-shadow .15s,transform .15s;"
+      onmouseover="this.style.boxShadow='0 0 12px ${bc}';this.style.transform='scale(1.04)'"
+      onmouseout="this.style.boxShadow='';this.style.transform=''"
+      onclick="toast('👤 ${_esc(u.name)} · ${_esc(uid)} · 투자:${fmt(u.investment||0)} · 잔액:${fmt(u.wallet||0)}','info')">
+      <div style="font-size:13px;font-weight:800;color:${nc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_esc(u.name)}</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:1px;">${_esc(uid)}</div>
+      ${inv}
+    </div>`;
+  }
+
+  container.innerHTML = `<div style="position:relative;width:${canvasW}px;height:${canvasH}px;min-width:${canvasW}px;">
+    <svg style="position:absolute;top:0;left:0;overflow:visible;" width="${canvasW}" height="${canvasH}">${svg}</svg>
+    ${html}
+  </div>`;
+
+  initTreeDrag(container);
+}
+
+function _orig_renderTree(containerId, rootId, userMap, selfId){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+
   const NW=150, NH=78, HGAP=30, VGAP=70;
 
   // ── 1단계: 서브트리 리프 개수 계산 (균형 배치용) ──
