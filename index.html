@@ -2263,140 +2263,153 @@ async function renderAdminTree(){
 }
 
 function renderTree(containerId, rootId, userMap, selfId){
-  const container = document.getElementById(containerId);
-  if(!container){ return; }
+  const wrap = document.getElementById(containerId);
+  if(!wrap) return;
+  wrap.innerHTML = '';
 
-  const NW=148, NH=74, HGAP=32, VGAP=68;
-
-  // ── 전체 userMap에서 각 uid의 직접 자식 목록 미리 계산 ──
-  // children.left/right 우선, 없으면 sponsorCode 기반으로 L/R 구성
-  const childMap = {}; // uid -> {left, right}
-  for(const uid of Object.keys(userMap)){
-    const u = userMap[uid];
-    if(!u) continue;
-    const hasChildren = u.children && (u.children.left || u.children.right);
-    if(hasChildren){
-      childMap[uid] = {left: u.children.left||null, right: u.children.right||null};
-    } else {
-      // sponsorCode 기반: 이 uid를 sponsorCode로 갖는 회원들
-      const subs = Object.values(userMap)
-        .filter(x => x.sponsorCode === uid && x.role === 'member')
-        .sort((a,b) => (a.registeredAt||'').localeCompare(b.registeredAt||''));
-      childMap[uid] = {left: subs[0]?.id||null, right: subs[1]?.id||null};
+  // ── 각 uid의 자식 목록 생성 ──
+  // children.left/right 우선, 없으면 sponsorCode 기반
+  function kids(uid){
+    const u = userMap[uid]; if(!u) return [];
+    if(u.children?.left || u.children?.right){
+      return [u.children.left, u.children.right].filter(Boolean);
     }
+    return Object.values(userMap)
+      .filter(x => x.sponsorCode===uid && x.role==='member')
+      .sort((a,b)=>(a.registeredAt||'').localeCompare(b.registeredAt||''))
+      .map(x=>x.id);
   }
 
-  // ── 서브트리 너비 (리프 개수 기반) ──
-  const wCache = {};
-  function leafCount(uid, depth, vis=new Set()){
-    if(!uid || depth>8 || vis.has(uid)) return 1;
-    vis.add(uid);
-    const ch = childMap[uid]||{};
-    if(!ch.left && !ch.right) return 1;
-    const l = ch.left  ? leafCount(ch.left,  depth+1, new Set(vis)) : 0;
-    const r = ch.right ? leafCount(ch.right, depth+1, new Set(vis)) : 0;
-    return (l+r) || 1;
+  // ── BFS로 전체 노드 수집 ──
+  const nodes = [];  // {uid, depth, parentUid, side}
+  const visited = new Set();
+  const queue = [{uid:rootId, depth:0, parentUid:null, side:null}];
+  while(queue.length){
+    const {uid, depth, parentUid, side} = queue.shift();
+    if(!uid || visited.has(uid) || depth>8) continue;
+    visited.add(uid);
+    const u = userMap[uid]; if(!u) continue;
+    nodes.push({uid, depth, parentUid, side});
+    const children = kids(uid);
+    const sides = ['left','right','left2','right2'];
+    children.forEach((cid, i) => {
+      if(!visited.has(cid)) queue.push({uid:cid, depth:depth+1, parentUid:uid, side:i===0?'left':'right'});
+    });
   }
 
-  // ── 노드 좌표 배정 ──
-  // 각 리프를 균등 간격으로 배치, 부모는 자식들의 중앙
-  const pos = {};
-  let leafX = 0;
-  const pVis = new Set();
-
-  function assign(uid, depth){
-    if(!uid || depth>8 || pVis.has(uid)) return;
-    pVis.add(uid);
-    const ch = childMap[uid]||{};
-    const lc = ch.left, rc = ch.right;
-
-    if(!lc && !rc){
-      // 리프: 순서대로 X 배정
-      pos[uid] = {x: leafX * (NW+HGAP), y: depth * (NH+VGAP)};
-      leafX++;
-      return;
-    }
-    if(lc) assign(lc, depth+1);
-    const leftX = lc && pos[lc] ? pos[lc].x : null;
-    if(rc) assign(rc, depth+1);
-    const rightX = rc && pos[rc] ? pos[rc].x : null;
-
-    // 부모 X = 자식들 중앙
-    let px;
-    if(leftX !== null && rightX !== null) px = (leftX + rightX) / 2;
-    else if(leftX !== null) px = leftX;
-    else if(rightX !== null) px = rightX;
-    else px = leafX * (NW+HGAP);
-
-    pos[uid] = {x: px, y: depth * (NH+VGAP)};
-  }
-  assign(rootId, 0);
-
-  // ── 캔버스 크기 계산 ──
-  const allP = Object.values(pos);
-  if(!allP.length){
-    container.innerHTML = '<div style="padding:60px;text-align:center;color:#6b7280;font-size:18px;">표시할 데이터가 없습니다</div>';
+  if(!nodes.length){
+    wrap.innerHTML='<div style="padding:60px;text-align:center;color:#6b7280;font-size:16px;">데이터 없음</div>';
     return;
   }
-  const minX = Math.min(...allP.map(p=>p.x));
-  const maxX = Math.max(...allP.map(p=>p.x));
-  const maxY = Math.max(...allP.map(p=>p.y));
+
+  // ── 깊이별 그룹 ──
+  const byDepth = {};
+  nodes.forEach(n => {
+    if(!byDepth[n.depth]) byDepth[n.depth] = [];
+    byDepth[n.depth].push(n);
+  });
+  const maxDepth = Math.max(...nodes.map(n=>n.depth));
+
+  // ── 노드 크기/간격 ──
+  const NW=148, NH=74, HGAP=28, VGAP=70;
+
+  // ── X 좌표: 각 깊이 내에서 균등 배치 ──
+  const pos = {};  // uid -> {x,y}
+
+  // 먼저 리프(말단) 노드들을 왼쪽부터 순서대로 X 배정
+  let leafIdx = 0;
+  function assignLeaves(uid, depth, vis2=new Set()){
+    if(!uid || depth>8 || vis2.has(uid)) return;
+    vis2.add(uid);
+    const ch = kids(uid);
+    const validCh = ch.filter(cid => userMap[cid] && !vis2.has(cid));
+    if(validCh.length === 0){
+      // 리프 노드
+      pos[uid] = {x: leafIdx * (NW + HGAP), y: depth * (NH + VGAP)};
+      leafIdx++;
+    } else {
+      validCh.forEach(cid => assignLeaves(cid, depth+1, new Set(vis2)));
+      // 부모 X = 자식들의 중앙값
+      const childXs = validCh.filter(cid=>pos[cid]).map(cid=>pos[cid].x);
+      if(childXs.length){
+        pos[uid] = {x: (Math.min(...childXs)+Math.max(...childXs))/2, y: depth*(NH+VGAP)};
+      } else {
+        pos[uid] = {x: leafIdx*(NW+HGAP), y: depth*(NH+VGAP)};
+        leafIdx++;
+      }
+    }
+  }
+  assignLeaves(rootId, 0);
+
+  // pos에 없는 노드 처리
+  nodes.forEach(n => {
+    if(!pos[n.uid]){
+      pos[n.uid] = {x: leafIdx*(NW+HGAP), y: n.depth*(NH+VGAP)};
+      leafIdx++;
+    }
+  });
+
+  // ── 캔버스 크기 ──
+  const allX = Object.values(pos).map(p=>p.x);
+  const allY = Object.values(pos).map(p=>p.y);
+  const minX = Math.min(...allX), maxX = Math.max(...allX);
+  const maxY = Math.max(...allY);
   const offX = -minX + HGAP;
   const offY = VGAP;
-  const W = maxX - minX + NW + HGAP*2;
+  const W = Math.max(maxX - minX + NW + HGAP*2, 600);
   const H = maxY + NH + VGAP*2;
 
   // ── SVG 연결선 ──
   let svg = '';
-  for(const [uid, p] of Object.entries(pos)){
-    const ch = childMap[uid]||{};
-    const px = p.x + offX + NW/2;
-    const py = p.y + offY + NH;
-    for(const [side, cid] of [['left', ch.left], ['right', ch.right]]){
-      if(!cid || !pos[cid]) continue;
+  const vis3 = new Set();
+  nodes.forEach(({uid}) => {
+    if(vis3.has(uid)) return; vis3.add(uid);
+    const u = userMap[uid]; if(!u) return;
+    const p = pos[uid]; if(!p) return;
+    const ch = kids(uid);
+    ch.forEach((cid, i) => {
+      if(!pos[cid]) return;
       const cp = pos[cid];
-      const cx = cp.x + offX + NW/2;
-      const cy = cp.y + offY;
-      const my = py + (cy-py)*0.5;
-      const col = side==='left' ? '#d4a853' : '#3dd68c';
-      svg += `<path d="M${px},${py} C${px},${my} ${cx},${my} ${cx},${cy}" stroke="${col}" stroke-width="2" fill="none" opacity="0.7"/>`;
-      const lbx=(px+cx)/2, lby=(py+cy)/2;
-      svg += `<circle cx="${lbx}" cy="${lby}" r="9" fill="${col}" opacity="0.9"/>`;
-      svg += `<text x="${lbx}" y="${lby+4}" fill="#000" font-size="11" font-weight="900" text-anchor="middle">${side==='left'?'L':'R'}</text>`;
-    }
-  }
+      const x1 = p.x + offX + NW/2, y1 = p.y + offY + NH;
+      const x2 = cp.x + offX + NW/2, y2 = cp.y + offY;
+      const my = y1 + (y2-y1)*0.45;
+      const col = i===0 ? '#d4a853' : '#3dd68c';
+      svg += `<path d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}" stroke="${col}" stroke-width="2.5" fill="none" opacity="0.75"/>`;
+      const lx=(x1+x2)/2, ly=(y1+y2)/2;
+      svg += `<circle cx="${lx}" cy="${ly}" r="10" fill="${col}"/>`;
+      svg += `<text x="${lx}" y="${ly+4}" fill="#000" font-size="11" font-weight="900" text-anchor="middle">${i===0?'L':'R'}</text>`;
+    });
+  });
 
   // ── 노드 HTML ──
   let html = '';
-  for(const [uid, p] of Object.entries(pos)){
-    const u = userMap[uid]; if(!u) continue;
-    const nx = p.x + offX, ny = p.y + offY;
-    const isSelf = uid === selfId;
-    const bdr = isSelf ? '#d4a853' : u.suspended ? '#f05d5d' : 'rgba(255,255,255,0.13)';
-    const bg  = isSelf ? 'rgba(212,168,83,0.15)' : '#0d0f1a';
-    const nc  = isSelf ? '#d4a853' : '#f0f2fa';
-    const inv = u.investment>0
-      ? `<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:4px;">₩${Math.round(u.investment/10000)}만</div>`
-      : `<div style="font-size:12px;color:#4a5068;margin-top:4px;">미투자</div>`;
+  nodes.forEach(({uid}) => {
+    const u = userMap[uid]; if(!u) return;
+    const p = pos[uid]; if(!p) return;
+    const nx = p.x+offX, ny = p.y+offY;
+    const isSelf = uid===selfId;
+    const bc = isSelf?'#d4a853': u.suspended?'#f05d5d':'rgba(255,255,255,0.13)';
+    const bg = isSelf?'rgba(212,168,83,0.18)':'#0d0f1a';
+    const nc = isSelf?'#d4a853':'#f0f2fa';
+    const iv = u.investment>0?`<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">₩${Math.round(u.investment/10000)}만</div>`
+      :`<div style="font-size:12px;color:#4a5068;margin-top:3px;">미투자</div>`;
     html += `<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;min-height:${NH}px;
-      background:${bg};border:2px solid ${bdr};border-radius:14px;
+      background:${bg};border:2px solid ${bc};border-radius:14px;
       padding:10px 12px;box-sizing:border-box;cursor:pointer;
-      transition:transform .15s,box-shadow .15s;"
-      onmouseover="this.style.transform='scale(1.06)';this.style.boxShadow='0 4px 20px ${bdr}55'"
-      onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none'"
+      transition:transform .12s,box-shadow .12s;z-index:1;"
+      onmouseover="this.style.transform='scale(1.07)';this.style.zIndex=10"
+      onmouseout="this.style.transform='scale(1)';this.style.zIndex=1"
       onclick="toast('👤 ${_esc(u.name)} (${_esc(uid)}) | 투자:${fmt(u.investment||0)} | 잔액:${fmt(u.wallet||0)}','info')">
       <div style="font-size:14px;font-weight:900;color:${nc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_esc(u.name)}</div>
-      <div style="font-size:11px;color:#6b7280;margin-top:1px;">${_esc(uid)}</div>
-      ${inv}
+      <div style="font-size:11px;color:#6b7280;margin-top:1px;">${_esc(uid)}</div>${iv}
     </div>`;
-  }
+  });
 
-  container.innerHTML = `<div style="position:relative;width:${W}px;height:${H}px;min-width:${W}px;">
+  wrap.innerHTML=`<div style="position:relative;width:${W}px;height:${H}px;flex-shrink:0;">
     <svg style="position:absolute;top:0;left:0;" width="${W}" height="${H}" overflow="visible">${svg}</svg>
     ${html}
   </div>`;
-
-  initTreeDrag(container);
+  initTreeDrag(wrap);
 }
 
 function _orig_renderTree(containerId, rootId, userMap, selfId){
