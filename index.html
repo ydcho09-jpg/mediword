@@ -2408,7 +2408,8 @@ function renderReferralTree(u, userMap){
     const bc=isSelf?'#3dd68c':'rgba(61,214,140,0.3)';
     const bg=isSelf?'rgba(61,214,140,0.12)':'#0d0f1a';
     const nc=isSelf?'#3dd68c':'#f0f2fa';
-    const iv=u2.investment>0?`<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${Math.round(u2.investment/10000)}만</div><div style="font-size:12px;color:#3dd68c;font-weight:700;margin-top:2px;">ROI ₩${Math.round(u2.roi/10000)}만</div>`:'';
+    const _inv2=u2.investment||0, _roi2=u2.roi||0;
+    const iv=_inv2>0?`<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${(_inv2/10000).toFixed(0)}만</div><div style="font-size:12px;color:#3dd68c;font-weight:700;margin-top:2px;">ROI ₩${(_roi2/10000).toFixed(0)}만</div>`:`<div style="font-size:12px;color:#4a5068;margin-top:3px;">미투자</div>`;
     // 몇 대인지 표시
     const refCh = getRefKids(uid);
     html+=`<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;min-height:${NH}px;
@@ -2599,9 +2600,11 @@ function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
     const bc = isSelf?'#d4a853': u.suspended?'#f05d5d':'rgba(255,255,255,0.13)';
     const bg = isSelf?'rgba(212,168,83,0.18)':'#0d0f1a';
     const nc = isSelf?'#d4a853':'#f0f2fa';
-    const iv = u.investment>0
-      ? `<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${Math.round(u.investment/10000)}만</div>
-         <div style="font-size:12px;color:#3dd68c;font-weight:700;margin-top:2px;">ROI ₩${Math.round((u.roi||0)/10000)}만</div>`
+    const _inv = u.investment||0;
+    const _roi = u.roi||0;
+    const iv = _inv>0
+      ? `<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${(_inv/10000).toFixed(0)}만</div>
+         <div style="font-size:12px;color:#3dd68c;font-weight:700;margin-top:2px;">ROI ₩${(_roi/10000).toFixed(0)}만</div>`
       : `<div style="font-size:12px;color:#4a5068;margin-top:3px;">미투자</div>`;
     html += `<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;min-height:${NH}px;
       background:${bg};border:2px solid ${bc};border-radius:14px;
@@ -2710,7 +2713,11 @@ function _orig_renderTree(containerId, rootId, userMap, selfId){
     const borderCol = isSelf ? '#d4a853' : u.suspended ? '#f05d5d' : 'rgba(255,255,255,0.12)';
     const bgCol = isSelf ? 'rgba(212,168,83,0.15)' : 'rgba(13,15,26,0.95)';
     const nameCol = isSelf ? '#d4a853' : '#ffffff';
-    const invText = u.investment>0 ? `<div style="font-size:12px;color:#d4a853;margin-top:3px;font-weight:700;">₩${(u.investment/10000).toFixed(0)}만</div>` : '';
+    const _invA=u.investment||0, _roiA=u.roi||0;
+    const invText = _invA>0
+      ? `<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${(_invA/10000).toFixed(0)}만</div>
+         <div style="font-size:12px;color:#3dd68c;font-weight:700;margin-top:2px;">ROI ₩${(_roiA/10000).toFixed(0)}만</div>`
+      : `<div style="font-size:12px;color:#4a5068;margin-top:3px;">미투자</div>`;
     nodes += `<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;min-height:${NH}px;
       background:${bgCol};border:2px solid ${borderCol};border-radius:14px;
       padding:10px 12px;box-sizing:border-box;cursor:pointer;transition:transform .1s;"
