@@ -670,9 +670,14 @@ td{font-size:14px !important;padding:14px 16px !important;}
           </div>
         </div>
         <div class="form-group">
+          <label class="form-label">추천인 아이디 <span style="color:var(--text3);font-size:14px;">(선택)</span></label>
+          <input class="form-input" id="inp-rref" placeholder="추천인 아이디 입력 (없으면 비워두세요)">
+          <div class="form-hint">💡 수당을 지급받을 추천인 아이디를 입력하세요.</div>
+        </div>
+        <div class="form-group">
           <label class="form-label">후원인 아이디 <span style="color:var(--red);font-size:14px;">✱ 필수</span></label>
-          <input class="form-input" id="inp-rref" placeholder="후원인 아이디를 입력하세요 (후원인의 하부에 배치됩니다)">
-          <div class="form-hint" style="color:var(--gold);">💡 후원인 아이디를 입력하면 해당 후원인의 하부 조직에 배치됩니다.</div>
+          <input class="form-input" id="inp-rsponsor" placeholder="후원인 아이디를 반드시 입력하세요">
+          <div class="form-hint" style="color:var(--gold);">💡 후원인 하부 조직에 배치됩니다. 후원인의 로그인 아이디를 입력하세요.</div>
         </div>
         <button class="lp-btn" onclick="doRegister()">계정 만들기</button>
         <div class="lp-switch">
@@ -1026,8 +1031,36 @@ td{font-size:14px !important;padding:14px 16px !important;}
       <div id="rank-progress-section"></div>
     </div>
     <div class="card" style="margin-bottom:20px;">
-      <div class="card-header"><div class="card-title-lg">네트워크 트리</div></div>
-      <div id="network-tree" style="overflow-x:auto;padding:20px 0;"></div>
+      <div class="card-header" style="margin-bottom:16px;">
+        <div class="card-title-lg">🌳 조직도</div>
+      </div>
+      <!-- 탭: 후원 조직도 / 추천 조직도 -->
+      <div style="display:flex;gap:0;background:rgba(0,0,0,0.25);border-radius:14px;padding:4px;margin-bottom:20px;">
+        <button id="org-tab-sponsor" onclick="switchOrgTab('sponsor')"
+          style="flex:1;padding:13px;border:none;border-radius:11px;cursor:pointer;font-size:17px;font-weight:800;font-family:'DM Sans',sans-serif;
+          background:var(--gold);color:#000;transition:all .2s;">
+          🏠 후원 조직도
+        </button>
+        <button id="org-tab-referral" onclick="switchOrgTab('referral')"
+          style="flex:1;padding:13px;border:none;border-radius:11px;cursor:pointer;font-size:17px;font-weight:700;font-family:'DM Sans',sans-serif;
+          background:none;color:var(--text3);transition:all .2s;">
+          👥 추천 조직도
+        </button>
+      </div>
+
+      <!-- 후원 조직도 설명 -->
+      <div id="org-desc-sponsor" style="background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.2);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:15px;color:var(--text2);">
+        🏠 <b style="color:var(--gold);">후원 조직도</b> — 후원인 기준으로 배치된 조직 구조 (바이너리 트리)
+      </div>
+      <!-- 추천 조직도 설명 -->
+      <div id="org-desc-referral" style="display:none;background:rgba(61,214,140,0.08);border:1px solid rgba(61,214,140,0.2);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:15px;color:var(--text2);">
+        👥 <b style="color:var(--green);">추천 조직도</b> — 추천인(수당 기준) 기준으로 연결된 조직 구조
+      </div>
+
+      <!-- 후원 조직도 트리 -->
+      <div id="network-tree-sponsor" style="overflow:auto;min-height:300px;cursor:grab;"></div>
+      <!-- 추천 조직도 트리 -->
+      <div id="network-tree-referral" style="display:none;overflow:auto;min-height:300px;cursor:grab;"></div>
     </div>
 
     <!-- ── 좌/우 입금내역 ── -->
@@ -1835,7 +1868,9 @@ async function doRegister(){
   const pwd2=document.getElementById('inp-rpwd2').value;
   const email=document.getElementById('inp-remail').value.trim();
   const phone=document.getElementById('inp-rphone').value.trim();
-  const ref=document.getElementById('inp-rref').value.trim();
+  const ref = document.getElementById('inp-rref')?.value.trim() || '';
+  const sponsorEl = document.getElementById('inp-rsponsor');
+  const sponsorId = sponsorEl ? sponsorEl.value.trim() : ref;
   // 보안 검증
   if(!id||!name||!pwd){toast('아이디, 이름, 비밀번호는 필수입니다','error');return;}
   if(!_sanitizeId(id)){toast('아이디는 영문/숫자 4~20자입니다','error');return;}
@@ -1843,13 +1878,23 @@ async function doRegister(){
   if(pwd!==pwd2){toast('비밀번호가 일치하지 않습니다','error');return;}
   const existing=await dbGet('users',id);
   if(existing){toast('이미 사용 중인 아이디입니다','error');return;}
-  // 후원인 — 필수 입력
-  if(!ref){toast('후원인 아이디를 입력하세요 (필수)','error');return;}
-  const refUser=await dbGet('users',ref);
-  if(!refUser||refUser.suspended){toast('유효하지 않은 후원인 아이디입니다. 후원인에게 확인하세요.','error');return;}
+  // 후원인 필수 확인
+  if(!sponsorId){toast('후원인 아이디를 입력하세요 (필수)','error');return;}
+  const sponsorUser = await dbGet('users', sponsorId);
+  if(!sponsorUser||sponsorUser.suspended){toast('유효하지 않은 후원인 아이디입니다','error');return;}
+  // 추천인 확인 (선택)
+  let referrerUser = null;
+  if(ref && ref !== sponsorId){
+    referrerUser = await dbGet('users', ref);
+    if(!referrerUser){toast('추천인 아이디가 존재하지 않습니다','error');return;}
+  }
+  // referrerCode: 수당 지급 기준 (추천인 없으면 후원인)
+  const referrerCode = referrerUser ? ref : sponsorId;
   const newUser={
     id, pwd:_hashPwd(pwd), role:'member', name,
-    inviteCode:id, sponsorCode:ref||'',
+    inviteCode:id,
+    sponsorCode: referrerCode,   // 수당 체계 (추천인 기준)
+    placedUnder: sponsorId,      // 조직도 배치 (후원인 기준)
     wallet:0, investment:0, roi:0,
     leftPoints:0, rightPoints:0, leftInvest:0, rightInvest:0,
     paidRanks:[], children:{left:null,right:null},
@@ -1858,7 +1903,7 @@ async function doRegister(){
     approvalStatus:'approved',
   };
   await dbPut('users',newUser);
-  await audit('REGISTER',`신규 가입 완료 추천인:${ref||'없음'}`,id);
+  await audit('REGISTER',`신규 가입 추천인:${referrerCode} 후원인:${sponsorId}`,id);
   toast('🎉 가입 완료! 바로 로그인하실 수 있습니다','success');
   document.querySelectorAll('.login-tab').forEach((t,i)=>{t.classList.remove('active');if(i===0)t.classList.add('active');});
   document.querySelectorAll('.login-form-section').forEach((s,i)=>{s.classList.remove('active');if(i===0)s.classList.add('active');});
@@ -2226,7 +2271,127 @@ async function loadLRData(u, allUsers){
 // 공통 트리 렌더 함수 (드래그/터치 이동 + 균형 레이아웃)
 // ══════════════════════════════════════════
 function renderTreeNode(u, userMap){
-  renderTree('network-tree', u.id, userMap, currentUser?.id);
+  // ── 후원 조직도 (placedUnder 기반 바이너리 트리) ──
+  renderSponsorTree(u, userMap);
+  // ── 추천 조직도 (sponsorCode 기반) ──
+  renderReferralTree(u, userMap);
+}
+
+// ── 조직도 탭 전환 ──
+let _currentOrgTab = 'sponsor';
+function switchOrgTab(tab){
+  _currentOrgTab = tab;
+  const isSponsor = tab==='sponsor';
+  // 탭 버튼 스타일
+  const sb = document.getElementById('org-tab-sponsor');
+  const rb = document.getElementById('org-tab-referral');
+  if(sb){ sb.style.background=isSponsor?'var(--gold)':'none'; sb.style.color=isSponsor?'#000':'var(--text3)'; sb.style.fontWeight=isSponsor?'800':'700'; }
+  if(rb){ rb.style.background=isSponsor?'none':'var(--green)'; rb.style.color=isSponsor?'var(--text3)':'#000'; rb.style.fontWeight=isSponsor?'700':'800'; }
+  // 설명 + 트리 표시
+  const ds = document.getElementById('org-desc-sponsor');
+  const dr = document.getElementById('org-desc-referral');
+  const ts = document.getElementById('network-tree-sponsor');
+  const tr = document.getElementById('network-tree-referral');
+  if(ds) ds.style.display = isSponsor?'block':'none';
+  if(dr) dr.style.display = isSponsor?'none':'block';
+  if(ts) ts.style.display = isSponsor?'block':'none';
+  if(tr) tr.style.display = isSponsor?'none':'block';
+}
+
+// ── 후원 조직도: placedUnder 기반 바이너리 트리 ──
+function renderSponsorTree(u, userMap){
+  // children 기반 트리 (후원 배치 구조)
+  renderTree('network-tree-sponsor', u.id, userMap, currentUser?.id, 'sponsor');
+  initTreeDrag(document.getElementById('network-tree-sponsor'));
+}
+
+// ── 추천 조직도: sponsorCode 기반 다단계 트리 ──
+function renderReferralTree(u, userMap){
+  const container = document.getElementById('network-tree-referral');
+  if(!container) return;
+
+  const NW=148, NH=74, HGAP=28, VGAP=65;
+  const visited = new Set();
+
+  // sponsorCode 기반 자식 목록 (다단계, 제한 없음)
+  function getRefKids(uid){
+    return Object.values(userMap)
+      .filter(x => x.sponsorCode===uid && x.role==='member')
+      .sort((a,b)=>(a.registeredAt||'').localeCompare(b.registeredAt||''));
+  }
+
+  // BFS로 노드 배치
+  let leafIdx = 0;
+  const pos = {};
+  const pv = new Set();
+
+  function assignRef(uid, depth){
+    if(!uid || depth>8 || pv.has(uid)) return;
+    pv.add(uid);
+    const ch = getRefKids(uid).map(x=>x.id);
+    if(ch.length===0){
+      pos[uid] = {x: leafIdx*(NW+HGAP), y: depth*(NH+VGAP)};
+      leafIdx++;
+      return;
+    }
+    ch.forEach(cid => assignRef(cid, depth+1));
+    const childXs = ch.filter(cid=>pos[cid]).map(cid=>pos[cid].x);
+    pos[uid] = {x: childXs.length ? (Math.min(...childXs)+Math.max(...childXs))/2 : leafIdx*(NW+HGAP), y: depth*(NH+VGAP)};
+    if(!childXs.length) leafIdx++;
+  }
+  assignRef(u.id, 0);
+
+  const allP = Object.values(pos);
+  if(!allP.length){ container.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);">추천 하부 없음</div>'; return; }
+  const minX=Math.min(...allP.map(p=>p.x)), maxX=Math.max(...allP.map(p=>p.x)), maxY=Math.max(...allP.map(p=>p.y));
+  const offX=-minX+HGAP, offY=VGAP;
+  const W=Math.max(maxX-minX+NW+HGAP*2,500), H=maxY+NH+VGAP*2;
+
+  // SVG 연결선
+  let svg='';
+  const sv=new Set();
+  for(const [uid,p] of Object.entries(pos)){
+    if(sv.has(uid)) continue; sv.add(uid);
+    const ch=getRefKids(uid);
+    const x1=p.x+offX+NW/2, y1=p.y+offY+NH;
+    ch.forEach((cu,i)=>{
+      const cp=pos[cu.id]; if(!cp) return;
+      const x2=cp.x+offX+NW/2, y2=cp.y+offY;
+      const my=y1+(y2-y1)*0.45;
+      // 추천 조직도는 초록색 계열
+      const col=`hsl(${140+i*25},70%,55%)`;
+      svg+=`<path d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}" stroke="${col}" stroke-width="2" fill="none" opacity="0.7"/>`;
+      svg+=`<circle cx="${(x1+x2)/2}" cy="${(y1+y2)/2}" r="9" fill="${col}"/>`;
+      svg+=`<text x="${(x1+x2)/2}" y="${(y1+y2)/2+4}" fill="#000" font-size="10" font-weight="900" text-anchor="middle">${i+1}</text>`;
+    });
+  }
+
+  // 노드
+  let html='';
+  for(const [uid,p] of Object.entries(pos)){
+    const u2=userMap[uid]; if(!u2) continue;
+    const nx=p.x+offX, ny=p.y+offY;
+    const isSelf=uid===currentUser?.id;
+    const bc=isSelf?'#3dd68c':'rgba(61,214,140,0.3)';
+    const bg=isSelf?'rgba(61,214,140,0.12)':'#0d0f1a';
+    const nc=isSelf?'#3dd68c':'#f0f2fa';
+    const iv=u2.investment>0?`<div style="font-size:12px;color:#3dd68c;font-weight:800;margin-top:3px;">₩${Math.round(u2.investment/10000)}만</div>`:'';
+    // 몇 대인지 표시
+    const refCh = getRefKids(uid);
+    html+=`<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;min-height:${NH}px;
+      background:${bg};border:2px solid ${bc};border-radius:14px;
+      padding:10px 12px;box-sizing:border-box;cursor:pointer;transition:transform .12s;"
+      onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'"
+      onclick="toast('👥 ${_esc(u2.name)} (${_esc(uid)}) | 추천:${refCh.length}명 | 투자:${fmt(u2.investment||0)}','info')">
+      <div style="font-size:14px;font-weight:900;color:${nc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_esc(u2.name)}</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:1px;">${_esc(uid)}</div>${iv}
+    </div>`;
+  }
+
+  container.innerHTML=`<div style="position:relative;width:${W}px;height:${H}px;min-width:${W}px;">
+    <svg style="position:absolute;top:0;left:0;" width="${W}" height="${H}" overflow="visible">${svg}</svg>${html}
+  </div>`;
+  initTreeDrag(container);
 }
 
 async function renderAdminTree(){
@@ -2262,21 +2427,23 @@ async function renderAdminTree(){
   renderTree('admin-network-tree', startId, userMap, null);
 }
 
-function renderTree(containerId, rootId, userMap, selfId){
+function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
   const wrap = document.getElementById(containerId);
   if(!wrap) return;
   wrap.innerHTML = '';
 
   // ── 각 uid의 자식 목록 생성 ──
-  // children.left/right 우선, 없으면 sponsorCode 기반
+  // children.left/right 우선, 없으면 placedUnder/sponsorCode 기반
   function kids(uid){
     const u = userMap[uid]; if(!u) return [];
     if(u.children?.left || u.children?.right){
       return [u.children.left, u.children.right].filter(Boolean);
     }
+    // placedUnder 또는 sponsorCode로 이 uid를 후원인/추천인으로 갖는 회원
     return Object.values(userMap)
-      .filter(x => x.sponsorCode===uid && x.role==='member')
+      .filter(x => (x.placedUnder===uid || x.sponsorCode===uid) && x.role==='member')
       .sort((a,b)=>(a.registeredAt||'').localeCompare(b.registeredAt||''))
+      .slice(0,2) // 최대 2명 (바이너리)
       .map(x=>x.id);
   }
 
@@ -3880,33 +4047,75 @@ async function approveInvestment(id){
 // processBinaryBonus 제거 — 수당은 approveInvestment에서 직접 처리
 async function updateLinePoints(newUserId, amount, side='auto'){
   const newUser = await dbGet('users', newUserId);
-  if(!newUser || !newUser.sponsorCode) return;
+  if(!newUser) return;
+
+  // 조직도 배치 기준: placedUnder(후원인) 우선, 없으면 sponsorCode
+  const placementId = newUser.placedUnder || newUser.sponsorCode;
+  if(!placementId) return;
+
   const allUsers = await dbGetAll('users');
 
-  const directSponsor = await dbGet('users', newUser.sponsorCode);
+  // BFS로 placementId 하부에서 빈 자리 찾기 (자동 배치)
+  async function findEmptySlot(rootId){
+    const vis = new Set();
+    const queue = [rootId];
+    while(queue.length){
+      const uid = queue.shift();
+      if(!uid || vis.has(uid)) continue;
+      vis.add(uid);
+      const u = await dbGet('users', uid);
+      if(!u) continue;
+      if(!u.children) u.children = {left:null, right:null};
+      if(!u.children.left)  return {uid, side:'left', user:u};
+      if(!u.children.right) return {uid, side:'right', user:u};
+      queue.push(u.children.left);
+      queue.push(u.children.right);
+    }
+    return null;
+  }
+
+  // 직접 후원인에게 먼저 배치 시도
+  const directSponsor = await dbGet('users', placementId);
   if(directSponsor){
     if(!directSponsor.children) directSponsor.children = {left:null, right:null};
-    // auto: 빈 쪽에 자동 배치 (left 우선)
-    let chosenSide;
-    if(side === 'right') chosenSide = 'right';
-    else if(side === 'left') chosenSide = 'left';
-    else {
-      // 자동: 빈 쪽에 배치, 둘 다 비어있으면 left
-      if(!directSponsor.children.left) chosenSide = 'left';
-      else if(!directSponsor.children.right) chosenSide = 'right';
-      else chosenSide = 'left'; // 둘 다 있으면 left
-    }
-    if(chosenSide === 'left'){
-      directSponsor.leftInvest  = (directSponsor.leftInvest||0) + amount;
-      directSponsor.leftPoints  = (directSponsor.leftPoints||0) + amount;
-      if(!directSponsor.children.left) directSponsor.children.left = newUserId;
+    let chosenSide = null;
+    if(!directSponsor.children.left) chosenSide = 'left';
+    else if(!directSponsor.children.right) chosenSide = 'right';
+
+    if(chosenSide){
+      // 직접 후원인에게 배치
+      if(chosenSide==='left'){
+        directSponsor.leftInvest  = (directSponsor.leftInvest||0)+amount;
+        directSponsor.leftPoints  = (directSponsor.leftPoints||0)+amount;
+        directSponsor.children.left = newUserId;
+      } else {
+        directSponsor.rightInvest = (directSponsor.rightInvest||0)+amount;
+        directSponsor.rightPoints = (directSponsor.rightPoints||0)+amount;
+        directSponsor.children.right = newUserId;
+      }
+      await dbPut('users', directSponsor);
+      console.log(`[Tree] ${newUserId} → ${placementId} ${chosenSide} 직접배치`);
     } else {
-      directSponsor.rightInvest = (directSponsor.rightInvest||0) + amount;
-      directSponsor.rightPoints = (directSponsor.rightPoints||0) + amount;
-      if(!directSponsor.children.right) directSponsor.children.right = newUserId;
+      // 후원인이 꽉 찼으면 BFS로 빈 자리 찾기
+      const slot = await findEmptySlot(placementId);
+      if(slot){
+        if(slot.side==='left'){
+          slot.user.leftInvest  = (slot.user.leftInvest||0)+amount;
+          slot.user.leftPoints  = (slot.user.leftPoints||0)+amount;
+          slot.user.children.left = newUserId;
+        } else {
+          slot.user.rightInvest = (slot.user.rightInvest||0)+amount;
+          slot.user.rightPoints = (slot.user.rightPoints||0)+amount;
+          slot.user.children.right = newUserId;
+        }
+        await dbPut('users', slot.user);
+        console.log(`[Tree] ${newUserId} → ${slot.uid} ${slot.side} BFS배치`);
+        // 직접 후원인 포인트도 업데이트
+        directSponsor.leftInvest  = (directSponsor.leftInvest||0)+amount;
+        directSponsor.leftPoints  = (directSponsor.leftPoints||0)+amount;
+        await dbPut('users', directSponsor);
+      }
     }
-    await dbPut('users', directSponsor);
-    console.log(`[Tree] ${newUserId} → ${newUser.sponsorCode} 의 ${chosenSide} 자동배치`);
   }
 
   // 2대 이상 상위: 자동 판별로 포인트 업데이트
