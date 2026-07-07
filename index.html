@@ -2084,10 +2084,10 @@ async function renderNetwork(){
   }
   const downlineAll=allUsers.filter(x=>x.sponsorCode===u.id&&x.role==='member');
   const smallLine=Math.min(u.leftInvest||0,u.rightInvest||0);
-  document.getElementById('net-direct-cnt').textContent=downlineAll.length;
-  document.getElementById('net-left-pt').textContent=fmt(u.leftInvest||0);
-  document.getElementById('net-right-pt').textContent=fmt(u.rightInvest||0);
-  document.getElementById('net-small-line').textContent=fmt(smallLine);
+  const elDC=document.getElementById('net-direct-cnt'); if(elDC) elDC.textContent=downlineAll.length;
+  const elLP=document.getElementById('net-left-pt');    if(elLP) elLP.textContent=fmt(u.leftInvest||0);
+  const elRP=document.getElementById('net-right-pt');   if(elRP) elRP.textContent=fmt(u.rightInvest||0);
+  const elSL=document.getElementById('net-small-line'); if(elSL) elSL.textContent=fmt(smallLine);
   document.getElementById('my-invite-code').innerHTML=`<i class="fas fa-copy"></i> 내 추천 ID: ${_esc(u.id)}`;
   // 후원인 표시
   const puEl = document.getElementById('my-placed-under');
@@ -2186,9 +2186,9 @@ function switchLRTab(tab, btn){
 }
 
 function renderLRTable(tab){
-  const tbody=document.getElementById('lr-tbody');
+  const tbody=document.getElementById('lr-tbody'); if(!tbody) return;
   const empty=document.getElementById('lr-empty');
-  const wrap=document.getElementById('lr-table-wrap');
+  const wrap=document.getElementById('lr-table-wrap'); if(!wrap) return;
 
   let rows=[];
   if(tab==='all')      rows=[..._lrData.left.map(u=>({...u,_side:'L'})), ..._lrData.right.map(u=>({...u,_side:'R'}))];
@@ -2270,12 +2270,12 @@ async function loadLRData(u, allUsers){
   // 합계 업데이트
   const leftTotal=leftMembers.reduce((s,x)=>s+(x.investment||0),0);
   const rightTotal=rightMembers.reduce((s,x)=>s+(x.investment||0),0);
-  document.getElementById('lr-left-total').textContent=fmtFull(leftTotal);
-  document.getElementById('lr-right-total').textContent=fmtFull(rightTotal);
-  document.getElementById('lr-left-cnt').textContent=leftMembers.length+'명';
-  document.getElementById('lr-right-cnt').textContent=rightMembers.length+'명';
+  const elLT=document.getElementById('lr-left-total');   if(elLT) elLT.textContent=fmtFull(leftTotal);
+  const elRT=document.getElementById('lr-right-total');  if(elRT) elRT.textContent=fmtFull(rightTotal);
+  const elLC=document.getElementById('lr-left-cnt');     if(elLC) elLC.textContent=leftMembers.length+'명';
+  const elRC=document.getElementById('lr-right-cnt');    if(elRC) elRC.textContent=rightMembers.length+'명';
 
-  renderLRTable('all');
+  if(document.getElementById('lr-tbody')) renderLRTable('all');
 }
 
 // ══════════════════════════════════════════
