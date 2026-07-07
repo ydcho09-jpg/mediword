@@ -670,9 +670,9 @@ td{font-size:14px !important;padding:14px 16px !important;}
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">추천인 아이디 <span style="color:var(--text3);font-size:14px;">(선택)</span></label>
-          <input class="form-input" id="inp-rref" placeholder="추천인 아이디 입력 (없으면 비워두세요)">
-          <div class="form-hint">💡 수당을 지급받을 추천인 아이디를 입력하세요.</div>
+          <label class="form-label">추천인 아이디 <span style="color:var(--red);font-size:14px;">✱ 필수</span></label>
+          <input class="form-input" id="inp-rref" placeholder="추천인 아이디를 입력하세요">
+          <div class="form-hint" style="color:var(--gold);">💡 추천인 아이디는 필수입니다. 수당 지급 기준이 됩니다.</div>
         </div>
         <div class="form-group">
           <label class="form-label">후원인 아이디 <span style="color:var(--red);font-size:14px;">✱ 필수</span></label>
@@ -1726,7 +1726,7 @@ function localDateTimeStr(d){
 }
 function isWeekday(d){ const w=d.getDay(); return w>=1&&w<=5; } // 월~금
 function typeColor(t){ const m={ROI:'var(--gold)',보너스:'var(--green)',바이너리:'var(--blue)',직급수당:'var(--purple)',출금:'var(--red)',투자:'var(--text)'}; return m[t]||'var(--text2)'; }
-function typeLabel(t){ const m={ROI:'ROI 배당',보너스:'소실적수당',바이너리:'소실적수당',직급수당:'직급수당',출금:'출금',투자:'투자'}; return m[t]||t; }
+function typeLabel(t){ const m={ROI:'ROI 배당',보너스:'소실적수당',바이너리:'소실적수당',직급수당:'직급수당',출금:'출금',투자:'투자',관리자지급:'관리자지급',관리자회수:'관리자회수'}; return m[t]||t; }
 function statusHtml(s){ const m={completed:'done',pending:'pend',rejected:'fail',suspended:'stop'}; const l={completed:'완료',pending:'대기',rejected:'거부',suspended:'정지'}; return `<span class="status status-${m[s]||'pend'}">${l[s]||s}</span>`; }
 
 // ═══════════════════════════════════════════════════════
@@ -1869,6 +1869,7 @@ async function doRegister(){
   const email=document.getElementById('inp-remail').value.trim();
   const phone=document.getElementById('inp-rphone').value.trim();
   const ref = document.getElementById('inp-rref')?.value.trim() || '';
+  if(!ref){toast('추천인 아이디를 입력하세요 (필수)','error');return;}
   const sponsorEl = document.getElementById('inp-rsponsor');
   const sponsorId = sponsorEl ? sponsorEl.value.trim() : ref;
   // 보안 검증
@@ -3452,24 +3453,30 @@ async function openMemberDetail(uid){
     </div>
 
     <div style="background:var(--bg3);border-radius:var(--r);padding:18px;">
-      <div style="font-size:16px;font-weight:800;color:var(--blue);margin-bottom:14px;">💸 잔액 긴급 추가</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="font-size:16px;font-weight:800;color:var(--blue);margin-bottom:14px;">💸 출금가능 금액 지급 / 회수</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
         <div>
-          <div style="font-size:14px;color:var(--text2);margin-bottom:6px;font-weight:700;">추가 금액 (원)</div>
+          <div style="font-size:14px;color:var(--text2);margin-bottom:6px;font-weight:700;">금액 (원)</div>
           <input class="form-input mono" id="admin-add-wallet-amount" type="number" placeholder="금액 입력">
         </div>
         <div>
-          <div style="font-size:14px;color:var(--text2);margin-bottom:6px;font-weight:700;">지급 사유</div>
-          <input class="form-input" id="admin-add-wallet-desc" placeholder="예: 이벤트 보너스">
+          <div style="font-size:14px;color:var(--text2);margin-bottom:6px;font-weight:700;">메모 (내역에 표시)</div>
+          <input class="form-input" id="admin-add-wallet-desc" placeholder="예: 보너스 지급 / 오류 회수">
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
-        <button class="btn btn-success btn-sm" onclick="adminAddWallet()">
-          <i class="fas fa-plus"></i> 잔액 추가
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <button class="btn btn-success btn-sm" onclick="adminWalletAdjust('add')">
+          <i class="fas fa-plus"></i> 지급
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="adminWalletAdjust('deduct')">
+          <i class="fas fa-minus"></i> 회수
         </button>
         <button class="btn btn-purple btn-sm" onclick="adminManualRoi()">
-          <i class="fas fa-coins"></i> ROI 수동 지급
+          <i class="fas fa-coins"></i> ROI 지급
         </button>
+      </div>
+      <div style="font-size:14px;color:var(--text3);margin-top:10px;">
+        💡 지급: 잔액 증가 / 회수: 잔액 감소 — 메모가 거래내역에 표시됩니다
       </div>
     </div>
   `;
@@ -3636,17 +3643,70 @@ async function adminManualRoi(){
   closeMemberDetail(); renderAdmin();
 }
 async function adminAddWallet(){
-  if(!_detailUserId)return;
-  const amt=parseInt(document.getElementById('admin-add-wallet-amount').value)||0;
-  const desc=document.getElementById('admin-add-wallet-desc').value.trim();
-  if(amt<=0){toast('금액을 입력하세요','error');return;}
-  const u=await dbGet('users',_detailUserId);
-  u.wallet+=amt; u.roi+=amt;
-  await dbPut('users',u);
-  await dbPut('transactions',{id:Date.now(),userId:u.id,type:'ROI',amount:amt,fee:0,netAmount:amt,date:localDateStr(new Date()),status:'completed',desc:desc||'관리자 수동 잔액 추가'});
-  await audit('ADD_WALLET',`잔액추가 ${fmt(amt)} 대상:${u.id} 사유:${desc}`,'admin');
-  toast(`${u.name}에게 ${fmt(amt)} 추가 완료`,'success');
-  closeMemberDetail(); renderAdmin();
+  // 하위 호환용 (기존 호출)
+  await adminWalletAdjust('add');
+}
+
+async function adminWalletAdjust(mode){
+  if(!_detailUserId) return;
+  const amt = parseInt(document.getElementById('admin-add-wallet-amount').value)||0;
+  const memo = document.getElementById('admin-add-wallet-desc').value.trim();
+  if(amt <= 0){ toast('금액을 입력하세요 (0보다 큰 숫자)','error'); return; }
+  if(!memo){ toast('메모를 입력하세요 (거래내역에 표시됩니다)','error'); return; }
+
+  const u = await dbGet('users', _detailUserId);
+  if(!u){ toast('회원 정보 없음','error'); return; }
+
+  const isAdd = mode === 'add';
+  const actualAmt = isAdd ? amt : -amt;
+  const newWallet = (u.wallet||0) + actualAmt;
+  const newRoi    = (u.roi||0) + (isAdd ? amt : 0); // 회수 시 ROI는 유지
+
+  if(!isAdd && newWallet < 0){
+    toast(`잔액 부족! 현재 잔액: ${fmt(u.wallet||0)}`, 'error');
+    return;
+  }
+
+  u.wallet = Math.max(0, newWallet);
+  if(isAdd) u.roi = newRoi;
+  await dbPut('users', u);
+
+  const today = localDateStr(new Date());
+  const txType = isAdd ? '관리자지급' : '관리자회수';
+  const txDesc = `[${isAdd?'지급':'회수'}] ${memo}`;
+
+  // 거래 내역 저장 (회원 내역에도 동일하게 표시)
+  await dbPut('transactions',{
+    id: Date.now(),
+    userId: u.id,
+    type: txType,
+    amount: amt,
+    fee: 0,
+    netAmount: isAdd ? amt : -amt,
+    date: today,
+    status: 'completed',
+    desc: txDesc,
+    memo: memo,
+    by: 'admin'
+  });
+
+  // 감사 로그
+  await audit(
+    isAdd ? 'WALLET_ADD' : 'WALLET_DEDUCT',
+    `${isAdd?'지급':'회수'} ${fmt(amt)} 대상:${u.id} 메모:${memo}`,
+    'admin'
+  );
+
+  toast(
+    `✅ ${u.name}에게 ${fmt(amt)} ${isAdd?'지급':'회수'} 완료\n메모: ${memo}`,
+    isAdd ? 'success' : 'error'
+  );
+
+  // 입력 초기화
+  document.getElementById('admin-add-wallet-amount').value = '';
+  document.getElementById('admin-add-wallet-desc').value = '';
+  closeMemberDetail();
+  renderAdmin();
 }
 async function adminEditAmounts(){
   if(!_detailUserId)return;
