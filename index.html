@@ -900,8 +900,8 @@ td{font-size:14px !important;padding:14px 16px !important;}
     </div>
     <div class="dash-grid dash-row-4" style="margin-bottom:20px;">
       <div class="stat-card card-blue"><div class="stat-label">직추천 수</div><div class="stat-value" id="net-direct-cnt">0</div><div class="stat-sub">명</div></div>
-      <div class="stat-card card-gold"><div class="stat-label">L팀 총투자</div><div class="stat-value mono" id="net-left-pt">₩0</div></div>
-      <div class="stat-card card-green"><div class="stat-label">R팀 총투자</div><div class="stat-value mono" id="net-right-pt">₩0</div></div>
+      
+      
       <div class="stat-card card-purple"><div class="stat-label">소라인 기준</div><div class="stat-value mono" id="net-small-line">₩0</div></div>
     </div>
     <div class="card" style="margin-bottom:20px;">
@@ -1063,50 +1063,6 @@ td{font-size:14px !important;padding:14px 16px !important;}
       <div id="network-tree-referral" style="display:none;overflow:auto;min-height:300px;cursor:grab;"></div>
     </div>
 
-    <!-- ── 좌/우 입금내역 ── -->
-    <div class="card" style="margin-bottom:20px;">
-      <div class="card-header" style="margin-bottom:16px;">
-        <div class="card-title-lg">📊 좌/우팀 입금 내역</div>
-      </div>
-      <div class="tabs" style="margin-bottom:16px;">
-        <button class="tab active" id="lr-tab-all"  onclick="switchLRTab('all',this)">전체</button>
-        <button class="tab"        id="lr-tab-left" onclick="switchLRTab('left',this)">⬅ L팀</button>
-        <button class="tab"        id="lr-tab-right" onclick="switchLRTab('right',this)">R팀 ➡</button>
-      </div>
-      <!-- 좌우 합계 -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-        <div style="background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.3);border-radius:var(--r);padding:14px;text-align:center;">
-          <div style="font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:700;">⬅ L팀 총 투자</div>
-          <div class="mono" style="font-size:22px;font-weight:800;color:var(--gold);" id="lr-left-total">₩0</div>
-          <div style="font-size:13px;color:var(--text3);margin-top:4px;" id="lr-left-cnt">0명</div>
-        </div>
-        <div style="background:rgba(61,214,140,0.1);border:1px solid rgba(61,214,140,0.3);border-radius:var(--r);padding:14px;text-align:center;">
-          <div style="font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:700;">R팀 총 투자 ➡</div>
-          <div class="mono" style="font-size:22px;font-weight:800;color:var(--green);" id="lr-right-total">₩0</div>
-          <div style="font-size:13px;color:var(--text3);margin-top:4px;" id="lr-right-cnt">0명</div>
-        </div>
-      </div>
-      <div id="lr-table-wrap" class="table-wrap">
-        <table style="width:100%;">
-          <thead>
-            <tr>
-              <th>구분</th>
-              <th>아이디</th>
-              <th>이름</th>
-              <th>가입일</th>
-              <th>투자금</th>
-              <th>누적ROI</th>
-              <th>상태</th>
-            </tr>
-          </thead>
-          <tbody id="lr-tbody"></tbody>
-        </table>
-      </div>
-      <div id="lr-empty" class="empty" style="display:none;">
-        <i class="fas fa-inbox"></i>
-        <p>해당 팀에 회원이 없습니다</p>
-      </div>
-    </div>
 
     <div class="card">
       <div class="card-header"><div class="card-title-lg">하위 전체 목록</div></div>
@@ -1425,15 +1381,36 @@ td{font-size:14px !important;padding:14px 16px !important;}
     <div id="admin-tab-tree" style="display:none;">
       <div class="card">
         <div class="card-header" style="margin-bottom:16px;">
-          <div class="card-title-lg">🌳 전체 조직도</div>
+          <div class="card-title-lg">🌳 조직도 관리</div>
         </div>
-        <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-          <input class="form-input" id="admin-tree-root" placeholder="루트 아이디 (비우면 sim001)" style="max-width:220px;padding:10px 14px;font-size:16px;">
-          <button class="btn btn-primary btn-sm" onclick="renderAdminTree()"><i class="fas fa-search"></i> 보기</button>
-          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('admin-tree-root').value='';renderAdminTree()"><i class="fas fa-globe"></i> 전체</button>
-          <span style="font-size:14px;color:var(--text2);">드래그로 이동 | 휠로 확대/축소</span>
+        <!-- 루트 검색 -->
+        <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <input class="form-input" id="admin-tree-root" placeholder="루트 아이디 입력" style="max-width:220px;padding:10px 14px;font-size:16px;">
+          <button class="btn btn-primary btn-sm" onclick="renderAdminBothTrees()"><i class="fas fa-search"></i> 보기</button>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('admin-tree-root').value='';renderAdminBothTrees()"><i class="fas fa-globe"></i> 전체</button>
+          <span style="font-size:14px;color:var(--text2);">드래그로 이동</span>
         </div>
-        <div id="admin-network-tree" style="overflow:hidden;position:relative;background:var(--bg3);border-radius:var(--r);min-height:500px;cursor:grab;"></div>
+        <!-- 탭 -->
+        <div style="display:flex;gap:0;background:rgba(0,0,0,0.25);border-radius:14px;padding:4px;margin-bottom:16px;">
+          <button id="admin-org-tab-sponsor" onclick="switchAdminOrgTab('sponsor')"
+            style="flex:1;padding:12px;border:none;border-radius:11px;cursor:pointer;font-size:16px;font-weight:800;font-family:'DM Sans',sans-serif;background:var(--gold);color:#000;transition:all .2s;">
+            🏠 후원 조직도
+          </button>
+          <button id="admin-org-tab-referral" onclick="switchAdminOrgTab('referral')"
+            style="flex:1;padding:12px;border:none;border-radius:11px;cursor:pointer;font-size:16px;font-weight:700;font-family:'DM Sans',sans-serif;background:none;color:var(--text3);transition:all .2s;">
+            👥 추천 조직도
+          </button>
+        </div>
+        <!-- 후원 조직도 -->
+        <div id="admin-tree-sponsor-wrap">
+          <div style="font-size:14px;color:var(--text2);margin-bottom:8px;">🏠 후원인 기준 바이너리 트리</div>
+          <div id="admin-network-tree" style="overflow:auto;background:var(--bg3);border-radius:var(--r);min-height:400px;cursor:grab;"></div>
+        </div>
+        <!-- 추천 조직도 -->
+        <div id="admin-tree-referral-wrap" style="display:none;">
+          <div style="font-size:14px;color:var(--text2);margin-bottom:8px;">👥 추천인(수당) 기준 다단계 트리</div>
+          <div id="admin-referral-tree" style="overflow:auto;background:var(--bg3);border-radius:var(--r);min-height:400px;cursor:grab;"></div>
+        </div>
       </div>
     </div>
 
@@ -2426,6 +2403,88 @@ function renderReferralTree(u, userMap){
   container.innerHTML=`<div style="position:relative;width:${W}px;height:${H}px;min-width:${W}px;">
     <svg style="position:absolute;top:0;left:0;" width="${W}" height="${H}" overflow="visible">${svg}</svg>${html}
   </div>`;
+  initTreeDrag(container);
+}
+
+function switchAdminOrgTab(tab){
+  const isSponsor = tab==='sponsor';
+  const sb=document.getElementById('admin-org-tab-sponsor');
+  const rb=document.getElementById('admin-org-tab-referral');
+  const sw=document.getElementById('admin-tree-sponsor-wrap');
+  const rw=document.getElementById('admin-tree-referral-wrap');
+  if(sb){ sb.style.background=isSponsor?'var(--gold)':'none'; sb.style.color=isSponsor?'#000':'var(--text3)'; }
+  if(rb){ rb.style.background=isSponsor?'none':'var(--green)'; rb.style.color=isSponsor?'var(--text3)':'#000'; }
+  if(sw) sw.style.display=isSponsor?'block':'none';
+  if(rw) rw.style.display=isSponsor?'none':'block';
+}
+
+async function renderAdminBothTrees(){
+  await renderAdminTree();
+  await renderAdminReferralTree();
+}
+
+async function renderAdminReferralTree(){
+  const container = document.getElementById('admin-referral-tree');
+  if(!container) return;
+  container.innerHTML='<div style="padding:30px;text-align:center;color:var(--text2);">로딩 중...</div>';
+  const rootInput = document.getElementById('admin-tree-root');
+  const rootId = (rootInput?.value||'').trim();
+  const allUsers = await dbGetAll('users');
+  const userMap = {};
+  allUsers.forEach(u=>{ userMap[u.id]=u; });
+  let startId = rootId && userMap[rootId] ? rootId
+    : (allUsers.find(u=>u.role==='member'&&u.sponsorCode==='admin')?.id
+    || allUsers.find(u=>u.role==='member')?.id || null);
+  if(!startId){ container.innerHTML='<div style="padding:30px;text-align:center;color:var(--text3);">회원 없음</div>'; return; }
+
+  // 추천 조직도 렌더링 (sponsorCode 기반)
+  const NW=148,NH=74,HGAP=28,VGAP=65;
+  function getRefKids(uid){
+    return Object.values(userMap).filter(x=>x.sponsorCode===uid&&x.role==='member')
+      .sort((a,b)=>(a.registeredAt||'').localeCompare(b.registeredAt||'')).map(x=>x.id);
+  }
+  let leafIdx=0; const pos={}; const pv=new Set();
+  function assignRef(uid,depth){
+    if(!uid||depth>8||pv.has(uid))return; pv.add(uid);
+    const ch=getRefKids(uid);
+    if(!ch.length){ pos[uid]={x:leafIdx*(NW+HGAP),y:depth*(NH+VGAP)};leafIdx++;return; }
+    ch.forEach(cid=>assignRef(cid,depth+1));
+    const xs=ch.filter(cid=>pos[cid]).map(cid=>pos[cid].x);
+    pos[uid]={x:xs.length?(Math.min(...xs)+Math.max(...xs))/2:leafIdx*(NW+HGAP),y:depth*(NH+VGAP)};
+    if(!xs.length)leafIdx++;
+  }
+  assignRef(startId,0);
+  const allP=Object.values(pos); if(!allP.length){container.innerHTML='<div style="padding:30px;text-align:center;color:var(--text3);">데이터 없음</div>';return;}
+  const minX=Math.min(...allP.map(p=>p.x)),maxX=Math.max(...allP.map(p=>p.x)),maxY=Math.max(...allP.map(p=>p.y));
+  const offX=-minX+HGAP,offY=VGAP,W=Math.max(maxX-minX+NW+HGAP*2,500),H=maxY+NH+VGAP*2;
+  let svg=''; const sv=new Set();
+  for(const [uid,p] of Object.entries(pos)){
+    if(sv.has(uid))continue;sv.add(uid);
+    const ch=getRefKids(uid);
+    const x1=p.x+offX+NW/2,y1=p.y+offY+NH;
+    ch.forEach((cid,i)=>{
+      const cp=pos[cid];if(!cp)return;
+      const x2=cp.x+offX+NW/2,y2=cp.y+offY,my=y1+(y2-y1)*0.45;
+      const col=`hsl(${140+i*25},70%,55%)`;
+      svg+=`<path d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}" stroke="${col}" stroke-width="2" fill="none" opacity="0.7"/>`;
+      svg+=`<circle cx="${(x1+x2)/2}" cy="${(y1+y2)/2}" r="9" fill="${col}"/>`;
+      svg+=`<text x="${(x1+x2)/2}" y="${(y1+y2)/2+4}" fill="#000" font-size="10" font-weight="900" text-anchor="middle">${i+1}</text>`;
+    });
+  }
+  let html='';
+  for(const [uid,p] of Object.entries(pos)){
+    const u2=userMap[uid];if(!u2)continue;
+    const nx=p.x+offX,ny=p.y+offY;
+    const isSelf=uid===startId;
+    const bc=isSelf?'#3dd68c':'rgba(61,214,140,0.3)',bg=isSelf?'rgba(61,214,140,0.12)':'#0d0f1a',nc=isSelf?'#3dd68c':'#f0f2fa';
+    const _i2=u2.investment||0,_r2=u2.roi||0;
+    const iv2=_i2>0?`<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${Math.round(_i2/10000)}만</div><div style="font-size:12px;color:#3dd68c;font-weight:700;">ROI ₩${Math.round(_r2/10000)}만</div>`:`<div style="font-size:12px;color:#4a5068;margin-top:3px;">미투자</div>`;
+    html+=`<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;min-height:${NH}px;background:${bg};border:2px solid ${bc};border-radius:14px;padding:10px 12px;box-sizing:border-box;cursor:pointer;" onclick="toast('👥 ${_esc(u2.name)} (${_esc(uid)}) | 추천:${getRefKids(uid).length}명 | 투자:${fmt(_i2)}','info')">
+      <div style="font-size:14px;font-weight:900;color:${nc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_esc(u2.name)}</div>
+      <div style="font-size:11px;color:#6b7280;">${_esc(uid)}</div>${iv2}
+    </div>`;
+  }
+  container.innerHTML=`<div style="position:relative;width:${W}px;height:${H}px;min-width:${W}px;"><svg style="position:absolute;top:0;left:0;" width="${W}" height="${H}" overflow="visible">${svg}</svg>${html}</div>`;
   initTreeDrag(container);
 }
 
@@ -3642,6 +3701,30 @@ async function adminManualRoi(){
   toast(`${u.name}에게 ${fmt(actual)} 수동 지급 완료`,'success');
   closeMemberDetail(); renderAdmin();
 }
+async function adminDeductWallet(){
+  if(!_detailUserId) return;
+  const u = await dbGet('users', _detailUserId);
+  if(!u){ toast('회원 정보를 불러올 수 없습니다','error'); return; }
+  const amt = parseInt(document.getElementById('admin-add-wallet-amount').value);
+  const desc = document.getElementById('admin-add-wallet-desc').value.trim() || '관리자 잔액 회수';
+  if(!amt||amt<=0){ toast('회수할 금액을 입력하세요','error'); return; }
+  if(u.wallet < amt){ toast(`잔액 부족 (현재 잔액: ${fmt(u.wallet)})`, 'error'); return; }
+  showModal('잔액 회수 확인', `${u.name}의 잔액 ${fmt(amt)}을 회수합니다.\n메모: ${desc}`, async()=>{
+    u.wallet -= amt;
+    await dbPut('users', u);
+    const today = localDateStr(new Date());
+    await dbPut('transactions',{
+      id:Date.now(), userId:u.id, type:'출금',
+      amount:-amt, fee:0, netAmount:-amt,
+      date:today, status:'completed',
+      desc:`[관리자 회수] ${desc}`
+    });
+    await audit('ADMIN_DEDUCT', `잔액회수 ${fmt(amt)} 회원:${u.id} 메모:${desc}`, 'admin');
+    toast(`✅ ${u.name} 잔액 ${fmt(amt)} 회수 완료`, 'success');
+    openMemberDetail(_detailUserId);
+  }, '회수', 'btn-danger');
+}
+
 async function adminAddWallet(){
   // 하위 호환용 (기존 호출)
   await adminWalletAdjust('add');
@@ -3801,7 +3884,7 @@ async function changePassword(){
 async function renderAdmin(){
   if(currentUser.role!=='admin')return;
   const allUsers=await dbGetAll('users');
-  const members=allUsers.filter(u=>u.role==='member');
+  const members=allUsers.filter(u=>u.role==='member').sort((a,b)=>(a.registeredAt||'').localeCompare(b.registeredAt||''));
   const pendInv=await dbGetAll('pendingInvestments');
   const pendWd=await dbGetAll('pendingWithdrawals');
   const allTx=await dbGetAll('transactions');
