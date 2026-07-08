@@ -777,10 +777,23 @@ td{font-size:14px !important;padding:14px 16px !important;}
             <i class="fas fa-paper-plane"></i> 출금 신청
           </button>
         </div>
+        <!-- 투자 예상 배당 -->
         <div class="card">
-          <div class="card-title" style="margin-bottom:12px;">오늘 예상 배당</div>
-          <div class="mono" style="font-size:22px;color:var(--blue);font-weight:700;" id="dash-today">₩0</div>
-          <div style="font-size:14px;color:var(--text3);margin-top:6px;"><span class="coin-dot"></span>주 5일 운영</div>
+          <div class="card-title" style="margin-bottom:10px;">투자 예상 배당</div>
+          <div class="mono" style="font-size:22px;color:var(--blue);font-weight:700;" id="dash-today-invest">₩0</div>
+          <div style="font-size:13px;color:var(--text3);margin-top:5px;"><span class="coin-dot"></span>내 투자금 × 1%</div>
+        </div>
+        <!-- 추천 매칭 -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:10px;">추천 매칭</div>
+          <div class="mono" style="font-size:22px;color:var(--green);font-weight:700;" id="dash-today-matching">₩0</div>
+          <div style="font-size:13px;color:var(--text3);margin-top:5px;"><span class="coin-dot" style="background:var(--green);"></span>하부 ROI 기반 수당</div>
+        </div>
+        <!-- 오늘 예상 배당 합계 -->
+        <div class="card" style="border:1px solid rgba(212,168,83,0.3);background:rgba(212,168,83,0.05);">
+          <div class="card-title" style="margin-bottom:10px;color:var(--gold);">오늘 예상 배당</div>
+          <div class="mono" style="font-size:22px;color:var(--gold);font-weight:800;" id="dash-today">₩0</div>
+          <div style="font-size:13px;color:var(--text3);margin-top:5px;">투자배당 + 추천매칭 합계</div>
         </div>
         <div class="card">
           <div class="card-title" style="margin-bottom:10px;">내 직급</div>
@@ -1353,7 +1366,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>회원</th><th>추천인</th><th>투자금</th><th>누적ROI</th><th>잔액</th><th>직급</th><th>상태</th><th>관리</th></tr></thead>
+            <thead><tr><th>회원</th><th>추천인</th><th>후원인</th><th>투자금</th><th>누적ROI</th><th>잔액</th><th>직급</th><th>상태</th><th>관리</th></tr></thead>
             <tbody id="admin-member-body"></tbody>
           </table>
         </div>
@@ -1945,10 +1958,52 @@ async function renderDashboard(){
     <div class="stat-card card-gold"><div class="stat-label">총 투자금</div><div class="stat-value">${fmt(u.investment)}</div><div class="stat-sub">원금</div></div>
     <div class="stat-card card-green"><div class="stat-label">누적 ROI</div><div class="stat-value">${fmt(u.roi)}</div><div class="stat-sub">${roiPct.toFixed(1)}% 달성</div></div>
     <div class="stat-card card-blue"><div class="stat-label">출금 잔액</div><div class="stat-value">${fmt(u.wallet)}</div></div>
-    <div class="stat-card"><div class="stat-label">일일 배당</div><div class="stat-value">${fmt(daily)}</div><div class="stat-sub">주 5일 지급</div></div>
+    <div class="stat-card"><div class="stat-label">일일 배당</div><div class="stat-value">${fmt(daily)}</div><div class="stat-sub">내 투자금 기준</div></div>
   `;
   document.getElementById('dash-wallet').textContent=fmtFull(u.wallet);
-  document.getElementById('dash-today').textContent=fmtFull(daily);
+
+  // ── 추천 매칭 계산 (하부 회원들의 일일 ROI 합 × 내 수당율) ──
+  const RBNS = (Array.isArray(CFG.REFERRAL_BONUS)&&CFG.REFERRAL_BONUS.length>1)
+    ? CFG.REFERRAL_BONUS
+    : [0,0.25,0.15,0.10,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.03,0.03,0.03,0.03,0.03];
+
+  // 1대 직추천 하부들의 일일 ROI 합 × 1대 수당율
+  const allUsersForMatch = await dbGetAll('users');
+  let matchingTotal = 0;
+
+  // 1~15대까지 순회하며 매칭 계산
+  const visited_m = new Set();
+  async function calcMatching(uid, gen){
+    if(gen>15 || visited_m.has(uid)) return;
+    visited_m.add(uid);
+    const rate = RBNS[gen]||0;
+    if(rate>0){
+      const mu = allUsersForMatch.find(x=>x.id===uid);
+      if(mu && !mu.suspended && mu.investment>0){
+        const muMax = mu.investment * CFG.MAX_PAYOUT;
+        if(mu.roi < muMax){
+          const muDaily = Math.round(mu.investment * CFG.DAILY_ROI);
+          matchingTotal += Math.floor(muDaily * rate);
+        }
+      }
+    }
+    // 이 회원의 추천 하부
+    const subs = allUsersForMatch.filter(x=>x.sponsorCode===uid&&x.role==='member');
+    for(const sub of subs) await calcMatching(sub.id, gen+1);
+  }
+
+  // 나의 직접 추천 하부부터 시작
+  const myDirectSubs = allUsersForMatch.filter(x=>x.sponsorCode===u.id&&x.role==='member');
+  for(const sub of myDirectSubs) await calcMatching(sub.id, 1);
+
+  const totalExpected = daily + matchingTotal;
+
+  // 화면 업데이트
+  const elInvest   = document.getElementById('dash-today-invest');
+  const elMatching = document.getElementById('dash-today-matching');
+  if(elInvest)   elInvest.textContent   = fmtFull(daily);
+  if(elMatching) elMatching.textContent = fmtFull(matchingTotal);
+  document.getElementById('dash-today').textContent=fmtFull(totalExpected);
   document.getElementById('dash-roi-now').textContent=fmtFull(u.roi);
   document.getElementById('dash-roi-max').textContent=fmtFull(max);
   document.getElementById('dash-roi-remain').textContent=fmtFull(Math.max(0,max-u.roi));
@@ -3952,7 +4007,8 @@ function renderAdminApproval(pendList){
               <td>${_esc(u.name)}</td>
               <td>${_esc(u.phone||'-')}</td>
               <td style="font-size:14px;">${_esc(u.email||'-')}</td>
-              <td>${u.sponsorCode?_esc(u.sponsorCode):'<span style="color:var(--text3);">없음</span>'}</td>
+              <td>${u.sponsorCode?_esc(u.sponsorCode):'<span style="color:var(--text3);">-</span>'}</td>
+              <td style="color:var(--blue);">${u.placedUnder?_esc(u.placedUnder):'<span style="color:var(--text3);">-</span>'}</td>
               <td style="font-size:14px;color:var(--text3);">${_esc(u.registeredAt)}</td>
               <td>
                 <div style="display:flex;gap:6px;">
@@ -4045,6 +4101,7 @@ function renderAdminMembers(members){
     return `<tr>
       <td><div style="font-weight:600;">${_esc(u.name)}</div><div style="font-size:14px;color:var(--text3);font-family:'Space Mono',monospace;">${_esc(u.id)}</div></td>
       <td style="font-size:14px;color:var(--text3);">${u.sponsorCode&&u.sponsorCode!=='SYSTEM-ROOT'?_esc(u.sponsorCode):'-'}</td>
+      <td style="font-size:14px;color:var(--blue);">${u.placedUnder?_esc(u.placedUnder):'<span style="color:var(--text3);">-</span>'}</td>
       <td class="td-amount">${fmt(u.investment)}</td>
       <td class="td-amount" style="color:var(--gold);">${fmt(u.roi)}${isMaxed?'<span class="stat-badge badge-down" style="margin-left:4px;font-size:9px;">${(CFG.MAX_PAYOUT*100).toFixed(0)}%</span>':''}</td>
       <td class="td-amount" style="color:var(--green);">${fmt(u.wallet)}</td>
