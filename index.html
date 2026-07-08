@@ -1401,6 +1401,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <input class="form-input" id="admin-tree-root" placeholder="루트 아이디 입력" style="max-width:220px;padding:10px 14px;font-size:16px;">
           <button class="btn btn-primary btn-sm" onclick="renderAdminBothTrees()"><i class="fas fa-search"></i> 보기</button>
           <button class="btn btn-secondary btn-sm" onclick="document.getElementById('admin-tree-root').value='';renderAdminBothTrees()"><i class="fas fa-globe"></i> 전체</button>
+          <button class="btn btn-danger btn-sm" onclick="checkAndFixDuplicatePlacements()"><i class="fas fa-wrench"></i> 중복 배치 검사/수정</button>
           <span style="font-size:14px;color:var(--text2);">드래그로 이동</span>
         </div>
         <!-- 탭 -->
@@ -4295,7 +4296,15 @@ async function updateLinePoints(newUserId, amount, side='auto'){
 
   const allUsers = await dbGetAll('users');
 
-  // BFS로 placementId 하부에서 빈 자리 찾기 (자동 배치)
+  // ⚠️ 중복 배치 방지: 이미 트리에 배치된 회원인지 먼저 확인
+  // (추가 투자로 이 함수가 다시 호출돼도 자리를 새로 잡지 않도록)
+  let existingParent = null;
+  for(const u of allUsers){
+    if(u.children?.left===newUserId){ existingParent={uid:u.id, side:'left'}; break; }
+    if(u.children?.right===newUserId){ existingParent={uid:u.id, side:'right'}; break; }
+  }
+
+  // BFS로 placementId 하부에서 빈 자리 찾기 (자동 배치, 최초 1회만 실행됨)
   async function findEmptySlot(rootId){
     const vis = new Set();
     const queue = [rootId];
@@ -4314,9 +4323,30 @@ async function updateLinePoints(newUserId, amount, side='auto'){
     return null;
   }
 
-  // 직접 후원인에게 먼저 배치 시도
   const directSponsor = await dbGet('users', placementId);
-  if(directSponsor){
+
+  if(existingParent){
+    // ✅ 이미 배치되어 있음 → 자리 재배정 없이, 배치된 자리에 포인트만 추가
+    const parentUser = await dbGet('users', existingParent.uid);
+    if(parentUser){
+      if(existingParent.side==='left'){
+        parentUser.leftInvest  = (parentUser.leftInvest||0)+amount;
+        parentUser.leftPoints  = (parentUser.leftPoints||0)+amount;
+      } else {
+        parentUser.rightInvest = (parentUser.rightInvest||0)+amount;
+        parentUser.rightPoints = (parentUser.rightPoints||0)+amount;
+      }
+      await dbPut('users', parentUser);
+      console.log(`[Tree] ${newUserId} 이미 배치됨(${existingParent.uid} ${existingParent.side}) → 포인트만 추가`);
+    }
+    // 직접 후원인이 배치 부모와 다른 경우(BFS로 흘러간 경우) 직접 후원인 포인트도 갱신
+    if(directSponsor && directSponsor.id!==existingParent.uid){
+      directSponsor.leftInvest = (directSponsor.leftInvest||0)+amount;
+      directSponsor.leftPoints = (directSponsor.leftPoints||0)+amount;
+      await dbPut('users', directSponsor);
+    }
+  } else if(directSponsor){
+    // 최초 배치: 직접 후원인에게 먼저 배치 시도
     if(!directSponsor.children) directSponsor.children = {left:null, right:null};
     let chosenSide = null;
     if(!directSponsor.children.left) chosenSide = 'left';
@@ -4374,6 +4404,48 @@ async function updateLinePoints(newUserId, amount, side='auto'){
     await dbPut('users',cur);
     curId=cur.sponsorCode;
   }
+}
+// ⚠️ 기존에 이미 발생한 중복 배치(두줄 오류)를 찾아서 정리하는 진단/수정 도구
+async function checkAndFixDuplicatePlacements(){
+  const allUsers = await dbGetAll('users');
+  const childMap = {}; // childId -> [{parentId, side}]
+  allUsers.forEach(u=>{
+    if(u.children?.left)  (childMap[u.children.left]  = childMap[u.children.left]  || []).push({parentId:u.id, side:'left'});
+    if(u.children?.right) (childMap[u.children.right] = childMap[u.children.right] || []).push({parentId:u.id, side:'right'});
+  });
+  const dups = Object.entries(childMap).filter(([cid, arr]) => arr.length > 1);
+
+  if(dups.length === 0){
+    toast('중복 배치된 회원이 없습니다 ✅', 'success');
+    return;
+  }
+
+  let report = `중복 배치 발견: ${dups.length}명\n\n`;
+  const plan = dups.map(([cid, arr]) => {
+    const u = allUsers.find(x => x.id === cid);
+    const correctParentId = u?.placedUnder || u?.sponsorCode;
+    const keep = arr.find(a => a.parentId === correctParentId) || arr[0];
+    const remove = arr.filter(a => a !== keep);
+    report += `- ${cid}${u?.name ? ' ('+u.name+')' : ''} : 유지=${keep.parentId}(${keep.side}) / 제거=${remove.map(r=>`${r.parentId}(${r.side})`).join(', ')}\n`;
+    return { cid, keep, remove };
+  });
+  report += '\n위 내용대로 잘못 연결된 자리를 제거하시겠습니까?\n(회원의 투자/포인트 금액 자체는 변경되지 않으니, 좌/우 실적 합계는 별도로 확인해 주세요)';
+
+  if(!confirm(report)) return;
+
+  for(const { remove } of plan){
+    for(const r of remove){
+      const parentUser = await dbGet('users', r.parentId);
+      if(parentUser?.children){
+        if(r.side === 'left')  parentUser.children.left  = null;
+        else                   parentUser.children.right = null;
+        await dbPut('users', parentUser);
+      }
+    }
+  }
+  await audit('TREE_FIX', `중복 배치 ${dups.length}건 정리`, 'admin');
+  toast('중복 배치를 정리했습니다. 조직도를 새로고침합니다.', 'success');
+  renderAdminBothTrees();
 }
 function getDownlineIds(uid,allUsers){
   if(!uid)return[];
