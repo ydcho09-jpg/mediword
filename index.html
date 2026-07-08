@@ -2467,10 +2467,13 @@ function switchAdminOrgTab(tab){
   const rb=document.getElementById('admin-org-tab-referral');
   const sw=document.getElementById('admin-tree-sponsor-wrap');
   const rw=document.getElementById('admin-tree-referral-wrap');
-  if(sb){ sb.style.background=isSponsor?'var(--gold)':'none'; sb.style.color=isSponsor?'#000':'var(--text3)'; }
-  if(rb){ rb.style.background=isSponsor?'none':'var(--green)'; rb.style.color=isSponsor?'var(--text3)':'#000'; }
+  if(sb){ sb.style.background=isSponsor?'var(--gold)':'none'; sb.style.color=isSponsor?'#000':'var(--text3)'; sb.style.fontWeight=isSponsor?'900':'700'; }
+  if(rb){ rb.style.background=isSponsor?'none':'var(--green)'; rb.style.color=isSponsor?'var(--text3)':'#000'; rb.style.fontWeight=isSponsor?'700':'900'; }
   if(sw) sw.style.display=isSponsor?'block':'none';
   if(rw) rw.style.display=isSponsor?'none':'block';
+  // 탭 전환 시 해당 조직도 렌더링
+  if(isSponsor) renderAdminTree();
+  else renderAdminReferralTree();
 }
 
 async function renderAdminBothTrees(){
@@ -2487,10 +2490,24 @@ async function renderAdminReferralTree(){
   const allUsers = await dbGetAll('users');
   const userMap = {};
   allUsers.forEach(u=>{ userMap[u.id]=u; });
-  let startId = rootId && userMap[rootId] ? rootId
-    : (allUsers.find(u=>u.role==='member'&&u.sponsorCode==='admin')?.id
-    || allUsers.find(u=>u.role==='member')?.id || null);
-  if(!startId){ container.innerHTML='<div style="padding:30px;text-align:center;color:var(--text3);">회원 없음</div>'; return; }
+  // 루트: 입력값 → admin의 직접 추천인 중 첫번째 → 전체 회원 중 첫번째
+  let startId = null;
+  if(rootId && userMap[rootId]){
+    startId = rootId;
+  } else {
+    // admin을 추천인으로 갖는 회원 (가장 상위)
+    const topMembers = allUsers
+      .filter(u=>u.role==='member' && u.sponsorCode==='admin')
+      .sort((a,b)=>(a.registeredAt||'').localeCompare(b.registeredAt||''));
+    if(topMembers.length>0) startId = topMembers[0].id;
+    else {
+      // sponsorCode가 없거나 admin이 아닌 경우도 포함
+      const anyMember = allUsers.filter(u=>u.role==='member')
+        .sort((a,b)=>(a.registeredAt||'').localeCompare(b.registeredAt||''));
+      if(anyMember.length>0) startId = anyMember[0].id;
+    }
+  }
+  if(!startId){ container.innerHTML='<div style="padding:30px;text-align:center;color:var(--text3);">회원이 없습니다</div>'; return; }
 
   // 추천 조직도 렌더링 (sponsorCode 기반)
   const NW=148,NH=74,HGAP=28,VGAP=65;
@@ -4167,8 +4184,8 @@ function switchAdminTab(tab,btn){
   document.querySelectorAll('#admin-tabs .tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active'); adminCurrentTab=tab;
   if(tab==='tree'){
-    // 조직도 탭: renderAdmin 호출 없이 바로 renderAdminTree
-    renderAdminTree();
+    // 조직도 탭: 후원+추천 조직도 모두 렌더링
+    renderAdminBothTrees();
   } else {
     renderAdmin();
   }
