@@ -1923,7 +1923,7 @@ async function doRegister(){
     await dbPut('users', sUser);
   }
 
-  await audit('REGISTER',`신규 가입 추천인:${referrerCode} 후원인:${sponsorId}`,id);
+  await audit('REGISTER',`신규 가입 추천인:${referrerCode} 후원인:${finalSponsorId}`,id);
   toast('🎉 가입 완료! 바로 로그인하실 수 있습니다','success');
   document.querySelectorAll('.login-tab').forEach((t,i)=>{t.classList.remove('active');if(i===0)t.classList.add('active');});
   document.querySelectorAll('.login-form-section').forEach((s,i)=>{s.classList.remove('active');if(i===0)s.classList.add('active');});
