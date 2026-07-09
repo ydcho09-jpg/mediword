@@ -2733,121 +2733,6 @@ function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
   initTreeDrag(wrap);
 }
 
-function _orig_renderTree(containerId, rootId, userMap, selfId){
-  const container = document.getElementById(containerId);
-  if(!container) return;
-
-  const NW=150, NH=78, HGAP=30, VGAP=70;
-
-  // ── 1단계: 서브트리 리프 개수 계산 (균형 배치용) ──
-  const leafCount = {};
-  const vis1 = new Set();
-  function countLeaves(uid){
-    if(!uid || vis1.has(uid)) return 0;
-    vis1.add(uid);
-    const u = userMap[uid]; if(!u) return 0;
-    const lc = u.children?.left, rc = u.children?.right;
-    if(!lc && !rc) return 1;
-    const l = lc ? countLeaves(lc) : 0;
-    const r = rc ? countLeaves(rc) : 0;
-    leafCount[uid] = l + r;
-    return l + r || 1;
-  }
-  countLeaves(rootId);
-
-  // ── 2단계: 노드 위치 계산 (Reingold-Tilford 간소화) ──
-  const pos = {};
-  const vis2 = new Set();
-  function place(uid, depth, left){
-    if(!uid || vis2.has(uid)) return left;
-    vis2.add(uid);
-    const u = userMap[uid]; if(!u) return left;
-    const lc = u.children?.left, rc = u.children?.right;
-    let x;
-    if(!lc && !rc){
-      x = left;
-      pos[uid] = {x, y: depth*(NH+VGAP)};
-      return left + NW + HGAP;
-    }
-    let cur = left;
-    if(lc) cur = place(lc, depth+1, cur);
-    const midL = lc && pos[lc] ? pos[lc].x : cur;
-    const startR = cur;
-    if(rc) cur = place(rc, depth+1, cur);
-    const midR = rc && pos[rc] ? pos[rc].x : startR;
-    x = lc && rc ? (midL + midR) / 2 : (lc ? midL : midR);
-    pos[uid] = {x, y: depth*(NH+VGAP)};
-    return cur;
-  }
-  place(rootId, 0, 0);
-
-  // ── 3단계: 전체 범위 ──
-  const allPos = Object.values(pos);
-  if(allPos.length === 0){ container.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);">데이터가 없습니다</div>'; return; }
-  const minX = Math.min(...allPos.map(p=>p.x));
-  const maxX = Math.max(...allPos.map(p=>p.x));
-  const maxY = Math.max(...allPos.map(p=>p.y));
-  const offX = -minX + HGAP;
-  const offY = VGAP;
-  const canvasW = Math.max(maxX - minX + NW + HGAP*2, 400);
-  const canvasH = maxY + NH + VGAP*2;
-
-  // ── 4단계: SVG 연결선 ──
-  let lines = '';
-  const vis3 = new Set();
-  for(const [uid, p] of Object.entries(pos)){
-    if(vis3.has(uid)) continue; vis3.add(uid);
-    const u = userMap[uid]; if(!u) continue;
-    for(const side of ['left','right']){
-      const cid = u.children?.[side];
-      if(!cid || !pos[cid]) continue;
-      const cp = pos[cid];
-      const x1 = p.x  + offX + NW/2, y1 = p.y  + offY + NH;
-      const x2 = cp.x + offX + NW/2, y2 = cp.y + offY;
-      const col = side==='left' ? '#d4a853' : '#3dd68c';
-      // 곡선 연결선
-      const my = (y1+y2)/2;
-      lines += `<path d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}" stroke="${col}" stroke-width="1.5" fill="none" opacity="0.6"/>`;
-      lines += `<text x="${(x1+x2)/2}" y="${(y1+y2)/2}" fill="${col}" font-size="12" text-anchor="middle" font-weight="bold" opacity="0.9">${side==='left'?'L':'R'}</text>`;
-    }
-  }
-
-  // ── 5단계: 노드 HTML ──
-  let nodes = '';
-  for(const [uid, p] of Object.entries(pos)){
-    const u = userMap[uid]; if(!u) continue;
-    const nx = p.x + offX, ny = p.y + offY;
-    const isSelf = uid === selfId;
-    const borderCol = isSelf ? '#d4a853' : u.suspended ? '#f05d5d' : 'rgba(255,255,255,0.12)';
-    const bgCol = isSelf ? 'rgba(212,168,83,0.15)' : 'rgba(13,15,26,0.95)';
-    const nameCol = isSelf ? '#d4a853' : '#ffffff';
-    const _invA=u.investment||0, _roiA=u.roi||0;
-    const invText = _invA>0
-      ? `<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${(_invA/10000).toFixed(0)}만</div>
-         <div style="font-size:12px;color:#3dd68c;font-weight:700;margin-top:2px;">ROI ₩${(_roiA/10000).toFixed(0)}만</div>`
-      : `<div style="font-size:12px;color:#4a5068;margin-top:3px;">미투자</div>`;
-    nodes += `<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;min-height:${NH}px;
-      background:${bgCol};border:2px solid ${borderCol};border-radius:14px;
-      padding:10px 12px;box-sizing:border-box;cursor:pointer;transition:transform .1s;"
-      onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"
-      onclick="toast('👤 ${_esc(u.name)} (${_esc(uid)}) | 투자: ${fmt(u.investment||0)} | 잔액: ${fmt(u.wallet||0)}','info')">
-      <div style="font-size:13px;font-weight:800;color:${nameCol};overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${_esc(u.name)}</div>
-      <div style="font-size:11px;color:#6b7280;margin-top:2px;">${_esc(uid)}</div>
-      ${invText}
-    </div>`;
-  }
-
-  container.innerHTML = `
-    <div id="${containerId}-inner" style="position:relative;width:${canvasW}px;height:${canvasH}px;min-width:${canvasW}px;">
-      <svg style="position:absolute;top:0;left:0;width:${canvasW}px;height:${canvasH}px;pointer-events:none;">
-        ${lines}
-      </svg>
-      ${nodes}
-    </div>`;
-
-  initTreeDrag(container);
-}
-
 function initTreeDrag(container){
   let isDrag=false, startX=0, startY=0, scrollLeft=0, scrollTop=0;
   // 마우스 드래그
@@ -4686,6 +4571,7 @@ async function init(){
         if(mhR) mhR.style.display='flex';
         if(mhNR) mhNR.textContent=savedUser.name+' ('+savedUser.id+')';
         goView(savedUser.role==='admin'?'admin_dash':'dashboard');
+        toast(`환영합니다, ${_esc(savedUser.name)}님! (세션 복원)`, 'success');
         setTimeout(()=>catchUpRoi(),800);
         console.log('[Init] 세션 복원 완료 ✅:', savedUid);
         return;
