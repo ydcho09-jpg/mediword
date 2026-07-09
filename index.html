@@ -1898,7 +1898,7 @@ async function doRegister(){
   await dbPut('users',newUser);
 
   // 후원인의 children에 자동 배치 (바이너리 트리 구성)
-  const sUser = await dbGet('users', sponsorId);
+  const sUser = await dbGet('users', finalSponsorId);
   if(sUser){
     if(!sUser.children) sUser.children = {left:null, right:null};
     if(!sUser.children.left){
@@ -2450,8 +2450,8 @@ function switchAdminOrgTab(tab){
   if(sw) sw.style.display=isSponsor?'block':'none';
   if(rw) rw.style.display=isSponsor?'none':'block';
   // 탭 전환 시 해당 조직도 렌더링
-  if(isSponsor) renderAdminTree();
-  else renderAdminReferralTree();
+  if(isSponsor) renderAdminTree().catch(e=>console.error(e));
+  else renderAdminReferralTree().catch(e=>console.error(e));
 }
 
 async function renderAdminBothTrees(){
@@ -2846,7 +2846,7 @@ async function submitWithdrawal(){
   await dbPut('users',u); currentUser=u;
   await audit('WITHDRAW_REQUEST',`출금신청 ${fmt(wdAmountVal)}`,u.id);
   toast('출금 신청이 접수되었습니다. 관리자 승인 후 처리됩니다','success');
-  renderWallet();
+  renderWallet().catch(e=>console.error(e));
 }
 async function updateBank(){
   if(!_validateSession())return;
@@ -3144,7 +3144,7 @@ async function resetAllData(){
           await dbPut('users',admin);
         }
         toast('✅ 전체 초기화 완료!','success');
-        setTimeout(()=>renderAdmin(),500);
+        setTimeout(()=>renderAdmin().catch(e=>console.error(e)),500);
       }catch(e){
         toast('초기화 중 오류: '+e.message,'error');
       }
@@ -3562,7 +3562,7 @@ async function adminSaveBasicInfo(){
   await dbPut('users',u);
   await audit('ADMIN_EDIT_INFO',`기본정보 수정 [${u.id}] 이름:${newName} 이메일:${newEmail} 전화:${newPhone}`,'admin');
   toast(`✅ ${newName} 기본 정보 저장 완료`,'success');
-  openMemberDetail(_detailUserId);
+  openMemberDetail(_detailUserId).catch(e=>console.error(e));
 }
 
 async function adminSaveBankInfo(){
@@ -3575,7 +3575,7 @@ async function adminSaveBankInfo(){
   await dbPut('users',u);
   await audit('ADMIN_EDIT_BANK',`계좌 수정 [${u.id}] ${u.bankName} ${u.accountNumber} ${u.accountHolder}`,'admin');
   toast(`✅ ${u.name} 계좌 정보 저장 완료`,'success');
-  openMemberDetail(_detailUserId);
+  openMemberDetail(_detailUserId).catch(e=>console.error(e));
 }
 
 async function adminSaveChildren(){
@@ -3599,7 +3599,7 @@ async function adminSaveChildren(){
   await dbPut('users', u);
   await audit('ADMIN_SET_CHILDREN', `좌우배치 설정 [${u.id}] L:${leftId||'없음'} R:${rightId||'없음'}`, 'admin');
   toast(`✅ ${u.name} 좌/우 배치 저장 완료`, 'success');
-  openMemberDetail(_detailUserId);
+  openMemberDetail(_detailUserId).catch(e=>console.error(e));
 }
 
 async function adminDeleteMember(uid){
@@ -3634,7 +3634,7 @@ async function adminManualRoi(){
   await dbPut('transactions',{id:Date.now(),userId:u.id,type:'ROI',amount:actual,fee:0,netAmount:actual,date:today,status:'completed',desc:'관리자 수동 배당 지급'});
   await audit('MANUAL_ROI',`수동배당 ${fmt(actual)} 대상:${u.id}`,'admin');
   toast(`${u.name}에게 ${fmt(actual)} 수동 지급 완료`,'success');
-  closeMemberDetail(); renderAdmin();
+  closeMemberDetail(); renderAdmin().catch(e=>console.error(e));
 }
 async function adminDeductWallet(){
   if(!_detailUserId) return;
@@ -3656,7 +3656,7 @@ async function adminDeductWallet(){
     });
     await audit('ADMIN_DEDUCT', `잔액회수 ${fmt(amt)} 회원:${u.id} 메모:${desc}`, 'admin');
     toast(`✅ ${u.name} 잔액 ${fmt(amt)} 회수 완료`, 'success');
-    openMemberDetail(_detailUserId);
+    openMemberDetail(_detailUserId).catch(e=>console.error(e));
   }, '회수', 'btn-danger');
 }
 
@@ -4279,7 +4279,7 @@ async function approveWithdrawal(id){
     await dbDelete('pendingWithdrawals',id);
     await audit('WD_APPROVE',`출금 승인 ${fmt(wd.amount)} 회원:${wd.userId}`,'admin');
     toast('출금이 승인되었습니다','success');
-    renderAdmin();
+    renderAdmin().catch(e=>console.error(e));
   },'승인','btn-success');
 }
 async function runSettlement(){
@@ -4314,7 +4314,7 @@ async function runSettlement(){
     }
     await audit('SETTLEMENT',`전체 정산 ${count}명 완료 ROI:${(CFG.DAILY_ROI*100).toFixed(1)}%`,'admin');
     toast(`✅ 정산 완료 — ${count}명 ROI 지급 + 소실적 수당 지급됨`,'success');
-    setTimeout(()=>renderAdmin(),500);
+    setTimeout(()=>renderAdmin().catch(e=>console.error(e)),500);
   },'정산 실행','btn-success');
 }
 
@@ -4412,7 +4412,7 @@ async function catchUpRoi(){
   if(paid>0){
     const u=await dbGet('users',currentUser.id); currentUser=u;
     toast(`미지급 ROI ${fmt(paid)} 자동 보정 완료`,'success');
-    if(currentView==='dashboard') renderDashboard();
+    if(currentView==='dashboard') renderDashboard().catch(e=>console.error(e));
   }
 }
 async function autoSettleAll(label){
@@ -4435,7 +4435,7 @@ async function autoSettleAll(label){
     if(currentUser&&currentUser.role!=='admin'&&currentUser.investment>0){
       const myPayout=Math.round(currentUser.investment*CFG.DAILY_ROI);
       toast(`💰 오늘의 ROI ${fmt(myPayout)}이 지급되었습니다!`,'success');
-      if(currentView==='dashboard') renderDashboard();
+      if(currentView==='dashboard') renderDashboard().catch(e=>console.error(e));
     }
     if(currentUser&&currentUser.role==='admin'){
       toast(`✅ 자동 정산 완료 — ${count}명 / ${fmt(totalAmt)}`, 'success');
