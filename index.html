@@ -781,7 +781,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
         <div class="card">
           <div class="card-title" style="margin-bottom:10px;">투자 예상 배당</div>
           <div class="mono" style="font-size:22px;color:var(--blue);font-weight:700;" id="dash-today-invest">₩0</div>
-          <div style="font-size:13px;color:var(--text3);margin-top:5px;"><span class="coin-dot"></span>내 투자금 × 1%</div>
+          <div style="font-size:13px;color:var(--text3);margin-top:5px;" id="dash-daily-roi-hint"><span class="coin-dot"></span>내 투자금 × 1%</div>
         </div>
         <!-- 추천 매칭 -->
         <div class="card">
@@ -1401,7 +1401,6 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <input class="form-input" id="admin-tree-root" placeholder="루트 아이디 입력" style="max-width:220px;padding:10px 14px;font-size:16px;">
           <button class="btn btn-primary btn-sm" onclick="renderAdminBothTrees()"><i class="fas fa-search"></i> 보기</button>
           <button class="btn btn-secondary btn-sm" onclick="document.getElementById('admin-tree-root').value='';renderAdminBothTrees()"><i class="fas fa-globe"></i> 전체</button>
-          <button class="btn btn-danger btn-sm" onclick="checkAndFixDuplicatePlacements()"><i class="fas fa-wrench"></i> 중복 배치 검사/수정</button>
           <span style="font-size:14px;color:var(--text2);">드래그로 이동</span>
         </div>
         <!-- 탭 -->
@@ -2000,6 +1999,9 @@ async function renderDashboard(){
   const totalExpected = daily + matchingTotal;
 
   // 화면 업데이트
+  // 투자 예상 배당 힌트 텍스트 동적 업데이트
+  const hintEl = document.getElementById('dash-daily-roi-hint');
+  if(hintEl) hintEl.innerHTML = `<span class="coin-dot"></span>내 투자금 × ${(CFG.DAILY_ROI*100).toFixed(1)}%`;
   const elInvest   = document.getElementById('dash-today-invest');
   const elMatching = document.getElementById('dash-today-matching');
   if(elInvest)   elInvest.textContent   = fmtFull(daily);
@@ -2599,24 +2601,20 @@ function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
   if(!wrap) return;
   wrap.innerHTML = '';
 
-  // ── 후원 조직도: children.left/right(실제 배치 구조) 기준으로 자식 찾기 ──
-  // ⚠️ 중요: 이 구조는 updateLinePoints()에서 수당 계산에 쓰이는 것과 동일한
-  // "진짜" 배치 구조입니다. 화면 표시도 반드시 이 기준을 따라야
-  // 회원이 화면에서 사라지거나 엉뚱한 자리에 나타나는 오류가 생기지 않습니다.
+  // ── 후원 조직도: placedUnder 기반으로 자식 찾기 ──
+  // placedUnder가 uid인 회원을 가입일 순으로 L, R 배치
   function kids(uid){
-    const u = userMap[uid];
-
-    // 1순위: children.left/right — 투자 승인 시 실제로 배치된 구조 (수당 계산과 동일 기준)
-    if(u?.children && (u.children.left || u.children.right)){
-      return [u.children.left, u.children.right].filter(Boolean);
-    }
-
-    // 2순위: 아직 투자 승인이 없어 children이 비어있는 경우 → placedUnder(가입 시 후원인) 기준으로 임시 표시
-    // (가입일 순으로 2명까지만 미리보기 — 실제 배치는 투자 승인 시 children.left/right로 확정됨)
+    // 1순위: placedUnder===uid 인 회원들
     const byPlaced = Object.values(userMap)
       .filter(x => x.placedUnder===uid && x.role==='member')
       .sort((a,b)=>(a.registeredAt||'').localeCompare(b.registeredAt||''));
     if(byPlaced.length > 0) return byPlaced.slice(0,2).map(x=>x.id);
+
+    // 2순위: children.left/right (수동 설정)
+    const u = userMap[uid];
+    if(u?.children?.left || u?.children?.right){
+      return [u.children.left, u.children.right].filter(Boolean);
+    }
 
     // 3순위: sponsorCode===uid (추천인 기반, placedUnder 없는 구버전)
     return Object.values(userMap)
@@ -3735,18 +3733,6 @@ async function adminSaveChildren(){
     const rUser = await dbGet('users', rightId);
     if(!rUser){ toast(`오른쪽 회원 [${rightId}] 이 존재하지 않습니다`, 'error'); return; }
   }
-  // ⚠️ 중복 배치 방지: 이미 다른 부모에게 배치된 회원을 또 배치하면 "두 줄" 오류가 생김
-  const allUsers = await dbGetAll('users');
-  for(const [label, cid] of [['왼쪽', leftId], ['오른쪽', rightId]]){
-    if(!cid) continue;
-    const otherParent = allUsers.find(x =>
-      x.id !== u.id && ((x.children?.left===cid) || (x.children?.right===cid))
-    );
-    if(otherParent){
-      toast(`${label} [${cid}] 회원은 이미 [${otherParent.id}] 하위에 배치되어 있습니다. 먼저 그쪽 배치를 해제하세요.`, 'error');
-      return;
-    }
-  }
   if(!u.children) u.children = {left:null, right:null};
   u.children.left  = leftId;
   u.children.right = rightId;
@@ -3758,17 +3744,6 @@ async function adminSaveChildren(){
 
 async function adminDeleteMember(uid){
   showModal('회원 삭제',`[${uid}] 회원의 모든 데이터를 영구 삭제합니다. 이 작업은 되돌릴 수 없습니다. 정말 삭제하시겠습니까?`,async()=>{
-    // ⚠️ 삭제 전, 이 회원을 자식으로 참조하고 있는 부모의 children 링크를 정리
-    // (안 하면 부모 쪽에 존재하지 않는 회원을 가리키는 빈 연결이 남아
-    //  조직도가 비정상적으로 표시될 수 있음)
-    const allUsers = await dbGetAll('users');
-    for(const p of allUsers){
-      if(!p.children) continue;
-      let changed = false;
-      if(p.children.left===uid){ p.children.left=null; changed=true; }
-      if(p.children.right===uid){ p.children.right=null; changed=true; }
-      if(changed) await dbPut('users', p);
-    }
     await dbDelete('users',uid);
     await audit('DELETE_MEMBER',`회원 삭제: ${uid}`,'admin');
     toast(`회원 [${uid}]이 삭제되었습니다`,'success');
@@ -4323,15 +4298,7 @@ async function updateLinePoints(newUserId, amount, side='auto'){
 
   const allUsers = await dbGetAll('users');
 
-  // ⚠️ 중복 배치 방지: 이미 트리에 배치된 회원인지 먼저 확인
-  // (추가 투자로 이 함수가 다시 호출돼도 자리를 새로 잡지 않도록)
-  let existingParent = null;
-  for(const u of allUsers){
-    if(u.children?.left===newUserId){ existingParent={uid:u.id, side:'left'}; break; }
-    if(u.children?.right===newUserId){ existingParent={uid:u.id, side:'right'}; break; }
-  }
-
-  // BFS로 placementId 하부에서 빈 자리 찾기 (자동 배치, 최초 1회만 실행됨)
+  // BFS로 placementId 하부에서 빈 자리 찾기 (자동 배치)
   async function findEmptySlot(rootId){
     const vis = new Set();
     const queue = [rootId];
@@ -4350,30 +4317,9 @@ async function updateLinePoints(newUserId, amount, side='auto'){
     return null;
   }
 
+  // 직접 후원인에게 먼저 배치 시도
   const directSponsor = await dbGet('users', placementId);
-
-  if(existingParent){
-    // ✅ 이미 배치되어 있음 → 자리 재배정 없이, 배치된 자리에 포인트만 추가
-    const parentUser = await dbGet('users', existingParent.uid);
-    if(parentUser){
-      if(existingParent.side==='left'){
-        parentUser.leftInvest  = (parentUser.leftInvest||0)+amount;
-        parentUser.leftPoints  = (parentUser.leftPoints||0)+amount;
-      } else {
-        parentUser.rightInvest = (parentUser.rightInvest||0)+amount;
-        parentUser.rightPoints = (parentUser.rightPoints||0)+amount;
-      }
-      await dbPut('users', parentUser);
-      console.log(`[Tree] ${newUserId} 이미 배치됨(${existingParent.uid} ${existingParent.side}) → 포인트만 추가`);
-    }
-    // 직접 후원인이 배치 부모와 다른 경우(BFS로 흘러간 경우) 직접 후원인 포인트도 갱신
-    if(directSponsor && directSponsor.id!==existingParent.uid){
-      directSponsor.leftInvest = (directSponsor.leftInvest||0)+amount;
-      directSponsor.leftPoints = (directSponsor.leftPoints||0)+amount;
-      await dbPut('users', directSponsor);
-    }
-  } else if(directSponsor){
-    // 최초 배치: 직접 후원인에게 먼저 배치 시도
+  if(directSponsor){
     if(!directSponsor.children) directSponsor.children = {left:null, right:null};
     let chosenSide = null;
     if(!directSponsor.children.left) chosenSide = 'left';
@@ -4432,48 +4378,6 @@ async function updateLinePoints(newUserId, amount, side='auto'){
     curId=cur.sponsorCode;
   }
 }
-// ⚠️ 기존에 이미 발생한 중복 배치(두줄 오류)를 찾아서 정리하는 진단/수정 도구
-async function checkAndFixDuplicatePlacements(){
-  const allUsers = await dbGetAll('users');
-  const childMap = {}; // childId -> [{parentId, side}]
-  allUsers.forEach(u=>{
-    if(u.children?.left)  (childMap[u.children.left]  = childMap[u.children.left]  || []).push({parentId:u.id, side:'left'});
-    if(u.children?.right) (childMap[u.children.right] = childMap[u.children.right] || []).push({parentId:u.id, side:'right'});
-  });
-  const dups = Object.entries(childMap).filter(([cid, arr]) => arr.length > 1);
-
-  if(dups.length === 0){
-    toast('중복 배치된 회원이 없습니다 ✅', 'success');
-    return;
-  }
-
-  let report = `중복 배치 발견: ${dups.length}명\n\n`;
-  const plan = dups.map(([cid, arr]) => {
-    const u = allUsers.find(x => x.id === cid);
-    const correctParentId = u?.placedUnder || u?.sponsorCode;
-    const keep = arr.find(a => a.parentId === correctParentId) || arr[0];
-    const remove = arr.filter(a => a !== keep);
-    report += `- ${cid}${u?.name ? ' ('+u.name+')' : ''} : 유지=${keep.parentId}(${keep.side}) / 제거=${remove.map(r=>`${r.parentId}(${r.side})`).join(', ')}\n`;
-    return { cid, keep, remove };
-  });
-  report += '\n위 내용대로 잘못 연결된 자리를 제거하시겠습니까?\n(회원의 투자/포인트 금액 자체는 변경되지 않으니, 좌/우 실적 합계는 별도로 확인해 주세요)';
-
-  if(!confirm(report)) return;
-
-  for(const { remove } of plan){
-    for(const r of remove){
-      const parentUser = await dbGet('users', r.parentId);
-      if(parentUser?.children){
-        if(r.side === 'left')  parentUser.children.left  = null;
-        else                   parentUser.children.right = null;
-        await dbPut('users', parentUser);
-      }
-    }
-  }
-  await audit('TREE_FIX', `중복 배치 ${dups.length}건 정리`, 'admin');
-  toast('중복 배치를 정리했습니다. 조직도를 새로고침합니다.', 'success');
-  renderAdminBothTrees();
-}
 function getDownlineIds(uid,allUsers){
   if(!uid)return[];
   const acc=[uid];
@@ -4523,16 +4427,37 @@ async function runSettlement(){
   const today=new Date();
   const dow=today.getDay();
   if(dow===0||dow===6){toast('주말(토/일)은 배당일이 아닙니다','error');return;}
-  showModal('전체 정산 실행',`오늘(${localDateStr(today)}) 전체 회원 ROI ${(CFG.DAILY_ROI*100).toFixed(1)}% 배당을 지급하겠습니까?\n(오늘 이미 자동 정산된 회원은 중복 지급되지 않습니다)`,async()=>{
-    // ⚠️ 예전 코드는 여기서 별도 로직으로 직접 지급했는데,
-    //   - lastRoiDate(오늘 이미 지급했는지) 체크가 없어 자동 정산과 겹치면 중복 지급되고
-    //   - 소실적 수당(추천인 상위 라인)도 빠지는 문제가 있었습니다.
-    // autoSettleAll()은 processUserRoi()를 통해 lastRoiDate를 확인하므로 중복 지급이 방지되고,
-    // 소실적 수당도 함께 정상 지급됩니다.
-    await autoSettleAll('수동실행');
-  },'정산 실행','btn-primary');
+  showModal('전체 정산 실행',
+    `오늘(${localDateStr(today)}) 전체 회원 ROI ${(CFG.DAILY_ROI*100).toFixed(1)}% 배당을 지급하겠습니까?\n\n소실적 수당(하부 ROI 기반)도 함께 지급됩니다.`,
+  async()=>{
+    const allUsers=await dbGetAll('users');
+    const todayStr=localDateStr(today);
+    let count=0;
+    toast('정산 진행 중...','info');
+    for(const u of allUsers){
+      if(u.role!=='member'||!u.investment||u.investment===0||u.suspended) continue;
+      const max=u.investment*CFG.MAX_PAYOUT;
+      if(u.roi>=max) continue;
+      const payout=Math.round(u.investment*CFG.DAILY_ROI);
+      const actual=Math.min(payout,max-u.roi);
+      if(actual<=0) continue;
+      u.roi+=actual; u.wallet+=actual; u.lastRoiDate=todayStr;
+      await dbPut('users',u);
+      await dbPut('transactions',{
+        id:Date.now()+count*10,userId:u.id,type:'ROI',
+        amount:actual,fee:0,netAmount:actual,
+        date:todayStr,status:'completed',
+        desc:`ROI ${(CFG.DAILY_ROI*100).toFixed(1)}% 정산`
+      });
+      // 소실적 수당 지급 (1~15대 상위에게 이 ROI의 % 지급)
+      await payReferralBonus(u.id, actual, todayStr);
+      count++;
+    }
+    await audit('SETTLEMENT',`전체 정산 ${count}명 완료 ROI:${(CFG.DAILY_ROI*100).toFixed(1)}%`,'admin');
+    toast(`✅ 정산 완료 — ${count}명 ROI 지급 + 소실적 수당 지급됨`,'success');
+    setTimeout(()=>renderAdmin(),500);
+  },'정산 실행','btn-success');
 }
-
 
 //  ROI AUTO SCHEDULER (주 5일 월~금)
 // ═══════════════════════════════════════════════════════
