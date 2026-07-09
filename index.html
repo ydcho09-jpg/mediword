@@ -1757,7 +1757,7 @@ function goHome(){ if(!currentUser)return; goView(currentUser.role==='admin'?'ad
 function renderPage(name){
   // async 함수들은 fire-and-forget (에러는 내부에서 처리)
   if(name==='dashboard') renderDashboard().catch(e=>console.error('[render]',e));
-  else if(name==='invest') renderInvest();
+  else if(name==='invest') renderInvest().catch(e=>console.error('[render]',e));
   else if(name==='network') renderNetwork().catch(e=>console.error('[render]',e));
   else if(name==='wallet') renderWallet().catch(e=>console.error('[render]',e));
   else if(name==='reports') renderReports().catch(e=>console.error('[render]',e));
@@ -4574,7 +4574,7 @@ async function init(){
         if(mhR) mhR.style.display='flex';
         if(mhNR) mhNR.textContent=savedUser.name+' ('+savedUser.id+')';
         goView(savedUser.role==='admin'?'admin_dash':'dashboard');
-        toast(`환영합니다, ${_esc(savedUser.name)}님! (세션 복원)`, 'successs');
+        toast(`환영합니다, ${_esc(savedUser.name)}님! (세션 복원)`, 'success');
         setTimeout(()=>catchUpRoi(),800);
         console.log('[Init] 세션 복원 완료 ✅:', savedUid);
         return;
