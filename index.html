@@ -2078,33 +2078,7 @@ function calcSim(){
   document.getElementById('sim-days').textContent=`약 ${Math.ceil(amt/daily)}일`;
 }
 function calcSimBox(){ const a=parseInt(document.getElementById('sim-amount').value)||0; const sim=document.getElementById('sim-result'); if(a<100000){sim.style.display='none';return;} sim.style.display='flex'; const d=Math.round(a*CFG.DAILY_ROI); document.getElementById('sim-daily').textContent=fmt(d); document.getElementById('sim-monthly').textContent=fmt(d*22); document.getElementById('sim-max').textContent=fmt(a*CFG.MAX_PAYOUT); document.getElementById('sim-days').textContent=`약 ${Math.ceil(a/d)}일`; }
-// 좌/우 선택 함수
 let _selectedSide = null;
-function selectSide(side){
-  _selectedSide = side;
-  // 왼쪽 스타일
-  const leftLabel = document.getElementById('side-left-label');
-  const leftFill  = document.getElementById('side-left-fill');
-  // 오른쪽 스타일
-  const rightLabel = document.getElementById('side-right-label');
-  const rightFill  = document.getElementById('side-right-fill');
-
-  if(side === 'left'){
-    leftLabel.style.borderColor  = 'var(--gold)';
-    leftLabel.style.background   = 'rgba(212,168,83,0.1)';
-    leftFill.style.background    = 'var(--gold)';
-    rightLabel.style.borderColor = 'var(--border)';
-    rightLabel.style.background  = 'var(--bg3)';
-    rightFill.style.background   = 'transparent';
-  } else {
-    rightLabel.style.borderColor = 'var(--green)';
-    rightLabel.style.background  = 'rgba(61,214,140,0.1)';
-    rightFill.style.background   = 'var(--green)';
-    leftLabel.style.borderColor  = 'var(--border)';
-    leftLabel.style.background   = 'var(--bg3)';
-    leftFill.style.background    = 'transparent';
-  }
-}
 
 async function submitInvestment(){
   if(!_validateSession())return;
@@ -2143,12 +2117,12 @@ async function renderNetwork(){
   const downlineAll=allUsers.filter(x=>x.sponsorCode===u.id&&x.role==='member');
   const smallLine=Math.min(u.leftInvest||0,u.rightInvest||0);
   const elDC=document.getElementById('net-direct-cnt'); if(elDC) elDC.textContent=downlineAll.length;
-  const elLP=document.getElementById('net-left-pt');    if(elLP) elLP.textContent=fmt(u.leftInvest||0);
-  const elRP=document.getElementById('net-right-pt');   if(elRP) elRP.textContent=fmt(u.rightInvest||0);
+  if(document.getElementById('net-left-pt'))  document.getElementById('net-left-pt').textContent=fmt(u.leftInvest||0);
+  if(document.getElementById('net-right-pt')) document.getElementById('net-right-pt').textContent=fmt(u.rightInvest||0);
   const elSL=document.getElementById('net-small-line'); if(elSL) elSL.textContent=fmt(smallLine);
-  document.getElementById('my-invite-code').innerHTML=`<i class="fas fa-copy"></i> 내 추천 ID: ${_esc(u.id)}`;
-  // 후원인 표시
-  const puEl = document.getElementById('my-placed-under');
+  const icEl=document.getElementById('my-invite-code');
+  if(icEl) icEl.innerHTML=`<i class="fas fa-copy"></i> 내 추천 ID: ${_esc(u.id)}`;
+  const puEl = (document.getElementById('my-placed-under')||null);
   if(puEl) puEl.textContent = u.placedUnder || u.sponsorCode || '-';
   // ── 내 스타 등급 진행 현황 ──
   const refCount = downlineAll.length;
@@ -2244,9 +2218,10 @@ function switchLRTab(tab, btn){
 }
 
 function renderLRTable(tab){
-  const tbody=document.getElementById('lr-tbody'); if(!tbody) return;
-  const empty=document.getElementById('lr-empty');
-  const wrap=document.getElementById('lr-table-wrap'); if(!wrap) return;
+  if(!document.getElementById('lr-tbody')) return;
+  const tbody=document.getElementById('lr-tbody');
+  const empty=((document.getElementById('lr-empty')||null)||{});
+  const wrap=((document.getElementById('lr-table-wrap')||null)||{}); if(!wrap) return;
 
   let rows=[];
   if(tab==='all')      rows=[..._lrData.left.map(u=>({...u,_side:'L'})), ..._lrData.right.map(u=>({...u,_side:'R'}))];
@@ -2328,11 +2303,9 @@ async function loadLRData(u, allUsers){
   // 합계 업데이트
   const leftTotal=leftMembers.reduce((s,x)=>s+(x.investment||0),0);
   const rightTotal=rightMembers.reduce((s,x)=>s+(x.investment||0),0);
-  const elLT=document.getElementById('lr-left-total');   if(elLT) elLT.textContent=fmtFull(leftTotal);
-  const elRT=document.getElementById('lr-right-total');  if(elRT) elRT.textContent=fmtFull(rightTotal);
-  const elLC=document.getElementById('lr-left-cnt');     if(elLC) elLC.textContent=leftMembers.length+'명';
-  const elRC=document.getElementById('lr-right-cnt');    if(elRC) elRC.textContent=rightMembers.length+'명';
-
+  // LR 섹션 삭제됨 — DOM 참조 생략
+  if(document.getElementById('lr-left-total')) document.getElementById('lr-left-total').textContent=fmtFull(leftTotal);
+  if(document.getElementById('lr-right-total')) document.getElementById('lr-right-total').textContent=fmtFull(rightTotal);
   if(document.getElementById('lr-tbody')) renderLRTable('all');
 }
 
@@ -4011,7 +3984,7 @@ async function renderAdmin(){
   if(tab==='logs') renderAdminLogs(allTx);
 }
 function renderAdminApproval(pendList){
-  const el=document.getElementById('admin-approval-list');
+  const el=(document.getElementById('admin-approval-list')||null); if(!el) return;
   if(!pendList||pendList.length===0){
     el.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);font-size:14px;">✅ 승인 대기 중인 가입 신청이 없습니다</div>';
     return;
