@@ -1859,33 +1859,32 @@ async function doRegister(){
   const email=document.getElementById('inp-remail').value.trim();
   const phone=document.getElementById('inp-rphone').value.trim();
   const ref = document.getElementById('inp-rref')?.value.trim() || '';
-  if(!ref){toast('추천인 아이디를 입력하세요 (필수)','error');return;}
   const sponsorEl = document.getElementById('inp-rsponsor');
-  const sponsorId = sponsorEl ? sponsorEl.value.trim() : ref;
-  // 보안 검증
+  const sponsorId = sponsorEl ? sponsorEl.value.trim() : '';
+  // ── 기본 검증 ──
   if(!id||!name||!pwd){toast('아이디, 이름, 비밀번호는 필수입니다','error');return;}
   if(!_sanitizeId(id)){toast('아이디는 영문/숫자 4~20자입니다','error');return;}
   if(!_sanitizePwd(pwd)){toast('비밀번호는 4자 이상이어야 합니다','error');return;}
   if(pwd!==pwd2){toast('비밀번호가 일치하지 않습니다','error');return;}
   const existing=await dbGet('users',id);
   if(existing){toast('이미 사용 중인 아이디입니다','error');return;}
-  // 후원인 필수 확인
-  if(!sponsorId){toast('후원인 아이디를 입력하세요 (필수)','error');return;}
-  const sponsorUser = await dbGet('users', sponsorId);
+  // ── 추천인 필수 확인 ──
+  if(!ref){toast('추천인 아이디를 입력하세요 (필수)','error');return;}
+  const referrerUser = await dbGet('users', ref);
+  if(!referrerUser){toast('존재하지 않는 추천인 아이디입니다','error');return;}
+  if(referrerUser.suspended){toast('정지된 추천인입니다. 다른 추천인을 입력하세요','error');return;}
+  // ── 후원인 필수 확인 ──
+  const finalSponsorId = sponsorId || ref; // 후원인 없으면 추천인을 후원인으로
+  if(!finalSponsorId){toast('후원인 아이디를 입력하세요 (필수)','error');return;}
+  const sponsorUser = await dbGet('users', finalSponsorId);
   if(!sponsorUser||sponsorUser.suspended){toast('유효하지 않은 후원인 아이디입니다','error');return;}
-  // 추천인 확인 (선택)
-  let referrerUser = null;
-  if(ref && ref !== sponsorId){
-    referrerUser = await dbGet('users', ref);
-    if(!referrerUser){toast('추천인 아이디가 존재하지 않습니다','error');return;}
-  }
-  // referrerCode: 수당 지급 기준 (추천인 없으면 후원인)
-  const referrerCode = referrerUser ? ref : sponsorId;
+  // ── 수당 기준: 추천인, 배치 기준: 후원인 ──
+  const referrerCode = ref;
   const newUser={
     id, pwd:_hashPwd(pwd), role:'member', name,
     inviteCode:id,
     sponsorCode: referrerCode,   // 수당 체계 (추천인 기준)
-    placedUnder: sponsorId,      // 조직도 배치 (후원인 기준)
+    placedUnder: finalSponsorId,  // 조직도 배치 (후원인 기준)
     wallet:0, investment:0, roi:0,
     leftPoints:0, rightPoints:0, leftInvest:0, rightInvest:0,
     paidRanks:[], children:{left:null,right:null},
@@ -1908,7 +1907,7 @@ async function doRegister(){
     else {
       const allU = await dbGetAll('users');
       const vis = new Set();
-      const q = [sponsorId];
+      const q = [finalSponsorId];
       while(q.length){
         const cur = q.shift();
         if(!cur||vis.has(cur)) continue;
@@ -1974,7 +1973,7 @@ async function renderDashboard(){
   // 1~15대까지 순회하며 매칭 계산
   const visited_m = new Set();
   async function calcMatching(uid, gen){
-    if(gen>15 || visited_m.has(uid)) return;
+    if(!uid || gen>15 || visited_m.has(uid)) return;
     visited_m.add(uid);
     const rate = RBNS[gen]||0;
     if(rate>0){
@@ -4571,7 +4570,7 @@ async function init(){
         if(mhR) mhR.style.display='flex';
         if(mhNR) mhNR.textContent=savedUser.name+' ('+savedUser.id+')';
         goView(savedUser.role==='admin'?'admin_dash':'dashboard');
-        toast(`환영합니다, ${_esc(savedUser.name)}님! (세션 복원)`, 'success');
+        toast(`환영합니다, ${_esc(savedUser.name)}님! (세션 복원)`, 'successs');
         setTimeout(()=>catchUpRoi(),800);
         console.log('[Init] 세션 복원 완료 ✅:', savedUid);
         return;
