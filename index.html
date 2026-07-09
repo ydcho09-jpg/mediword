@@ -1755,13 +1755,14 @@ function showPage(name){
 function goView(name){ showPage(name); renderPage(name); }
 function goHome(){ if(!currentUser)return; goView(currentUser.role==='admin'?'admin_dash':'dashboard'); }
 function renderPage(name){
-  if(name==='dashboard') renderDashboard();
+  // async 함수들은 fire-and-forget (에러는 내부에서 처리)
+  if(name==='dashboard') renderDashboard().catch(e=>console.error('[render]',e));
   else if(name==='invest') renderInvest();
-  else if(name==='network') renderNetwork();
-  else if(name==='wallet') renderWallet();
-  else if(name==='reports') renderReports();
-  else if(name==='profile') renderProfile();
-  else if(name==='admin_dash') renderAdmin();
+  else if(name==='network') renderNetwork().catch(e=>console.error('[render]',e));
+  else if(name==='wallet') renderWallet().catch(e=>console.error('[render]',e));
+  else if(name==='reports') renderReports().catch(e=>console.error('[render]',e));
+  else if(name==='profile') renderProfile().catch(e=>console.error('[render]',e));
+  else if(name==='admin_dash') renderAdmin().catch(e=>console.error('[render]',e));
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1810,6 +1811,8 @@ async function loginUser(user){
   await dbPut('users',user);
   _sessionToken=_genToken();
   currentUser=user;
+  // ★ 최신 관리자 설정(ROI%, 수당% 등) 로드
+  await loadSettings();
   // 새로고침 후 세션 복원 (localStorage 사용 — 탭 독립성 유지)
   try{
     const tabId = sessionStorage.getItem('bosang_tab') || Math.random().toString(36).slice(2);
@@ -4037,17 +4040,16 @@ function renderAdminLogs(allTx){
 // ═══════════════════════════════════════════════════════
 //  ADMIN ACTIONS
 // ═══════════════════════════════════════════════════════
-function switchAdminTab(tab,btn){
+async function switchAdminTab(tab,btn){
   ['overview','approval','members','investments','withdrawals','logs','tree'].forEach(t=>{
     const el=document.getElementById('admin-tab-'+t); if(el) el.style.display=t===tab?'block':'none';
   });
   document.querySelectorAll('#admin-tabs .tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active'); adminCurrentTab=tab;
   if(tab==='tree'){
-    // 조직도 탭: 후원+추천 조직도 모두 렌더링
-    renderAdminBothTrees();
+    await renderAdminBothTrees();
   } else {
-    renderAdmin();
+    await renderAdmin();
   }
 }
 function searchMembers(){
@@ -4559,6 +4561,8 @@ async function init(){
         // ✅ 세션 복원 성공
         _sessionToken = _genToken();
         currentUser = savedUser;
+        // 최신 CFG 로드
+        await loadSettings();
         // 저장 시간 갱신
         localStorage.setItem('bosang_ts_' + tabId, Date.now().toString());
         setupTopbar();
