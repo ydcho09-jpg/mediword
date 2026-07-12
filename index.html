@@ -29,26 +29,36 @@ const fsdb = getFirestore(app);
 // ── Firestore DB 함수 (기존 IndexedDB 함수를 덮어씁니다) ──
 window.fsdb = fsdb;
 window.fsGet = async (col, id) => {
-  const snap = await getDoc(doc(fsdb, col, String(id)));
-  return snap.exists() ? snap.data() : undefined;
+  try{
+    const snap = await getDoc(doc(fsdb, col, String(id)));
+    return snap.exists() ? snap.data() : undefined;
+  }catch(e){ console.error('[fsGet]',col,id,e); return undefined; }
 };
 window.fsGetAll = async (col) => {
-  const snap = await getDocs(collection(fsdb, col));
-  return snap.docs.map(d => d.data());
+  try{
+    const snap = await getDocs(collection(fsdb, col));
+    return snap.docs.map(d => d.data());
+  }catch(e){ console.error('[fsGetAll]',col,e); return []; }
 };
 window.fsPut = async (col, obj) => {
-  const key = obj.id !== undefined ? String(obj.id) : String(obj.key);
-  await setDoc(doc(fsdb, col, key), obj);
+  try{
+    const key = obj.id !== undefined ? String(obj.id) : String(obj.key);
+    await setDoc(doc(fsdb, col, key), obj);
+  }catch(e){ console.error('[fsPut]',col,e); throw e; }
 };
 window.fsDelete = async (col, id) => {
-  await deleteDoc(doc(fsdb, col, String(id)));
+  try{
+    await deleteDoc(doc(fsdb, col, String(id)));
+  }catch(e){ console.error('[fsDelete]',col,id,e); throw e; }
 };
 window.fsAdd = async (col, obj) => {
-  if(obj.id !== undefined){
-    await setDoc(doc(fsdb, col, String(obj.id)), { ...obj });
-  } else {
-    await addDoc(collection(fsdb, col), { ...obj, _ts: serverTimestamp() });
-  }
+  try{
+      if(obj.id !== undefined){
+        await setDoc(doc(fsdb, col, String(obj.id)), { ...obj });
+      } else {
+        await addDoc(collection(fsdb, col), { ...obj, _ts: serverTimestamp() });
+      }
+  }catch(e){ console.error('[fsAdd]',col,e); throw e; }
 };
 window.fsGetIndex = async (col, field, val) => {
   const q = query(collection(fsdb, col), where(field, '==', val));
@@ -1969,17 +1979,19 @@ async function saveNotice(){
   if(!title){ toast('제목을 입력하세요','error'); return; }
   if(!content){ toast('내용을 입력하세요','error'); return; }
   const now = localDateTimeStr(new Date());
+  // createdAt 먼저 로드 (수정 시)
+  let createdAt = now;
+  if(editId){
+    const existing = await dbGet('notices', editId);
+    createdAt = existing?.createdAt || now;
+  }
   const notice = {
     id: editId || ('notice_'+Date.now()),
     title, content, important,
-    createdAt: editId ? undefined : now,
+    createdAt,
     updatedAt: now,
     author: '관리자',
   };
-  if(editId){
-    const existing = await dbGet('notices', editId);
-    notice.createdAt = existing?.createdAt || now;
-  }
   await dbPut('notices', notice);
   await audit('NOTICE_'+(editId?'EDIT':'CREATE'), `공지: ${title}`, 'admin');
   toast(`✅ 공지사항이 ${editId?'수정':'등록'}되었습니다`, 'success');
@@ -2086,6 +2098,9 @@ function switchPointTab(tab){
   if(tb2){ tb2.style.background=isDaily?'none':'#3dd68c'; tb2.style.color=isDaily?'var(--text3)':'#000'; tb2.style.fontWeight=isDaily?'700':'900'; }
   if(p1) p1.style.display=isDaily?'block':'none';
   if(p2) p2.style.display=isDaily?'none':'block';
+  // 탭 전환 시 렌더링
+  if(isDaily) renderPointsDaily && renderPointsDaily().catch(e=>console.error(e));
+  else renderPointsSub && renderPointsSub().catch(e=>console.error(e));
 }
 
 async function renderPoints(){
@@ -2563,17 +2578,6 @@ async function renderInvest(){
   `:'<div class="empty"><i class="fas fa-chart-line"></i><p>투자를 시작하세요</p></div>';
 }
 // ── 조직도 줌 내부 함수 ──
-function _treeZoomBy(zid, delta){
-  // 하위 호환용 — initTreeDrag 내부 applyZoom 사용 불가하므로 직접 구현
-  const con = document.querySelector('[data-zoom-cid="'+zid+'"]');
-  if(!con) return;
-  if(!window._treeScales) window._treeScales = {};
-  let sc = window._treeScales[zid] !== undefined ? window._treeScales[zid] : 1;
-  sc = delta===0 ? 1 : Math.min(3.0, Math.max(0.2, sc+delta));
-  window._treeScales[zid] = sc;
-  const inner = con.querySelector('div[style*="position:relative"]');
-  if(inner){ inner.style.transform='scale('+sc+')'; inner.style.transformOrigin='top left'; }
-}
 
 function treeZoom(cid, delta){
   const con = document.querySelector('[data-zoom-id="'+cid+'"]');
@@ -3262,84 +3266,121 @@ function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
   initTreeDrag(wrap);
 }
 
+// ══════════════════════════════════════════
+// 조직도 줌 — 전역 함수 방식 (renderTree 후에도 안정적)
+// ══════════════════════════════════════════
+if(!window._treeScales) window._treeScales = {};
+
+function _treeZoomBy(zid, delta){
+  if(!window._treeScales) window._treeScales = {};
+  const con = document.querySelector('[data-zoom-cid="'+zid+'"]');
+  if(!con){ console.warn('[zoom] container not found:', zid); return; }
+  // inner: position:relative 인 div (renderTree가 교체해도 매번 새로 찾기)
+  const inner = con.querySelector(':scope > div[style*="position:relative"], :scope div[style*="position:relative"]');
+  if(!inner){ console.warn('[zoom] inner not found in', con); return; }
+  let sc = window._treeScales[zid] !== undefined ? window._treeScales[zid] : 1;
+  if(delta === 0){
+    sc = 1;  // 원본
+  } else {
+    sc = Math.round(Math.min(3.0, Math.max(0.25, sc + delta)) * 100) / 100;
+  }
+  window._treeScales[zid] = sc;
+  inner.style.transform       = 'scale(' + sc + ')';
+  inner.style.transformOrigin = 'top left';
+  // 스케일 표시 업데이트
+  const scLabel = con.parentElement && con.parentElement.querySelector('.zoom-scale-label');
+  if(scLabel) scLabel.textContent = Math.round(sc*100) + '%';
+}
+
 function initTreeDrag(container){
   if(!container) return;
 
-  // ── 컨테이너에 고유 ID 부여 (한 번만) ──
+  // ── 컨테이너 고유 ID (한 번만) ──
   if(!container.dataset.zoomCid){
     container.dataset.zoomCid = 'zc_' + Math.random().toString(36).slice(2,8);
   }
   const zid = container.dataset.zoomCid;
-  if(!window._treeScales) window._treeScales = {};
   if(window._treeScales[zid] === undefined) window._treeScales[zid] = 1;
 
-  // ── inner 가져오기 (매번 동적으로) ──
-  function getInner(){
-    return container.querySelector('div[style*="position:relative"]');
-  }
-
-  // ── 줌 적용 ──
-  function applyZoom(sc){
-    sc = Math.min(3.0, Math.max(0.2, sc));
-    window._treeScales[zid] = sc;
-    const inner = getInner();
-    if(inner){
-      inner.style.transform = 'scale(' + sc + ')';
-      inner.style.transformOrigin = 'top left';
-    }
-  }
-
-  // ── 줌 버튼 추가 (한 번만) ──
+  // ── 줌 버튼 (한 번만 생성) ──
   if(!container.querySelector('.tree-zoom-btns')){
     const zbDiv = document.createElement('div');
     zbDiv.className = 'tree-zoom-btns';
+    zbDiv.setAttribute('data-zid', zid);
     zbDiv.style.cssText = [
-      'position:sticky','top:8px','left:8px','z-index:100',
-      'display:flex','gap:6px','margin-bottom:8px',
-      'padding:4px 6px','background:rgba(0,0,0,0.5)',
-      'border-radius:10px','width:fit-content',
-      'pointer-events:all'
+      'position:sticky','top:6px','left:6px','z-index:200',
+      'display:inline-flex','align-items:center','gap:4px',
+      'margin-bottom:8px','padding:3px 6px',
+      'background:rgba(0,0,0,0.65)','border-radius:10px',
+      'backdrop-filter:blur(4px)','-webkit-backdrop-filter:blur(4px)',
+      'pointer-events:all','user-select:none'
     ].join(';');
 
-    const btnBase = [
-      'background:#2a2d3e','border:1.5px solid #3a3d4e',
-      'color:#fff','border-radius:8px','cursor:pointer',
-      'font-weight:900','line-height:1','min-width:44px',
-      'height:38px','font-size:20px','display:flex',
+    const btnStyle = [
+      'background:#1e2130','border:1.5px solid #3a3d54',
+      'color:#fff','border-radius:7px','cursor:pointer',
+      'font-weight:900','min-width:36px','height:36px',
+      'font-size:20px','display:inline-flex',
       'align-items:center','justify-content:center',
-      'touch-action:manipulation','-webkit-tap-highlight-color:transparent'
+      'touch-action:manipulation',
+      '-webkit-tap-highlight-color:transparent',
+      'padding:0 10px','transition:background .15s'
     ].join(';');
 
-    const mkBtn = (label, title, delta) => {
-      const btn = document.createElement('button');
-      btn.textContent = label;
-      btn.title = title;
-      btn.style.cssText = btnBase + (label==='원본' ? ';font-size:14px;min-width:52px;' : '');
-      btn.addEventListener('click',  e=>{ e.stopPropagation(); e.preventDefault();
-        const cur = window._treeScales[zid]||1;
-        applyZoom(delta===0 ? 1 : cur+delta);
-      });
-      btn.addEventListener('touchend', e=>{ e.stopPropagation(); e.preventDefault();
-        const cur = window._treeScales[zid]||1;
-        applyZoom(delta===0 ? 1 : cur+delta);
-      });
-      return btn;
+    const makeBtn = (txt, tip, fn) => {
+      const b = document.createElement('button');
+      b.textContent = txt;
+      b.title = tip;
+      b.style.cssText = btnStyle + (txt==='원본' ? ';font-size:13px;min-width:48px;' : '');
+      const handler = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        fn();
+      };
+      b.addEventListener('click', handler);
+      b.addEventListener('touchend', handler, {passive:false});
+      b.addEventListener('mouseover', ()=>{ b.style.background='#2e3250'; });
+      b.addEventListener('mouseout',  ()=>{ b.style.background='#1e2130'; });
+      return b;
     };
 
-    zbDiv.appendChild(mkBtn('+',  '확대',   +0.25));
-    zbDiv.appendChild(mkBtn('-',  '축소',   -0.25));
-    zbDiv.appendChild(mkBtn('원본','원래크기', 0));
+    const scLabel = document.createElement('span');
+    scLabel.className = 'zoom-scale-label';
+    scLabel.style.cssText = 'color:#aaa;font-size:13px;min-width:38px;text-align:center;font-family:monospace;';
+    scLabel.textContent = '100%';
+
+    zbDiv.appendChild(makeBtn('+', '확대', ()=>{
+      const cur = window._treeScales[zid]||1;
+      _treeZoomBy(zid, +0.25);
+      scLabel.textContent = Math.round((window._treeScales[zid]||1)*100)+'%';
+    }));
+    zbDiv.appendChild(makeBtn('-', '축소 (최소 25%)', ()=>{
+      const cur = window._treeScales[zid]||1;
+      _treeZoomBy(zid, -0.25);
+      scLabel.textContent = Math.round((window._treeScales[zid]||1)*100)+'%';
+    }));
+    zbDiv.appendChild(makeBtn('원본', '100% 원래크기', ()=>{
+      _treeZoomBy(zid, 0);
+      scLabel.textContent = '100%';
+    }));
+    zbDiv.appendChild(scLabel);
     container.insertBefore(zbDiv, container.firstChild);
+  } else {
+    // 이미 버튼 있으면 zid만 업데이트
+    const existingBtns = container.querySelector('.tree-zoom-btns');
+    if(existingBtns) existingBtns.setAttribute('data-zid', zid);
   }
 
-  // ── 마우스 휠 줌 (Ctrl+휠 또는 그냥 휠) ──
+  // ── 마우스 휠 줌 ──
   if(!container.dataset.wheelBound){
     container.dataset.wheelBound = '1';
     container.addEventListener('wheel', e=>{
       if(e.ctrlKey || e.metaKey || e.altKey){
         e.preventDefault();
         const cur = window._treeScales[zid]||1;
-        applyZoom(cur + (e.deltaY<0 ? 0.1 : -0.1));
+        _treeZoomBy(zid, e.deltaY<0 ? 0.1 : -0.1);
+        const scLabel = container.querySelector('.zoom-scale-label');
+        if(scLabel) scLabel.textContent = Math.round((window._treeScales[zid]||1)*100)+'%';
       }
     },{passive:false});
   }
@@ -3347,37 +3388,36 @@ function initTreeDrag(container){
   // ── 마우스 드래그 ──
   if(!container.dataset.dragBound){
     container.dataset.dragBound = '1';
-    let isDrag=false, startX=0, startY=0, scrollLeft=0, scrollTop=0;
+    let isDrag=false, dSX=0, dSY=0, dSL=0, dST=0;
     container.addEventListener('mousedown', e=>{
       if(e.target.closest('.tree-zoom-btns')) return;
-      isDrag=true; startX=e.pageX; startY=e.pageY;
-      scrollLeft=container.scrollLeft; scrollTop=container.scrollTop;
-      container.style.cursor='grabbing'; e.preventDefault();
+      isDrag=true; dSX=e.clientX; dSY=e.clientY;
+      dSL=container.scrollLeft; dST=container.scrollTop;
+      container.style.cursor='grabbing';
+      e.preventDefault();
     });
     document.addEventListener('mousemove', e=>{
       if(!isDrag) return;
-      container.scrollLeft = scrollLeft-(e.pageX-startX);
-      container.scrollTop  = scrollTop -(e.pageY-startY);
+      container.scrollLeft = dSL-(e.clientX-dSX);
+      container.scrollTop  = dST-(e.clientY-dSY);
     });
     document.addEventListener('mouseup', ()=>{ isDrag=false; container.style.cursor='grab'; });
   }
 
-  // ── 터치: 드래그 + 핀치줌 ──
+  // ── 터치 드래그 + 핀치줌 ──
   if(!container.dataset.touchBound){
     container.dataset.touchBound = '1';
-    let tSX=0,tSY=0,tSL=0,tST=0,tDist=0,tPinching=false;
+    let tSX=0,tSY=0,tSL=0,tST=0,tDist=0,tPinch=false;
 
     container.addEventListener('touchstart', e=>{
       if(e.target.closest('.tree-zoom-btns')) return;
       if(e.touches.length===2){
-        tPinching=true;
-        tDist=Math.hypot(
-          e.touches[0].clientX-e.touches[1].clientX,
-          e.touches[0].clientY-e.touches[1].clientY
-        );
+        tPinch=true;
+        tDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                         e.touches[0].clientY-e.touches[1].clientY);
         e.preventDefault();
       } else {
-        tPinching=false;
+        tPinch=false;
         tSX=e.touches[0].clientX; tSY=e.touches[0].clientY;
         tSL=container.scrollLeft;  tST=container.scrollTop;
       }
@@ -3385,31 +3425,33 @@ function initTreeDrag(container){
 
     container.addEventListener('touchmove', e=>{
       if(e.target.closest('.tree-zoom-btns')) return;
-      if(e.touches.length===2){
-        tPinching=true;
-        const d=Math.hypot(
-          e.touches[0].clientX-e.touches[1].clientX,
-          e.touches[0].clientY-e.touches[1].clientY
-        );
+      if(e.touches.length===2 && tPinch){
+        const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                           e.touches[0].clientY-e.touches[1].clientY);
         if(tDist>0){
           const cur = window._treeScales[zid]||1;
-          applyZoom(cur*(d/tDist));
+          const newSc = Math.round(Math.min(3.0,Math.max(0.25,cur*(d/tDist)))*100)/100;
+          window._treeScales[zid] = newSc;
+          const inner = container.querySelector(':scope div[style*="position:relative"]');
+          if(inner){ inner.style.transform='scale('+newSc+')'; inner.style.transformOrigin='top left'; }
+          const scLabel = container.querySelector('.zoom-scale-label');
+          if(scLabel) scLabel.textContent = Math.round(newSc*100)+'%';
         }
         tDist=d;
         e.preventDefault();
-      } else if(!tPinching){
+      } else if(!tPinch){
         container.scrollLeft=tSL-(e.touches[0].clientX-tSX);
         container.scrollTop =tST-(e.touches[0].clientY-tSY);
       }
     },{passive:false});
 
     container.addEventListener('touchend', e=>{
-      if(e.touches.length < 2) tPinching=false;
+      if(e.touches.length<2) tPinch=false;
     },{passive:true});
   }
 
-  container.style.overflow = 'auto';
-  container.style.cursor = 'grab';
+  container.style.overflow='auto';
+  container.style.cursor='grab';
 }
 function copyInvite(){ navigator.clipboard.writeText(currentUser.id).then(()=>toast('내 추천 아이디가 복사되었습니다: '+currentUser.id,'success')); }
 
@@ -4516,6 +4558,7 @@ async function renderAdmin(){
     const el=document.getElementById('admin-tab-'+t); if(el) el.style.display=t===tab?'block':'none';
   });
   if(tab==='overview') renderAdminOverview(members);
+  if(tab==='approval') renderAdminApproval && renderAdminApproval(pendApproval);
   // 가입승인 탭 제거됨
   if(tab==='members') renderAdminMembers(members);
   if(tab==='investments') renderAdminInvestments(pendInv);
