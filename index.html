@@ -3060,7 +3060,7 @@ async function renderAdminReferralTree(){
     const isSelf=uid===startId;
     const bc=isSelf?'#3dd68c':'rgba(61,214,140,0.3)',bg=isSelf?'rgba(61,214,140,0.12)':'#0d0f1a',nc=isSelf?'#3dd68c':'#f0f2fa';
     const _i2=u2.investment||0,_r2=u2.roi||0;
-    const iv2=_i2>0?`<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${Math.round(_i2/10000)}만</div><div style="font-size:12px;color:#3dd68c;font-weight:700;">ROI ₩${Math.round(_r2/10000)}만</div>`:`<div style="font-size:12px;color:#4a5068;margin-top:3px;">미투자</div>`;
+    const iv2=_i2>0?`<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${Math.round(_i2).toLocaleString()}</div><div style="font-size:12px;color:#3dd68c;font-weight:700;">ROI ₩${Math.round(_r2).toLocaleString()}</div>`:`<div style="font-size:12px;color:#4a5068;margin-top:3px;">미투자</div>`;
     html+=`<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;min-height:${NH}px;background:${bg};border:2px solid ${bc};border-radius:14px;padding:10px 12px;box-sizing:border-box;cursor:pointer;" onclick="toast('👥 ${_esc(u2.name)} (${_esc(uid)}) | 추천:${getRefKids(uid).length}명 | 투자:${fmtFull(_i2)}','info')">
       <div style="font-size:14px;font-weight:900;color:${nc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_esc(u2.name)}</div>
       <div style="font-size:11px;color:#6b7280;">${_esc(uid)}</div>${iv2}
@@ -4920,7 +4920,7 @@ async function runSettlement(){
       await dbPut('users',u);
       await dbPut('transactions',{
         id:Date.now()+count*10,userId:u.id,type:'ROI',
-        amount:actual,fee:0,netAmount:actual,
+        amount:actual,fee:0,netAmount:sWallet,
         date:todayStr,status:'completed',
         desc:`ROI ${(CFG.DAILY_ROI*100).toFixed(1)}% 정산`
       });
@@ -4971,7 +4971,7 @@ async function processUserRoi(userId){
     upd.roi+=actual; upd.wallet+=walletAmt;
     upd.shopPoint=(upd.shopPoint||0)+shopAmt;
     upd.lastRoiDate=dateStr; totalPaid+=actual;
-    await dbPut('transactions',{id:Date.now()+Math.floor(Math.random()*9999),userId:u.id,type:'ROI',amount:actual,fee:0,netAmount:actual,date:dateStr,status:'completed',desc:`ROI — 출금 ${numWithComma(walletAmt)}원 / 쇼핑 ${numWithComma(shopAmt)}원 (${dateStr})`});
+    await dbPut('transactions',{id:Date.now()+Math.floor(Math.random()*9999),userId:u.id,type:'ROI',amount:actual,fee:0,netAmount:walletAmt,date:dateStr,status:'completed',desc:`ROI — 출금 ${numWithComma(walletAmt)}원 / 쇼핑 ${numWithComma(shopAmt)}원 (${dateStr})`});
     await new Promise(r=>setTimeout(r,2));
   }
   if(totalPaid>0){
