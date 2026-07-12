@@ -728,7 +728,9 @@ td{font-size:14px !important;padding:14px 16px !important;}
       border-radius:var(--r);padding:12px 20px;margin-bottom:20px;">
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="coin-dot"></span>
-        <span style="font-size:14px;font-weight:600;color:var(--green);">자동 ROI 배당 가동 중</span>
+  <!-- 공지사항 배너 -->
+  <div id="dash-notice-banner" style="display:none;background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.2);border-radius:12px;padding:12px 16px;margin-bottom:12px;"></div>
+                <span style="font-size:14px;font-weight:600;color:var(--green);">자동 ROI 배당 가동 중</span>
         <span style="font-size:14px;color:var(--text3);">— 투자 승인 익일부터 월~금 주 5일 자정 지급</span>
       </div>
       <div id="next-roi-timer" style="font-family:'Space Mono',monospace;font-size:14px;color:var(--text2);"></div>
@@ -834,8 +836,8 @@ td{font-size:14px !important;padding:14px 16px !important;}
         </div>
         <div class="form-group">
           <label class="form-label">투자 금액 (원)</label>
-          <input class="form-input mono" id="inp-invest-amount" type="number" placeholder="최소 100,000원 이상" min="100000" step="10000" oninput="calcSim()">
-          <div class="form-hint" style="font-size:15px;font-weight:700;color:var(--gold);">최소 투자금액: ₩100,000 (10만원)</div>
+          <input class="form-input mono" id="inp-invest-amount" type="number" placeholder="투자금액 입력" min="0" step="1000" oninput="formatInvestInput(this);calcSim()">
+          <div class="form-hint" style="color:var(--text3);">₩ 기호 제외하고 숫자만 입력하세요</div>
         </div>
         <div class="form-group">
           <label class="form-label">입금자명</label>
@@ -884,7 +886,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
           <div class="card-title" style="margin-bottom:14px;">수익 시뮬레이터</div>
           <div class="form-group">
             <label class="form-label">투자 예정 금액</label>
-            <input class="form-input mono" id="sim-amount" type="number" placeholder="10000000" oninput="calcSimBox()">
+            <input class="form-input mono" id="sim-amount" type="text" inputmode="numeric" placeholder="10,000,000" oninput="formatCommaInput(this);calcSimBox()">
           </div>
           <div id="sim-result" style="display:none;margin-top:4px;display:flex;flex-direction:column;gap:8px;">
             <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--text2);">일일 수익</span><b class="mono" id="sim-daily" style="color:var(--gold);">₩0</b></div>
@@ -1196,6 +1198,139 @@ td{font-size:14px !important;padding:14px 16px !important;}
 </div>
 
 <!-- ═══════════ PROFILE ═══════════ -->
+<div id="page-points" class="page">
+  <div style="max-width:900px;margin:0 auto;padding:20px 0;">
+
+    <!-- 헤더 -->
+    <div style="margin-bottom:24px;">
+      <div style="font-size:26px;font-weight:900;color:var(--text);">🏆 포인트 내역</div>
+      <div style="font-size:15px;color:var(--text3);margin-top:6px;">데일리 수당 및 추천 매칭 내역을 확인하세요</div>
+    </div>
+
+    <!-- 합계 카드 -->
+    <div class="dash-row-2" style="margin-bottom:20px;gap:14px;">
+      <div class="card" style="background:rgba(212,168,83,0.07);border:1px solid rgba(212,168,83,0.25);">
+        <div style="font-size:14px;color:var(--text3);margin-bottom:8px;">📊 총 누적 ROI</div>
+        <div class="mono" style="font-size:26px;font-weight:900;color:var(--gold);" id="pt-total-roi">₩0</div>
+        <div style="font-size:13px;color:var(--text3);margin-top:4px;">투자 승인 후 누적 합계</div>
+      </div>
+      <div class="card" style="background:rgba(61,214,140,0.07);border:1px solid rgba(61,214,140,0.2);">
+        <div style="font-size:14px;color:var(--text3);margin-bottom:8px;">💰 출금 가능 잔액</div>
+        <div class="mono" style="font-size:26px;font-weight:900;color:var(--green);" id="pt-wallet">₩0</div>
+        <div style="font-size:13px;color:var(--text3);margin-top:4px;">90% 출금 가능</div>
+      </div>
+      <div class="card" style="background:rgba(99,179,237,0.07);border:1px solid rgba(99,179,237,0.2);">
+        <div style="font-size:14px;color:var(--text3);margin-bottom:8px;">🛍️ 쇼핑 포인트</div>
+        <div class="mono" style="font-size:26px;font-weight:900;color:#63b3ed;" id="pt-shop">0 P</div>
+        <div style="font-size:13px;color:var(--text3);margin-top:4px;">10% 자동 적립</div>
+      </div>
+    </div>
+
+    <!-- 탭 -->
+    <div style="display:flex;gap:0;background:rgba(0,0,0,0.25);border-radius:14px;padding:4px;margin-bottom:20px;">
+      <button id="pt-tab-daily" onclick="switchPointTab('daily')"
+        style="flex:1;padding:12px;border:none;border-radius:11px;cursor:pointer;font-size:16px;font-weight:800;font-family:'DM Sans',sans-serif;background:var(--gold);color:#000;transition:all .2s;">
+        📅 일마감 내역
+      </button>
+      <button id="pt-tab-sub" onclick="switchPointTab('sub')"
+        style="flex:1;padding:12px;border:none;border-radius:11px;cursor:pointer;font-size:16px;font-weight:700;font-family:'DM Sans',sans-serif;background:none;color:var(--text3);transition:all .2s;">
+        👥 후원조직 내역
+      </button>
+    </div>
+
+    <!-- 일마감 내역 -->
+    <div id="pt-panel-daily">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div style="font-size:17px;font-weight:800;">📅 일마감 보너스 내역</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="date" id="pt-date-from" class="form-input" style="max-width:150px;padding:8px 10px;font-size:14px;">
+            <span style="color:var(--text3);">~</span>
+            <input type="date" id="pt-date-to" class="form-input" style="max-width:150px;padding:8px 10px;font-size:14px;">
+            <button class="btn btn-primary btn-sm" onclick="renderPointsDaily()"><i class="fas fa-search"></i> 조회</button>
+          </div>
+        </div>
+        <!-- 소계 -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:13px;color:var(--text3);">데일리 합계</div>
+            <div class="mono" style="font-size:18px;font-weight:800;color:var(--gold);margin-top:4px;" id="pt-sum-daily">₩0</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:13px;color:var(--text3);">매칭 합계</div>
+            <div class="mono" style="font-size:18px;font-weight:800;color:var(--green);margin-top:4px;" id="pt-sum-matching">₩0</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:13px;color:var(--text3);">수당 합계</div>
+            <div class="mono" style="font-size:18px;font-weight:800;color:var(--blue);margin-top:4px;" id="pt-sum-total">₩0</div>
+          </div>
+        </div>
+        <!-- 테이블 -->
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:15px;">
+            <thead>
+              <tr style="border-bottom:2px solid var(--border);">
+                <th style="padding:10px 8px;text-align:center;color:var(--text3);font-weight:700;">NO.</th>
+                <th style="padding:10px 8px;text-align:center;color:var(--text3);font-weight:700;">날짜</th>
+                <th style="padding:10px 8px;text-align:right;color:var(--gold);font-weight:700;">데일리</th>
+                <th style="padding:10px 8px;text-align:right;color:var(--green);font-weight:700;">데일리 매칭</th>
+                <th style="padding:10px 8px;text-align:right;color:var(--blue);font-weight:700;">수당 합계</th>
+                <th style="padding:10px 8px;text-align:right;color:var(--text3);font-weight:700;">실지급액</th>
+              </tr>
+            </thead>
+            <tbody id="pt-daily-tbody">
+              <tr><td colspan="6" style="text-align:center;color:var(--text3);padding:30px;">조회 버튼을 눌러주세요</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 후원조직 내역 -->
+    <div id="pt-panel-sub" style="display:none;">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div style="font-size:17px;font-weight:800;">👥 후원 조직 내역</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="date" id="pt-sub-date-from" class="form-input" style="max-width:150px;padding:8px 10px;font-size:14px;">
+            <span style="color:var(--text3);">~</span>
+            <input type="date" id="pt-sub-date-to" class="form-input" style="max-width:150px;padding:8px 10px;font-size:14px;">
+            <button class="btn btn-primary btn-sm" onclick="renderPointsSub()"><i class="fas fa-search"></i> 조회</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:15px;">
+            <thead>
+              <tr style="border-bottom:2px solid var(--border);">
+                <th style="padding:10px 8px;text-align:center;color:var(--text3);font-weight:700;">NO.</th>
+                <th style="padding:10px 8px;text-align:center;color:var(--text3);font-weight:700;">날짜</th>
+                <th style="padding:10px 8px;text-align:center;color:var(--text3);font-weight:700;">대(代)</th>
+                <th style="padding:10px 8px;text-align:center;color:var(--text3);font-weight:700;">아이디</th>
+                <th style="padding:10px 8px;text-align:right;color:var(--gold);font-weight:700;">하부 ROI</th>
+                <th style="padding:10px 8px;text-align:right;color:var(--green);font-weight:700;">내 수당</th>
+                <th style="padding:10px 8px;text-align:center;color:var(--text3);font-weight:700;">비율</th>
+              </tr>
+            </thead>
+            <tbody id="pt-sub-tbody">
+              <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px;">조회 버튼을 눌러주세요</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="page-notice" class="page">
+  <div style="max-width:800px;margin:0 auto;padding:20px 0;">
+    <div style="font-size:24px;font-weight:900;color:var(--text);margin-bottom:20px;">📢 공지사항</div>
+    <div id="notice-list-user" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="text-align:center;color:var(--text3);padding:40px;">불러오는 중...</div>
+    </div>
+  </div>
+</div>
+
 <div id="page-profile" class="page">
   <div class="main">
     <div class="page-header">
@@ -1332,6 +1467,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
       <button class="tab" onclick="switchAdminTab('withdrawals',this)">🏧 출금승인 <span id="wd-badge" class="stat-badge badge-pend" style="margin-left:4px;"></span></button>
       <button class="tab" onclick="switchAdminTab('logs',this)">📋 거래로그</button>
       <button class="tab" onclick="switchAdminTab('tree',this)">🌳 조직도</button>
+      <button class="tab" onclick="switchAdminTab('notice',this)">📢 공지사항</button>
     </div>
 
     <!-- OVERVIEW TAB -->
@@ -1423,6 +1559,48 @@ td{font-size:14px !important;padding:14px 16px !important;}
         <div id="admin-tree-referral-wrap" style="display:none;">
           <div style="font-size:14px;color:var(--text2);margin-bottom:8px;">👥 추천인(수당) 기준 다단계 트리</div>
           <div id="admin-referral-tree" style="overflow:auto;background:var(--bg3);border-radius:var(--r);min-height:400px;cursor:grab;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTICE TAB -->
+    <div id="admin-tab-notice" style="display:none;">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div class="card-title-lg">📢 공지사항 관리</div>
+          <button class="btn btn-primary btn-sm" onclick="openNoticeForm()">
+            <i class="fas fa-plus"></i> 새 공지 작성
+          </button>
+        </div>
+
+        <!-- 작성/수정 폼 -->
+        <div id="notice-form" style="display:none;background:var(--bg3);border-radius:var(--r);padding:20px;margin-bottom:20px;">
+          <div style="font-size:17px;font-weight:800;color:var(--gold);margin-bottom:14px;" id="notice-form-title">새 공지 작성</div>
+          <input type="hidden" id="notice-edit-id">
+          <div class="form-group">
+            <label class="form-label">제목 <span style="color:var(--red);">✱</span></label>
+            <input class="form-input" id="notice-title-input" placeholder="공지 제목을 입력하세요">
+          </div>
+          <div class="form-group">
+            <label class="form-label">내용 <span style="color:var(--red);">✱</span></label>
+            <textarea class="form-input" id="notice-content-input" rows="6" placeholder="공지 내용을 입력하세요" style="resize:vertical;min-height:140px;"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">중요 공지</label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" id="notice-important" style="width:20px;height:20px;">
+              <span style="font-size:16px;color:var(--text2);">중요 공지로 표시 (상단 고정)</span>
+            </label>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-primary" onclick="saveNotice()" style="flex:1;"><i class="fas fa-save"></i> 저장</button>
+            <button class="btn btn-secondary" onclick="closeNoticeForm()" style="flex:1;">취소</button>
+          </div>
+        </div>
+
+        <!-- 공지 목록 -->
+        <div id="notice-list-admin" style="display:flex;flex-direction:column;gap:10px;">
+          <div style="text-align:center;color:var(--text3);padding:40px;">공지사항이 없습니다</div>
         </div>
       </div>
     </div>
@@ -1551,10 +1729,12 @@ let CFG = {
   MAX_PAYOUT:   2.50,    // 최대 수익 250%
   MAX_PV:       20000000,
   WD_FEE:       0.05,
-  MIN_INVEST:   100000,   // 최소 10만원
+  MIN_INVEST:   0,        // 최소금액 없음
   PV_BONUS_RATE: 0.10,
   PV_BONUS_THRESHOLD: 0.90,
   SUBLINE_BONUS: 0.04,
+  SHOP_POINT_RATE: 0.10,  // 쇼핑 포인트 10%
+  WALLET_RATE:     0.90,  // 출금 잔액 90%
   DEPOSIT_BANK: '하나은행',
   DEPOSIT_ACCOUNT: '779-910028-43204',
   DEPOSIT_HOLDER: '에스엠(SM)투자조합',
@@ -1754,6 +1934,301 @@ function showPage(name){
 }
 function goView(name){ showPage(name); renderPage(name); }
 function goHome(){ if(!currentUser)return; goView(currentUser.role==='admin'?'admin_dash':'dashboard'); }
+// ══════════════════════════════════════════
+// 공지사항 기능
+// ══════════════════════════════════════════
+function openNoticeForm(id){
+  document.getElementById('notice-form').style.display='block';
+  document.getElementById('notice-edit-id').value = id||'';
+  if(id){
+    document.getElementById('notice-form-title').textContent='공지 수정';
+    dbGet('notices', id).then(n=>{
+      if(!n) return;
+      document.getElementById('notice-title-input').value = n.title||'';
+      document.getElementById('notice-content-input').value = n.content||'';
+      document.getElementById('notice-important').checked = n.important||false;
+    }).catch(e=>console.error(e));
+  } else {
+    document.getElementById('notice-form-title').textContent='새 공지 작성';
+    document.getElementById('notice-title-input').value='';
+    document.getElementById('notice-content-input').value='';
+    document.getElementById('notice-important').checked=false;
+  }
+  document.getElementById('notice-title-input').focus();
+}
+
+function closeNoticeForm(){
+  document.getElementById('notice-form').style.display='none';
+}
+
+async function saveNotice(){
+  const title   = document.getElementById('notice-title-input').value.trim();
+  const content = document.getElementById('notice-content-input').value.trim();
+  const important = document.getElementById('notice-important').checked;
+  const editId  = document.getElementById('notice-edit-id').value;
+  if(!title){ toast('제목을 입력하세요','error'); return; }
+  if(!content){ toast('내용을 입력하세요','error'); return; }
+  const now = localDateTimeStr(new Date());
+  const notice = {
+    id: editId || ('notice_'+Date.now()),
+    title, content, important,
+    createdAt: editId ? undefined : now,
+    updatedAt: now,
+    author: '관리자',
+  };
+  if(editId){
+    const existing = await dbGet('notices', editId);
+    notice.createdAt = existing?.createdAt || now;
+  }
+  await dbPut('notices', notice);
+  await audit('NOTICE_'+(editId?'EDIT':'CREATE'), `공지: ${title}`, 'admin');
+  toast(`✅ 공지사항이 ${editId?'수정':'등록'}되었습니다`, 'success');
+  closeNoticeForm();
+  renderAdminNotice();
+}
+
+async function deleteNotice(id){
+  showModal('공지 삭제', '이 공지사항을 삭제하시겠습니까?', async()=>{
+    await dbDelete('notices', id);
+    toast('공지사항이 삭제되었습니다', 'success');
+    renderAdminNotice();
+  }, '삭제', 'btn-danger');
+}
+
+async function renderAdminNotice(){
+  const el = document.getElementById('notice-list-admin');
+  if(!el) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px;">로딩 중...</div>';
+  try{
+    const notices = await dbGetAll('notices');
+    if(!notices||notices.length===0){
+      el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:40px;font-size:16px;">등록된 공지사항이 없습니다</div>';
+      return;
+    }
+    // 중요 공지 상단, 최신순 정렬
+    notices.sort((a,b)=>{
+      if(a.important&&!b.important) return -1;
+      if(!a.important&&b.important) return 1;
+      return (b.createdAt||'').localeCompare(a.createdAt||'');
+    });
+    el.innerHTML = notices.map(n=>`
+      <div style="background:var(--bg3);border-radius:var(--r);padding:18px;border-left:4px solid ${n.important?'var(--gold)':'var(--border2)'};">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:8px;flex:1;">
+            ${n.important?'<span style="background:var(--gold);color:#000;font-size:12px;font-weight:800;padding:2px 8px;border-radius:6px;">중요</span>':''}
+            <div style="font-size:17px;font-weight:800;color:var(--text);">${_esc(n.title)}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0;">
+            <button class="btn btn-sm" style="background:var(--blue);color:#fff;font-size:13px;" onclick="openNoticeForm('${_esc(n.id)}')"><i class="fas fa-edit"></i> 수정</button>
+            <button class="btn btn-danger btn-sm" style="font-size:13px;" onclick="deleteNotice('${_esc(n.id)}')"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+        <div style="font-size:15px;color:var(--text2);line-height:1.8;white-space:pre-wrap;">${_esc(n.content)}</div>
+        <div style="font-size:13px;color:var(--text3);margin-top:10px;text-align:right;">${_esc(n.createdAt||'')}${n.updatedAt&&n.updatedAt!==n.createdAt?' (수정됨)':''}</div>
+      </div>
+    `).join('');
+  }catch(e){ el.innerHTML='<div style="color:var(--red);padding:20px;">불러오기 실패</div>'; }
+}
+
+async function renderNotice(){
+  const el = document.getElementById('notice-list-user');
+  if(!el) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px;">로딩 중...</div>';
+  try{
+    const notices = await dbGetAll('notices');
+    if(!notices||notices.length===0){
+      el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:60px;font-size:18px;">등록된 공지사항이 없습니다</div>';
+      return;
+    }
+    notices.sort((a,b)=>{
+      if(a.important&&!b.important) return -1;
+      if(!a.important&&b.important) return 1;
+      return (b.createdAt||'').localeCompare(a.createdAt||'');
+    });
+    el.innerHTML = notices.map((n,i)=>`
+      <div style="background:var(--bg2);border-radius:16px;overflow:hidden;border:1px solid ${n.important?'rgba(212,168,83,0.4)':'var(--border)'};">
+        <!-- 제목 (클릭해서 열기) -->
+        <div onclick="toggleNotice('nu${i}')"
+          style="display:flex;align-items:center;gap:10px;padding:18px 20px;cursor:pointer;user-select:none;">
+          ${n.important?'<span style="background:var(--gold);color:#000;font-size:12px;font-weight:800;padding:3px 10px;border-radius:8px;flex-shrink:0;">📌 중요</span>':'<span style="color:var(--text3);font-size:15px;flex-shrink:0;">📋</span>'}
+          <div style="flex:1;font-size:17px;font-weight:700;color:${n.important?'var(--gold)':'var(--text)'};">${_esc(n.title)}</div>
+          <span style="color:var(--text3);font-size:13px;flex-shrink:0;">${_esc((n.createdAt||'').slice(0,10))}</span>
+          <span id="nu${i}-arrow" style="color:var(--text3);font-size:18px;flex-shrink:0;transition:transform .2s;">▼</span>
+        </div>
+        <!-- 내용 (접히는) -->
+        <div id="nu${i}" style="display:${i===0&&n.important?'block':'none'};padding:0 20px 20px;border-top:1px solid var(--border);">
+          <div style="font-size:15px;color:var(--text2);line-height:1.9;white-space:pre-wrap;margin-top:14px;">${_esc(n.content)}</div>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){ el.innerHTML='<div style="color:var(--red);padding:20px;">불러오기 실패</div>'; }
+}
+
+function toggleNotice(id){
+  const el=document.getElementById(id);
+  const arrow=document.getElementById(id+'-arrow');
+  if(!el) return;
+  const open = el.style.display==='none';
+  el.style.display=open?'block':'none';
+  if(arrow) arrow.style.transform=open?'rotate(180deg)':'';
+}
+
+// ══════════════════════════════════════════
+// 포인트 내역 기능
+// ══════════════════════════════════════════
+function switchPointTab(tab){
+  const isDaily = tab==='daily';
+  const tb1=document.getElementById('pt-tab-daily');
+  const tb2=document.getElementById('pt-tab-sub');
+  const p1=document.getElementById('pt-panel-daily');
+  const p2=document.getElementById('pt-panel-sub');
+  if(tb1){ tb1.style.background=isDaily?'var(--gold)':'none'; tb1.style.color=isDaily?'#000':'var(--text3)'; tb1.style.fontWeight=isDaily?'900':'700'; }
+  if(tb2){ tb2.style.background=isDaily?'none':'#3dd68c'; tb2.style.color=isDaily?'var(--text3)':'#000'; tb2.style.fontWeight=isDaily?'700':'900'; }
+  if(p1) p1.style.display=isDaily?'block':'none';
+  if(p2) p2.style.display=isDaily?'none':'block';
+}
+
+async function renderPoints(){
+  if(!currentUser) return;
+  const u = await dbGet('users', currentUser.id);
+  if(!u) return;
+
+  // 상단 합계 업데이트
+  const elRoi  = document.getElementById('pt-total-roi');
+  const elWal  = document.getElementById('pt-wallet');
+  const elShop = document.getElementById('pt-shop');
+  if(elRoi)  elRoi.textContent  = fmtFull(u.roi||0);
+  if(elWal)  elWal.textContent  = fmtFull(u.wallet||0);
+  if(elShop) elShop.textContent = numWithComma(u.shopPoint||0) + ' P';
+
+  // 기본 날짜 (최근 30일)
+  const today = localDateStr(new Date());
+  const d30 = localDateStr(new Date(Date.now()-30*24*60*60*1000));
+  const fFrom = document.getElementById('pt-date-from');
+  const fTo   = document.getElementById('pt-date-to');
+  if(fFrom && !fFrom.value) fFrom.value = d30;
+  if(fTo   && !fTo.value)   fTo.value   = today;
+  const sf = document.getElementById('pt-sub-date-from');
+  const st = document.getElementById('pt-sub-date-to');
+  if(sf && !sf.value) sf.value = d30;
+  if(st && !st.value) st.value = today;
+
+  await renderPointsDaily();
+}
+
+async function renderPointsDaily(){
+  if(!currentUser) return;
+  const tbody = document.getElementById('pt-daily-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:30px;">로딩 중...</td></tr>';
+
+  const dateFrom = document.getElementById('pt-date-from')?.value || '';
+  const dateTo   = document.getElementById('pt-date-to')?.value   || '';
+
+  try{
+    const allTx = await dbGetAll('transactions');
+    // 내 거래 중 ROI + 보너스만 필터
+    let txs = allTx.filter(t =>
+      t.userId === currentUser.id &&
+      (t.type==='ROI' || t.type==='보너스') &&
+      (!dateFrom || (t.date||'') >= dateFrom) &&
+      (!dateTo   || (t.date||'') <= dateTo)
+    );
+    // 날짜별 합산
+    const byDate = {};
+    txs.forEach(t=>{
+      const d = t.date||'';
+      if(!byDate[d]) byDate[d]={date:d, daily:0, matching:0, total:0, actual:0};
+      if(t.type==='ROI'){
+        byDate[d].daily += (t.amount||0);
+      } else {
+        byDate[d].matching += (t.amount||0);
+      }
+      byDate[d].total  += (t.amount||0);
+      byDate[d].actual += (t.netAmount||t.amount||0);
+    });
+    const rows = Object.values(byDate).sort((a,b)=>b.date.localeCompare(a.date));
+
+    // 소계
+    const sumD = rows.reduce((s,r)=>s+r.daily,0);
+    const sumM = rows.reduce((s,r)=>s+r.matching,0);
+    const sumT = rows.reduce((s,r)=>s+r.total,0);
+    const elSD=document.getElementById('pt-sum-daily');
+    const elSM=document.getElementById('pt-sum-matching');
+    const elST=document.getElementById('pt-sum-total');
+    if(elSD) elSD.textContent=fmtFull(sumD);
+    if(elSM) elSM.textContent=fmtFull(sumM);
+    if(elST) elST.textContent=fmtFull(sumT);
+
+    if(rows.length===0){
+      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:30px;">해당 기간의 내역이 없습니다</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map((r,i)=>`
+      <tr style="border-bottom:1px solid var(--border);transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background=''">
+        <td style="padding:12px 8px;text-align:center;color:var(--text3);">${rows.length-i}</td>
+        <td style="padding:12px 8px;text-align:center;color:var(--text);">${r.date}</td>
+        <td style="padding:12px 8px;text-align:right;color:var(--gold);font-weight:700;" class="mono">${r.daily>0?fmtFull(r.daily):'-'}</td>
+        <td style="padding:12px 8px;text-align:right;color:var(--green);font-weight:700;" class="mono">${r.matching>0?fmtFull(r.matching):'-'}</td>
+        <td style="padding:12px 8px;text-align:right;color:var(--blue);font-weight:700;" class="mono">${fmtFull(r.total)}</td>
+        <td style="padding:12px 8px;text-align:right;color:var(--text);" class="mono">${fmtFull(r.actual)}</td>
+      </tr>
+    `).join('');
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="6" style="color:var(--red);padding:20px;text-align:center;">불러오기 실패</td></tr>';
+  }
+}
+
+async function renderPointsSub(){
+  if(!currentUser) return;
+  const tbody = document.getElementById('pt-sub-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px;">로딩 중...</td></tr>';
+
+  const dateFrom = document.getElementById('pt-sub-date-from')?.value || '';
+  const dateTo   = document.getElementById('pt-sub-date-to')?.value   || '';
+
+  try{
+    // 나에게 소실적 수당으로 지급된 거래에서 하부 정보 파싱
+    const allTx = await dbGetAll('transactions');
+    let bonusTx = allTx.filter(t=>
+      t.userId===currentUser.id &&
+      t.type==='보너스' &&
+      (!dateFrom||(t.date||'')>=dateFrom) &&
+      (!dateTo  ||(t.date||'')<=dateTo)
+    ).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
+    if(bonusTx.length===0){
+      tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px;">해당 기간의 내역이 없습니다</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = bonusTx.map((t,i)=>{
+      // desc에서 대(代)와 하부 ID 파싱
+      const genMatch = (t.desc||'').match(/(\d+)대/);
+      const idMatch  = (t.desc||'').match(/\(([^)]+)\s/);
+      const gen = genMatch ? genMatch[1] : '-';
+      const subId = idMatch ? idMatch[1] : '-';
+      // ROI 금액 역산 (desc에서 파싱 또는 amount/rate)
+      const roiMatch = (t.desc||'').match(/ROI\s*([\d,]+)원/);
+      const subRoi = roiMatch ? parseInt(roiMatch[1].replace(/,/g,'')) : 0;
+      return `
+        <tr style="border-bottom:1px solid var(--border);transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background=''">
+          <td style="padding:12px 8px;text-align:center;color:var(--text3);">${bonusTx.length-i}</td>
+          <td style="padding:12px 8px;text-align:center;color:var(--text);">${t.date||'-'}</td>
+          <td style="padding:12px 8px;text-align:center;"><span style="background:rgba(212,168,83,0.15);color:var(--gold);font-weight:800;padding:2px 10px;border-radius:8px;">${gen}대</span></td>
+          <td style="padding:12px 8px;text-align:center;color:var(--text);" class="mono">${_esc(subId)}</td>
+          <td style="padding:12px 8px;text-align:right;color:var(--text2);" class="mono">${subRoi>0?fmtFull(subRoi):'-'}</td>
+          <td style="padding:12px 8px;text-align:right;color:var(--green);font-weight:700;" class="mono">${fmtFull(t.amount||0)}</td>
+          <td style="padding:12px 8px;text-align:center;color:var(--text3);font-size:14px;">${t.desc?.match(/\d+%/)?.[0]||'-'}</td>
+        </tr>
+      `;
+    }).join('');
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="7" style="color:var(--red);padding:20px;text-align:center;">불러오기 실패</td></tr>';
+  }
+}
+
 function renderPage(name){
   // async 함수들은 fire-and-forget (에러는 내부에서 처리)
   if(name==='dashboard') renderDashboard().catch(e=>console.error('[render]',e));
@@ -1762,6 +2237,8 @@ function renderPage(name){
   else if(name==='wallet') renderWallet().catch(e=>console.error('[render]',e));
   else if(name==='reports') renderReports().catch(e=>console.error('[render]',e));
   else if(name==='profile') renderProfile().catch(e=>console.error('[render]',e));
+  else if(name==='notice') renderNotice().catch(e=>console.error('[render]',e));
+  else if(name==='points') renderPoints().catch(e=>console.error('[render]',e));
   else if(name==='admin_dash') renderAdmin().catch(e=>console.error('[render]',e));
 }
 
@@ -1888,7 +2365,7 @@ async function doRegister(){
     inviteCode:id,
     sponsorCode: referrerCode,   // 수당 체계 (추천인 기준)
     placedUnder: finalSponsorId,  // 조직도 배치 (후원인 기준)
-    wallet:0, investment:0, roi:0,
+    wallet:0, investment:0, roi:0, shopPoint:0,
     leftPoints:0, rightPoints:0, leftInvest:0, rightInvest:0,
     paidRanks:[], children:{left:null,right:null},
     email, phone, bankName:'', accountNumber:'', accountHolder:'',
@@ -1938,7 +2415,7 @@ function setupTopbar(){
   const nav=document.getElementById('topbar-nav'); nav.innerHTML='';
   const views=currentUser.role==='admin'
     ?[{id:'admin_dash',label:'관리자홈'}]
-    :[{id:'dashboard',label:'대시보드'},{id:'invest',label:'투자하기'},{id:'network',label:'조직관리'},{id:'wallet',label:'수익출금'},{id:'reports',label:'거래내역'},{id:'profile',label:'내정보'}];
+    :[{id:'dashboard',label:'대시보드'},{id:'invest',label:'투자하기'},{id:'network',label:'조직관리'},{id:'wallet',label:'수익출금'},{id:'reports',label:'거래내역'},{id:'points',label:'포인트'},{id:'notice',label:'공지사항'},{id:'profile',label:'내정보'}];
   views.forEach(v=>{
     const b=document.createElement('button');
     b.className='nav-btn'; b.dataset.view=v.id; b.textContent=v.label;
@@ -1963,6 +2440,20 @@ async function renderDashboard(){
     <div class="stat-card"><div class="stat-label">일일 배당</div><div class="stat-value">${fmt(daily)}</div><div class="stat-sub">내 투자금 기준</div></div>
   `;
   document.getElementById('dash-wallet').textContent=fmtFull(u.wallet);
+  // ── 공지 배너 업데이트 ──
+  try{
+    const _notices = await dbGetAll('notices');
+    const _imp = (_notices||[]).filter(n=>n.important).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+    const _nb = document.getElementById('dash-notice-banner');
+    if(_nb){
+      if(_imp.length>0){
+        _nb.style.display='block';
+        _nb.innerHTML=`<span style="background:var(--gold);color:#000;font-size:12px;font-weight:800;padding:2px 8px;border-radius:6px;margin-right:8px;">📌 공지</span><span style="color:var(--text);font-size:15px;cursor:pointer;" onclick="goView('notice')">${_esc(_imp[0].title)}</span>`;
+      } else {
+        _nb.style.display='none';
+      }
+    }
+  }catch(_e){}
 
   // ── 추천 매칭 계산 (하부 회원들의 일일 ROI 합 × 내 수당율) ──
   const RBNS = (Array.isArray(CFG.REFERRAL_BONUS)&&CFG.REFERRAL_BONUS.length>1)
@@ -1999,6 +2490,9 @@ async function renderDashboard(){
   for(const sub of myDirectSubs) await calcMatching(sub.id, 1);
 
   const totalExpected = daily + matchingTotal;
+  // 쇼핑 포인트 표시
+  const spEl = document.getElementById('dash-shop-point');
+  if(spEl) spEl.textContent = numWithComma(u.shopPoint||0) + ' P';
 
   // 화면 업데이트
   // 투자 예상 배당 힌트 텍스트 동적 업데이트
@@ -2068,10 +2562,30 @@ async function renderInvest(){
     <div style="font-size:15px;color:var(--text3);margin-top:5px;text-align:right;">${(u.roi/max*100).toFixed(1)}% / ${(CFG.MAX_PAYOUT*100).toFixed(0)}%</div>
   `:'<div class="empty"><i class="fas fa-chart-line"></i><p>투자를 시작하세요</p></div>';
 }
+function treeZoom(cid, delta){
+  const con = document.querySelector('[data-zoom-id="'+cid+'"]');
+  if(!con) return;
+  const inner = con.querySelector('div[style*="position:relative"]');
+  if(!inner) return;
+  let sc = parseFloat(inner.style.transform?.match(/scale\(([^)]+)\)/)?.[1]||1);
+  if(delta===0) sc=1;
+  else sc = Math.min(2.5, Math.max(0.2, sc+delta));
+  inner.style.transform='scale('+sc+')';
+  inner.style.transformOrigin='top left';
+}
+
+// 입력창 콤마 자동 포맷
+function formatCommaInput(el){
+  const v = parseComma(el.value);
+  if(v > 0) el.value = numWithComma(v);
+  else if(el.value.replace(/,/g,'') === '') el.value = '';
+}
+function formatInvestInput(el){ formatCommaInput(el); }
+
 function calcSim(){
-  const amt=parseInt(document.getElementById('inp-invest-amount').value)||0;
+  const amt=parseComma(document.getElementById('inp-invest-amount').value);
   const sim=document.getElementById('sim-result');
-  if(amt<(CFG.MIN_INVEST||100000)){sim.style.display='none';return;}
+  if(amt<=0){sim.style.display='none';return;}
   sim.style.display='flex';
   const daily=Math.round(amt*CFG.DAILY_ROI);
   document.getElementById('sim-daily').textContent=fmt(daily);
@@ -2079,16 +2593,16 @@ function calcSim(){
   document.getElementById('sim-max').textContent=fmt(amt*CFG.MAX_PAYOUT);
   document.getElementById('sim-days').textContent=`약 ${Math.ceil(amt/daily)}일`;
 }
-function calcSimBox(){ const a=parseInt(document.getElementById('sim-amount').value)||0; const sim=document.getElementById('sim-result'); if(a<100000){sim.style.display='none';return;} sim.style.display='flex'; const d=Math.round(a*CFG.DAILY_ROI); document.getElementById('sim-daily').textContent=fmt(d); document.getElementById('sim-monthly').textContent=fmt(d*22); document.getElementById('sim-max').textContent=fmt(a*CFG.MAX_PAYOUT); document.getElementById('sim-days').textContent=`약 ${Math.ceil(a/d)}일`; }
+function calcSimBox(){ const a=parseComma(document.getElementById('sim-amount').value); const sim=document.getElementById('sim-result'); if(a<=0){sim.style.display='none';return;} sim.style.display='flex'; const d=Math.round(a*CFG.DAILY_ROI); document.getElementById('sim-daily').textContent=fmt(d); document.getElementById('sim-monthly').textContent=fmt(d*22); document.getElementById('sim-max').textContent=fmt(a*CFG.MAX_PAYOUT); document.getElementById('sim-days').textContent=`약 ${Math.ceil(a/d)}일`; }
 let _selectedSide = null;
 
 async function submitInvestment(){
   if(!_validateSession())return;
   const u=await dbGet('users',currentUser.id);
   if(u.suspended){toast('계정이 정지되어 투자할 수 없습니다','error');return;}
-  const amt=parseInt(document.getElementById('inp-invest-amount').value)||0;
+  const amt=parseComma(document.getElementById('inp-invest-amount').value);
   const iname=document.getElementById('inp-invest-name').value.trim();
-  if(amt<100000){toast('최소 투자금액은 ₩100,000(10만원)입니다','error');return;}
+  if(amt<=0){toast('투자금액을 입력하세요','error');return;}
   if(!iname){toast('입금자명을 입력하세요','error');return;}
   const inv={id:Date.now(),userId:currentUser.id,userName:currentUser.name,amount:amt,depositorName:_esc(iname),memo:_esc(document.getElementById('inp-invest-memo').value.trim()),side:'auto',requestedAt:localDateTimeStr(new Date()),status:'pending'};
   await dbPut('pendingInvestments',inv);  // id 있으므로 fsPut 사용
@@ -2495,7 +3009,7 @@ async function renderAdminReferralTree(){
   }
   let leafIdx=0; const pos={}; const pv=new Set();
   function assignRef(uid,depth){
-    if(!uid||depth>8||pv.has(uid))return; pv.add(uid);
+    if(!uid||depth>15||pv.has(uid))return; pv.add(uid);
     const ch=getRefKids(uid);
     if(!ch.length){ pos[uid]={x:leafIdx*(NW+HGAP),y:depth*(NH+VGAP)};leafIdx++;return; }
     ch.forEach(cid=>assignRef(cid,depth+1));
@@ -2605,7 +3119,7 @@ function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
   const queue = [{uid:rootId, depth:0, parentUid:null, side:null}];
   while(queue.length){
     const {uid, depth, parentUid, side} = queue.shift();
-    if(!uid || visited.has(uid) || depth>8) continue;
+    if(!uid || visited.has(uid) || depth>15) continue;
     visited.add(uid);
     const u = userMap[uid]; if(!u) continue;
     nodes.push({uid, depth, parentUid, side});
@@ -2638,7 +3152,7 @@ function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
   // 먼저 리프(말단) 노드들을 왼쪽부터 순서대로 X 배정
   let leafIdx = 0;
   function assignLeaves(uid, depth, vis2=new Set()){
-    if(!uid || depth>8 || vis2.has(uid)) return;
+    if(!uid || depth>15 || vis2.has(uid)) return;
     vis2.add(uid);
     const ch = kids(uid);
     const validCh = ch.filter(cid => userMap[cid] && !vis2.has(cid));
@@ -2736,30 +3250,77 @@ function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
 }
 
 function initTreeDrag(container){
+  // ── 줌 상태 ──
+  let scale = 1;
+  let inner = container.querySelector('[id$="-inner"], div[style*="position:relative"]');
+
+  function applyScale(){
+    if(inner) inner.style.transform=`scale(${scale})`;
+    if(inner) inner.style.transformOrigin='top left';
+  }
+
+  // ── 줌 버튼 추가 ──
+  if(!container.querySelector('.tree-zoom-btns')){
+    const zbDiv = document.createElement('div');
+    zbDiv.className = 'tree-zoom-btns';
+    zbDiv.style.cssText = 'position:sticky;top:8px;left:8px;z-index:10;display:flex;gap:6px;margin-bottom:8px;';
+    zbDiv.innerHTML = `
+      <button onclick="(()=>{const s=this.closest('.card,div').querySelector('[id$=\'-inner\'],div[style*=\'position:relative\']');let sc=parseFloat(s?.style.transform?.match(/scale\\(([^)]+)\\)/)?.[1]||1);sc=Math.min(2,sc+0.2);if(s){s.style.transform='scale('+sc+')';s.style.transformOrigin='top left';}})()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:800;">＋</button>
+      <button onclick="(()=>{const s=this.closest('.card,div').querySelector('[id$=\'-inner\'],div[style*=\'position:relative\']');let sc=parseFloat(s?.style.transform?.match(/scale\\(([^)]+)\\)/)?.[1]||1);sc=Math.max(0.3,sc-0.2);if(s){s.style.transform='scale('+sc+')';s.style.transformOrigin='top left';}})()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:800;">－</button>
+      <button onclick="(()=>{const s=this.closest('.card,div').querySelector('[id$=\'-inner\'],div[style*=\'position:relative\']');if(s){s.style.transform='scale(1)';s.style.transformOrigin='top left';}})()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;">원본</button>`;
+    container.insertBefore(zbDiv, container.firstChild);
+  }
+
+  // ── 마우스 휠 줌 ──
+  container.addEventListener('wheel', e=>{
+    if(e.ctrlKey || e.metaKey){
+      e.preventDefault();
+      inner = container.querySelector('div[style*="position:relative"]');
+      scale = parseFloat(inner?.style.transform?.match(/scale\(([^)]+)\)/)?.[1]||1);
+      scale = e.deltaY<0 ? Math.min(2.5,scale+0.1) : Math.max(0.2,scale-0.1);
+      if(inner){ inner.style.transform=`scale(${scale})`; inner.style.transformOrigin='top left'; }
+    }
+  },{passive:false});
+
+  // ── 마우스 드래그 ──
   let isDrag=false, startX=0, startY=0, scrollLeft=0, scrollTop=0;
-  // 마우스 드래그
   container.addEventListener('mousedown', e=>{
+    if(e.target.tagName==='BUTTON') return;
     isDrag=true; startX=e.pageX; startY=e.pageY;
     scrollLeft=container.scrollLeft; scrollTop=container.scrollTop;
     container.style.cursor='grabbing';
   });
   document.addEventListener('mousemove', e=>{
     if(!isDrag) return;
-    container.scrollLeft = scrollLeft - (e.pageX - startX);
-    container.scrollTop  = scrollTop  - (e.pageY - startY);
+    container.scrollLeft = scrollLeft-(e.pageX-startX);
+    container.scrollTop  = scrollTop -(e.pageY-startY);
   });
   document.addEventListener('mouseup', ()=>{ isDrag=false; container.style.cursor='grab'; });
-  // 터치 드래그
-  let tStartX=0, tStartY=0, tScrollL=0, tScrollT=0;
+
+  // ── 터치 드래그 + 핀치줌 ──
+  let tStartX=0,tStartY=0,tScrollL=0,tScrollT=0,tDist=0;
   container.addEventListener('touchstart', e=>{
-    tStartX=e.touches[0].pageX; tStartY=e.touches[0].pageY;
-    tScrollL=container.scrollLeft; tScrollT=container.scrollTop;
+    if(e.touches.length===2){
+      tDist=Math.hypot(e.touches[0].pageX-e.touches[1].pageX,e.touches[0].pageY-e.touches[1].pageY);
+    } else {
+      tStartX=e.touches[0].pageX; tStartY=e.touches[0].pageY;
+      tScrollL=container.scrollLeft; tScrollT=container.scrollTop;
+    }
   },{passive:true});
   container.addEventListener('touchmove', e=>{
-    container.scrollLeft = tScrollL - (e.touches[0].pageX - tStartX);
-    container.scrollTop  = tScrollT - (e.touches[0].pageY - tStartY);
+    if(e.touches.length===2){
+      const d=Math.hypot(e.touches[0].pageX-e.touches[1].pageX,e.touches[0].pageY-e.touches[1].pageY);
+      inner = container.querySelector('div[style*="position:relative"]');
+      scale = parseFloat(inner?.style.transform?.match(/scale\(([^)]+)\)/)?.[1]||1);
+      scale = Math.min(2.5,Math.max(0.2,scale*(d/tDist)));
+      tDist=d;
+      if(inner){ inner.style.transform=`scale(${scale})`; inner.style.transformOrigin='top left'; }
+    } else {
+      container.scrollLeft=tScrollL-(e.touches[0].pageX-tStartX);
+      container.scrollTop =tScrollT-(e.touches[0].pageY-tStartY);
+    }
   },{passive:true});
-  // overflow 설정
+
   container.style.overflow='auto';
   container.style.cursor='grab';
 }
@@ -2935,7 +3496,7 @@ async function loadSimulationData(){
         id, pwd:_hashPwd('1234'),
         role:'member', name, inviteCode:id,
         sponsorCode:sponsor,
-        wallet:0, investment:INV, roi:0,
+        wallet:0, investment:INV, roi:0, shopPoint:0,
         leftInvest:lInv||0, rightInvest:rInv||0,
         leftPoints:lInv||0, rightPoints:rInv||0,
         children:{left:lc||null, right:rc||null},
@@ -3095,6 +3656,10 @@ async function loadSimulationData(){
     setTimeout(()=>renderAdmin(), 500);
   }, '100명 생성', 'btn-primary');
 }
+
+// ── 숫자 콤마 포맷 유틸 (최상단 정의) ──
+function numWithComma(n){ return Math.floor(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+function parseComma(s){ return parseInt((s||'').replace(/,/g,''))||0; }
 
 // Firebase children 데이터 정리 (중복/순환 제거)
 async function cleanChildrenData(){
@@ -4041,7 +4606,7 @@ function renderAdminLogs(allTx){
 //  ADMIN ACTIONS
 // ═══════════════════════════════════════════════════════
 async function switchAdminTab(tab,btn){
-  ['overview','approval','members','investments','withdrawals','logs','tree'].forEach(t=>{
+  ['overview','approval','members','investments','withdrawals','logs','tree','notice'].forEach(t=>{
     const el=document.getElementById('admin-tab-'+t); if(el) el.style.display=t===tab?'block':'none';
   });
   document.querySelectorAll('#admin-tabs .tab').forEach(b=>b.classList.remove('active'));
@@ -4300,7 +4865,11 @@ async function runSettlement(){
       const payout=Math.round(u.investment*CFG.DAILY_ROI);
       const actual=Math.min(payout,max-u.roi);
       if(actual<=0) continue;
-      u.roi+=actual; u.wallet+=actual; u.lastRoiDate=todayStr;
+      const sShop=Math.floor(actual*(CFG.SHOP_POINT_RATE||0.10));
+      const sWallet=actual-sShop;
+      u.roi+=actual; u.wallet+=sWallet;
+      u.shopPoint=(u.shopPoint||0)+sShop;
+      u.lastRoiDate=todayStr;
       await dbPut('users',u);
       await dbPut('transactions',{
         id:Date.now()+count*10,userId:u.id,type:'ROI',
@@ -4349,8 +4918,13 @@ async function processUserRoi(userId){
     const payout=Math.round(upd.investment*CFG.DAILY_ROI);
     const actual=Math.min(payout,max-upd.roi);
     if(actual<=0)break;
-    upd.roi+=actual; upd.wallet+=actual; upd.lastRoiDate=dateStr; totalPaid+=actual;
-    await dbPut('transactions',{id:Date.now()+Math.floor(Math.random()*9999),userId:u.id,type:'ROI',amount:actual,fee:0,netAmount:actual,date:dateStr,status:'completed',desc:`자동 ROI ${(CFG.DAILY_ROI*100).toFixed(1)}% — ${dateStr}`});
+    // 10% 쇼핑포인트 / 90% 출금가능
+    const shopAmt=Math.floor(actual*(CFG.SHOP_POINT_RATE||0.10));
+    const walletAmt=actual-shopAmt;
+    upd.roi+=actual; upd.wallet+=walletAmt;
+    upd.shopPoint=(upd.shopPoint||0)+shopAmt;
+    upd.lastRoiDate=dateStr; totalPaid+=actual;
+    await dbPut('transactions',{id:Date.now()+Math.floor(Math.random()*9999),userId:u.id,type:'ROI',amount:actual,fee:0,netAmount:actual,date:dateStr,status:'completed',desc:`ROI — 출금 ${numWithComma(walletAmt)}원 / 쇼핑 ${numWithComma(shopAmt)}원 (${dateStr})`});
     await new Promise(r=>setTimeout(r,2));
   }
   if(totalPaid>0){
@@ -4392,15 +4966,19 @@ async function payReferralBonus(userId, roiAmount, dateStr){
     const actual = Math.min(bonus, maxP - sponsor.roi);
     if(actual <= 0){ curId = sponsor.sponsorCode || null; continue; }
 
-    sponsor.wallet += actual;
-    sponsor.roi    += actual;
+    // 소실적 수당도 10%쇼핑/90%출금
+    const pShop   = Math.floor(actual * (CFG.SHOP_POINT_RATE||0.10));
+    const pWallet = actual - pShop;
+    sponsor.wallet    += pWallet;
+    sponsor.roi       += actual;
+    sponsor.shopPoint  = (sponsor.shopPoint||0) + pShop;
     await dbPut('users', sponsor);
     await dbPut('transactions',{
       id: Date.now() + gen*100 + Math.floor(Math.random()*99),
       userId: sponsor.id, type:'보너스',
-      amount: actual, fee:0, netAmount: actual,
+      amount: actual, fee:0, netAmount: pWallet,
       date: dateStr, status:'completed',
-      desc:`소실적 수당 ${gen}대 (${userId} 일일ROI ${fmt(roiAmount)}의 ${(rate*100).toFixed(0)}%)`
+      desc:`소실적 수당 ${gen}대 — 출금 ${numWithComma(pWallet)}원 / 쇼핑 ${numWithComma(pShop)}원`
     });
     await new Promise(r=>setTimeout(r,2));
     curId = sponsor.sponsorCode || null;
