@@ -1884,7 +1884,7 @@ let _detailUserId=null;
 // ═══════════════════════════════════════════════════════
 //  UTILS
 // ═══════════════════════════════════════════════════════
-function fmt(n){ n=Math.round(n||0); if(Math.abs(n)>=100000000) return '₩'+(n/100000000).toFixed(2).replace(/\.?0+$/,'')+'억'; if(Math.abs(n)>=10000000) return '₩'+(n/10000000).toFixed(1).replace(/\.?0+$/,'')+'천만'; if(Math.abs(n)>=10000) return '₩'+(n/10000).toFixed(0)+'만'; return '₩'+n.toLocaleString(); }
+function fmt(n){ return '₩'+(Math.round(n||0)).toLocaleString(); }
 function fmtFull(n){ return '₩'+(Math.round(n||0)).toLocaleString(); }
 function localDateStr(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function localDateTimeStr(d){
@@ -2434,10 +2434,10 @@ async function renderDashboard(){
   const roiPct=max>0?Math.min(100,(u.roi/max*100)):0;
   const daily=susp?0:Math.round(u.investment*CFG.DAILY_ROI);
   document.getElementById('dash-kpi').innerHTML=`
-    <div class="stat-card card-gold"><div class="stat-label">총 투자금</div><div class="stat-value">${fmt(u.investment)}</div><div class="stat-sub">원금</div></div>
-    <div class="stat-card card-green"><div class="stat-label">누적 ROI</div><div class="stat-value">${fmt(u.roi)}</div><div class="stat-sub">${roiPct.toFixed(1)}% 달성</div></div>
-    <div class="stat-card card-blue"><div class="stat-label">출금 잔액</div><div class="stat-value">${fmt(u.wallet)}</div></div>
-    <div class="stat-card"><div class="stat-label">일일 배당</div><div class="stat-value">${fmt(daily)}</div><div class="stat-sub">내 투자금 기준</div></div>
+    <div class="stat-card card-gold"><div class="stat-label">총 투자금</div><div class="stat-value">${fmtFull(u.investment||0)}</div><div class="stat-sub">원금</div></div>
+    <div class="stat-card card-green"><div class="stat-label">누적 ROI</div><div class="stat-value">${fmtFull(u.roi||0)}</div><div class="stat-sub">${roiPct.toFixed(1)}% 달성</div></div>
+    <div class="stat-card card-blue"><div class="stat-label">출금 잔액</div><div class="stat-value">${fmtFull(u.wallet||0)}</div></div>
+    <div class="stat-card"><div class="stat-label">일일 배당</div><div class="stat-value">${fmtFull(daily)}</div><div class="stat-sub">내 투자금 기준</div></div>
   `;
   document.getElementById('dash-wallet').textContent=fmtFull(u.wallet);
   // ── 공지 배너 업데이트 ──
@@ -2521,7 +2521,7 @@ async function renderDashboard(){
   // 직급
   const smallLine=Math.min(u.leftInvest||0,u.rightInvest||0);
   const rank=calcRank(smallLine);
-  document.getElementById('dash-rank-badge').innerHTML=`<div class="rank-badge ${rank.class}"><i class="fas fa-star"></i>${rank.label}</div><div style="font-size:14px;color:var(--text3);margin-top:6px;">소라인: ${fmt(smallLine)}</div>`;
+  document.getElementById('dash-rank-badge').innerHTML=`<div class="rank-badge ${rank.class}"><i class="fas fa-star"></i>${rank.label}</div><div style="font-size:14px;color:var(--text3);margin-top:6px;">소라인: ${fmtFull(smallLine)}</div>`;
   // ROI ring
   if(roiRingChart){ roiRingChart.destroy(); roiRingChart=null; }
   const ctx=document.getElementById('roi-ring-canvas').getContext('2d');
@@ -2530,7 +2530,7 @@ async function renderDashboard(){
   const allTx=await dbGetAll('transactions');
   const myTx=allTx.filter(t=>t.userId===u.id).sort((a,b)=>b.id-a.id).slice(0,8);
   const tbody=document.getElementById('dash-tx-body');
-  tbody.innerHTML=myTx.length===0?'<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text3);">거래 내역이 없습니다</td></tr>':myTx.map(t=>`<tr><td style="color:var(--text3);font-size:14px;">${t.date}</td><td><span style="color:${typeColor(t.type)};font-size:14px;font-weight:600;">${typeLabel(t.type)}</span></td><td class="td-amount">${fmt(t.amount)}</td><td>${statusHtml(t.status)}</td><td style="font-size:14px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_esc(t.desc||'')}</td></tr>`).join('');
+  tbody.innerHTML=myTx.length===0?'<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text3);">거래 내역이 없습니다</td></tr>':myTx.map(t=>`<tr><td style="color:var(--text3);font-size:14px;">${t.date}</td><td><span style="color:${typeColor(t.type)};font-size:14px;font-weight:600;">${typeLabel(t.type)}</span></td><td class="td-amount">${fmtFull(t.amount)}</td><td>${statusHtml(t.status)}</td><td style="font-size:14px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_esc(t.desc||'')}</td></tr>`).join('');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2606,12 +2606,12 @@ function calcSim(){
   if(amt<=0){sim.style.display='none';return;}
   sim.style.display='flex';
   const daily=Math.round(amt*CFG.DAILY_ROI);
-  document.getElementById('sim-daily').textContent=fmt(daily);
-  document.getElementById('sim-monthly').textContent=fmt(daily*22);
-  document.getElementById('sim-max').textContent=fmt(amt*CFG.MAX_PAYOUT);
+  document.getElementById('sim-daily').textContent=fmtFull(daily);
+  document.getElementById('sim-monthly').textContent=fmtFull(daily*22);
+  document.getElementById('sim-max').textContent=fmtFull(amt*CFG.MAX_PAYOUT);
   document.getElementById('sim-days').textContent=`약 ${Math.ceil(amt/daily)}일`;
 }
-function calcSimBox(){ const a=parseComma(document.getElementById('sim-amount').value); const sim=document.getElementById('sim-result'); if(a<=0){sim.style.display='none';return;} sim.style.display='flex'; const d=Math.round(a*CFG.DAILY_ROI); document.getElementById('sim-daily').textContent=fmt(d); document.getElementById('sim-monthly').textContent=fmt(d*22); document.getElementById('sim-max').textContent=fmt(a*CFG.MAX_PAYOUT); document.getElementById('sim-days').textContent=`약 ${Math.ceil(a/d)}일`; }
+function calcSimBox(){ const a=parseComma(document.getElementById('sim-amount').value); const sim=document.getElementById('sim-result'); if(a<=0){sim.style.display='none';return;} sim.style.display='flex'; const d=Math.round(a*CFG.DAILY_ROI); document.getElementById('sim-daily').textContent=fmtFull(d); document.getElementById('sim-monthly').textContent=fmtFull(d*22); document.getElementById('sim-max').textContent=fmtFull(a*CFG.MAX_PAYOUT); document.getElementById('sim-days').textContent=`약 ${Math.ceil(a/d)}일`; }
 let _selectedSide = null;
 
 async function submitInvestment(){
@@ -2624,7 +2624,7 @@ async function submitInvestment(){
   if(!iname){toast('입금자명을 입력하세요','error');return;}
   const inv={id:Date.now(),userId:currentUser.id,userName:currentUser.name,amount:amt,depositorName:_esc(iname),memo:_esc(document.getElementById('inp-invest-memo').value.trim()),side:'auto',requestedAt:localDateTimeStr(new Date()),status:'pending'};
   await dbPut('pendingInvestments',inv);  // id 있으므로 fsPut 사용
-  await audit('INVEST_REQUEST',`투자신청 ${fmt(amt)}`,currentUser.id);
+  await audit('INVEST_REQUEST',`투자신청 ${fmtFull(amt)}`,currentUser.id);
   document.getElementById('inp-invest-amount').value='';
   document.getElementById('inp-invest-name').value='';
   document.getElementById('inp-invest-memo').value='';
@@ -2651,9 +2651,9 @@ async function renderNetwork(){
   const downlineAll=allUsers.filter(x=>x.sponsorCode===u.id&&x.role==='member');
   const smallLine=Math.min(u.leftInvest||0,u.rightInvest||0);
   const elDC=document.getElementById('net-direct-cnt'); if(elDC) elDC.textContent=downlineAll.length;
-  if(document.getElementById('net-left-pt'))  document.getElementById('net-left-pt').textContent=fmt(u.leftInvest||0);
-  if(document.getElementById('net-right-pt')) document.getElementById('net-right-pt').textContent=fmt(u.rightInvest||0);
-  const elSL=document.getElementById('net-small-line'); if(elSL) elSL.textContent=fmt(smallLine);
+  if(document.getElementById('net-left-pt'))  document.getElementById('net-left-pt').textContent=fmtFull(u.leftInvest||0);
+  if(document.getElementById('net-right-pt')) document.getElementById('net-right-pt').textContent=fmtFull(u.rightInvest||0);
+  const elSL=document.getElementById('net-small-line'); if(elSL) elSL.textContent=fmtFull(smallLine);
   const icEl=document.getElementById('my-invite-code');
   if(icEl) icEl.innerHTML=`<i class="fas fa-copy"></i> 내 추천 ID: ${_esc(u.id)}`;
   const puEl = (document.getElementById('my-placed-under')||null);
@@ -2702,7 +2702,7 @@ async function renderNetwork(){
     <div style="background:var(--bg3);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
         <span style="font-size:15px;font-weight:700;color:var(--text2);">내 PV 현황</span>
-        <span class="mono" style="font-size:15px;font-weight:800;color:var(--gold);">${fmt(totalPV)} / ${fmt(CFG.MAX_PV||20000000)}</span>
+        <span class="mono" style="font-size:15px;font-weight:800;color:var(--gold);">${fmtFull(totalPV)} / ${fmtFull(CFG.MAX_PV||20000000)}</span>
       </div>
       <div class="progress-bar" style="height:10px;margin-bottom:8px;"><div class="progress-fill fill-gold" style="width:${pvPct}%"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:14px;flex-wrap:wrap;gap:6px;">
@@ -2735,9 +2735,9 @@ async function renderNetwork(){
         <div class="net-name">${_esc(d.name)} ${d.suspended?'<span class="stat-badge badge-down">정지</span>':''}</div>
         <div class="net-id">${_esc(d.id)}</div>
         <div class="net-meta">
-          <div class="net-meta-item">투자: <b>${fmt(d.investment)}</b></div>
+          <div class="net-meta-item">투자: <b>${fmtFull(d.investment||0)}</b></div>
           <div class="net-meta-item">가입: <b>${d.registeredAt}</b></div>
-          <div class="net-meta-item">잔액: <b>${fmt(d.wallet)}</b></div>
+          <div class="net-meta-item">잔액: <b>${fmtFull(d.wallet||0)}</b></div>
         </div>
       </div>
     </div>`).join(''); }
@@ -2952,14 +2952,14 @@ function renderReferralTree(u, userMap){
     const bg=isSelf?'rgba(61,214,140,0.12)':'#0d0f1a';
     const nc=isSelf?'#3dd68c':'#f0f2fa';
     const _inv2=u2.investment||0, _roi2=u2.roi||0;
-    const iv=_inv2>0?`<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${(_inv2/10000).toFixed(0)}만</div><div style="font-size:12px;color:#3dd68c;font-weight:700;margin-top:2px;">ROI ₩${(_roi2/10000).toFixed(0)}만</div>`:`<div style="font-size:12px;color:#4a5068;margin-top:3px;">미투자</div>`;
+    const iv=_inv2>0?`<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${Math.round(_inv2).toLocaleString()}</div><div style="font-size:12px;color:#3dd68c;font-weight:700;margin-top:2px;">ROI ₩${Math.round(_roi2).toLocaleString()}</div>`:`<div style="font-size:12px;color:#4a5068;margin-top:3px;">미투자</div>`;
     // 몇 대인지 표시
     const refCh = getRefKids(uid);
     html+=`<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;min-height:${NH}px;
       background:${bg};border:2px solid ${bc};border-radius:14px;
       padding:10px 12px;box-sizing:border-box;cursor:pointer;transition:transform .12s;"
       onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'"
-      onclick="toast('👥 ${_esc(u2.name)} (${_esc(uid)}) | 추천:${refCh.length}명 | 투자:${fmt(u2.investment||0)}','info')">
+      onclick="toast('👥 ${_esc(u2.name)} (${_esc(uid)}) | 추천:${refCh.length}명 | 투자:${fmtFull(u2.investment||0)}','info')">
       <div style="font-size:14px;font-weight:900;color:${nc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_esc(u2.name)}</div>
       <div style="font-size:11px;color:#6b7280;margin-top:1px;">${_esc(uid)}</div>${iv}
     </div>`;
@@ -3061,7 +3061,7 @@ async function renderAdminReferralTree(){
     const bc=isSelf?'#3dd68c':'rgba(61,214,140,0.3)',bg=isSelf?'rgba(61,214,140,0.12)':'#0d0f1a',nc=isSelf?'#3dd68c':'#f0f2fa';
     const _i2=u2.investment||0,_r2=u2.roi||0;
     const iv2=_i2>0?`<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${Math.round(_i2/10000)}만</div><div style="font-size:12px;color:#3dd68c;font-weight:700;">ROI ₩${Math.round(_r2/10000)}만</div>`:`<div style="font-size:12px;color:#4a5068;margin-top:3px;">미투자</div>`;
-    html+=`<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;min-height:${NH}px;background:${bg};border:2px solid ${bc};border-radius:14px;padding:10px 12px;box-sizing:border-box;cursor:pointer;" onclick="toast('👥 ${_esc(u2.name)} (${_esc(uid)}) | 추천:${getRefKids(uid).length}명 | 투자:${fmt(_i2)}','info')">
+    html+=`<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;min-height:${NH}px;background:${bg};border:2px solid ${bc};border-radius:14px;padding:10px 12px;box-sizing:border-box;cursor:pointer;" onclick="toast('👥 ${_esc(u2.name)} (${_esc(uid)}) | 추천:${getRefKids(uid).length}명 | 투자:${fmtFull(_i2)}','info')">
       <div style="font-size:14px;font-weight:900;color:${nc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_esc(u2.name)}</div>
       <div style="font-size:11px;color:#6b7280;">${_esc(uid)}</div>${iv2}
     </div>`;
@@ -3245,8 +3245,8 @@ function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
     const _inv = u.investment||0;
     const _roi = u.roi||0;
     const iv = _inv>0
-      ? `<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${(_inv/10000).toFixed(0)}만</div>
-         <div style="font-size:12px;color:#3dd68c;font-weight:700;margin-top:2px;">ROI ₩${(_roi/10000).toFixed(0)}만</div>`
+      ? `<div style="font-size:12px;color:#d4a853;font-weight:800;margin-top:3px;">투자 ₩${Math.round(_inv).toLocaleString()}</div>
+         <div style="font-size:12px;color:#3dd68c;font-weight:700;margin-top:2px;">ROI ₩${Math.round(_roi).toLocaleString()}</div>`
       : `<div style="font-size:12px;color:#4a5068;margin-top:3px;">미투자</div>`;
     html += `<div style="position:absolute;left:${nx}px;top:${ny}px;width:${NW}px;min-height:${NH}px;
       background:${bg};border:2px solid ${bc};border-radius:14px;
@@ -3254,7 +3254,7 @@ function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
       transition:transform .12s,box-shadow .12s;z-index:1;"
       onmouseover="this.style.transform='scale(1.07)';this.style.zIndex=10"
       onmouseout="this.style.transform='scale(1)';this.style.zIndex=1"
-      onclick="toast('👤 ${_esc(u.name)} (${_esc(uid)}) | 투자:${fmt(u.investment||0)} | 잔액:${fmt(u.wallet||0)}','info')">
+      onclick="toast('👤 ${_esc(u.name)} (${_esc(uid)}) | 투자:${fmtFull(u.investment||0)} | 잔액:${fmtFull(u.wallet||0)}','info')">
       <div style="font-size:14px;font-weight:900;color:${nc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_esc(u.name)}</div>
       <div style="font-size:11px;color:#6b7280;margin-top:1px;">${_esc(uid)}</div>${iv}
     </div>`;
@@ -3393,9 +3393,9 @@ async function renderWallet(){
   else{ wdList.innerHTML=all.slice(0,10).map(w=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);">
       <div><div style="font-size:15px;font-weight:600;" class="mono">${fmtFull(w.amount)}</div>
-        <div style="font-size:14px;color:var(--text3);margin-top:2px;">${w.requestedAt||w.date} · 수수료 ${fmt(w.fee||0)}</div></div>
+        <div style="font-size:14px;color:var(--text3);margin-top:2px;">${w.requestedAt||w.date} · 수수료 ${fmtFull(w.fee||0)}</div></div>
       <div style="text-align:right;">${statusHtml(w.status)}
-        ${w.status==='completed'?`<div class="mono" style="font-size:14px;color:var(--green);margin-top:4px;">실수령 ${fmt(w.netAmount||w.net)}</div>`:''}
+        ${w.status==='completed'?`<div class="mono" style="font-size:14px;color:var(--green);margin-top:4px;">실수령 ${fmtFull(w.netAmount||w.net)}</div>`:''}
       </div>
     </div>`).join(''); }
 }
@@ -3452,7 +3452,7 @@ async function submitWithdrawal(){
   await dbPut('pendingWithdrawals',wd);  // id 있으므로 fsPut 사용
   u.wallet-=wdAmountVal;
   await dbPut('users',u); currentUser=u;
-  await audit('WITHDRAW_REQUEST',`출금신청 ${fmt(wdAmountVal)}`,u.id);
+  await audit('WITHDRAW_REQUEST',`출금신청 ${fmtFull(wdAmountVal)}`,u.id);
   toast('출금 신청이 접수되었습니다. 관리자 승인 후 처리됩니다','success');
   renderWallet().catch(e=>console.error(e));
 }
@@ -3478,9 +3478,9 @@ async function renderReports(){
   const bonusTotal=myTx.filter(t=>['보너스','바이너리','직급수당'].includes(t.type)).reduce((a,c)=>a+c.amount,0);
   const wdTotal=myTx.filter(t=>t.type==='출금').reduce((a,c)=>a+c.amount,0);
   document.getElementById('report-kpi').innerHTML=`
-    <div class="stat-card card-gold"><div class="stat-label">ROI 누적</div><div class="stat-value">${fmt(roiTotal)}</div></div>
-    <div class="stat-card card-green"><div class="stat-label">수당 합계</div><div class="stat-value">${fmt(bonusTotal)}</div></div>
-    <div class="stat-card card-red"><div class="stat-label">총 출금</div><div class="stat-value">${fmt(wdTotal)}</div></div>
+    <div class="stat-card card-gold"><div class="stat-label">ROI 누적</div><div class="stat-value">${fmtFull(roiTotal)}</div></div>
+    <div class="stat-card card-green"><div class="stat-label">수당 합계</div><div class="stat-value">${fmtFull(bonusTotal)}</div></div>
+    <div class="stat-card card-red"><div class="stat-label">총 출금</div><div class="stat-value">${fmtFull(wdTotal)}</div></div>
   `;
   renderReportTable(myTx,reportFilter);
 }
@@ -3505,9 +3505,9 @@ function renderReportTable(myTx,filter){
     <td style="color:var(--text3);font-size:14px;white-space:nowrap;">${t.date}</td>
     <td><span style="color:${typeColor(t.type)};font-size:14px;font-weight:600;">${typeLabel(t.type)}</span></td>
     <td style="font-size:14px;color:var(--text2);max-width:200px;overflow:hidden;">${_esc(t.desc||'')}</td>
-    <td class="td-amount">${fmt(t.amount)}</td>
-    <td class="td-amount" style="color:var(--red);">${t.fee>0?'-'+fmt(t.fee):'-'}</td>
-    <td class="td-amount" style="color:var(--green);">${fmt(t.netAmount||t.amount)}</td>
+    <td class="td-amount">${fmtFull(t.amount)}</td>
+    <td class="td-amount" style="color:var(--red);">${t.fee>0?'-'+fmtFull(t.fee):'-'}</td>
+    <td class="td-amount" style="color:var(--green);">${fmtFull(t.netAmount||t.amount)}</td>
     <td>${statusHtml(t.status)}</td>
   </tr>`).join('');
 }
@@ -4000,7 +4000,7 @@ async function openMemberDetail(uid){
         </div>
         <div style="background:var(--bg2);border-radius:12px;padding:14px;text-align:center;">
           <div style="font-size:13px;color:var(--text2);margin-bottom:6px;">L/R 투자</div>
-          <div class="mono" style="font-size:16px;font-weight:700;">${fmt(u.leftInvest||0)} / ${fmt(u.rightInvest||0)}</div>
+          <div class="mono" style="font-size:16px;font-weight:700;">${fmtFull(u.leftInvest||0)} / ${fmtFull(u.rightInvest||0)}</div>
         </div>
         <div style="background:var(--bg2);border-radius:12px;padding:14px;text-align:center;">
           <div style="font-size:13px;color:var(--text2);margin-bottom:6px;">마지막 ROI</div>
@@ -4244,8 +4244,8 @@ async function adminManualRoi(){
   u.roi+=actual; u.wallet+=actual; u.lastRoiDate=today;
   await dbPut('users',u);
   await dbPut('transactions',{id:Date.now(),userId:u.id,type:'ROI',amount:actual,fee:0,netAmount:actual,date:today,status:'completed',desc:'관리자 수동 배당 지급'});
-  await audit('MANUAL_ROI',`수동배당 ${fmt(actual)} 대상:${u.id}`,'admin');
-  toast(`${u.name}에게 ${fmt(actual)} 수동 지급 완료`,'success');
+  await audit('MANUAL_ROI',`수동배당 ${fmtFull(actual)} 대상:${u.id}`,'admin');
+  toast(`${u.name}에게 ${fmtFull(actual)} 수동 지급 완료`,'success');
   closeMemberDetail(); renderAdmin().catch(e=>console.error(e));
 }
 async function adminDeductWallet(){
@@ -4255,8 +4255,8 @@ async function adminDeductWallet(){
   const amt = parseInt(document.getElementById('admin-add-wallet-amount').value);
   const desc = document.getElementById('admin-add-wallet-desc').value.trim() || '관리자 잔액 회수';
   if(!amt||amt<=0){ toast('회수할 금액을 입력하세요','error'); return; }
-  if(u.wallet < amt){ toast(`잔액 부족 (현재 잔액: ${fmt(u.wallet)})`, 'error'); return; }
-  showModal('잔액 회수 확인', `${u.name}의 잔액 ${fmt(amt)}을 회수합니다.\n메모: ${desc}`, async()=>{
+  if(u.wallet < amt){ toast(`잔액 부족 (현재 잔액: ${fmtFull(u.wallet||0)})`, 'error'); return; }
+  showModal('잔액 회수 확인', `${u.name}의 잔액 ${fmtFull(amt)}을 회수합니다.\n메모: ${desc}`, async()=>{
     u.wallet -= amt;
     await dbPut('users', u);
     const today = localDateStr(new Date());
@@ -4266,8 +4266,8 @@ async function adminDeductWallet(){
       date:today, status:'completed',
       desc:`[관리자 회수] ${desc}`
     });
-    await audit('ADMIN_DEDUCT', `잔액회수 ${fmt(amt)} 회원:${u.id} 메모:${desc}`, 'admin');
-    toast(`✅ ${u.name} 잔액 ${fmt(amt)} 회수 완료`, 'success');
+    await audit('ADMIN_DEDUCT', `잔액회수 ${fmtFull(amt)} 회원:${u.id} 메모:${desc}`, 'admin');
+    toast(`✅ ${u.name} 잔액 ${fmtFull(amt)} 회수 완료`, 'success');
     openMemberDetail(_detailUserId).catch(e=>console.error(e));
   }, '회수', 'btn-danger');
 }
@@ -4293,7 +4293,7 @@ async function adminWalletAdjust(mode){
   const newRoi    = (u.roi||0) + (isAdd ? amt : 0); // 회수 시 ROI는 유지
 
   if(!isAdd && newWallet < 0){
-    toast(`잔액 부족! 현재 잔액: ${fmt(u.wallet||0)}`, 'error');
+    toast(`잔액 부족! 현재 잔액: ${fmtFull(u.wallet||0)}`, 'error');
     return;
   }
 
@@ -4323,12 +4323,12 @@ async function adminWalletAdjust(mode){
   // 감사 로그
   await audit(
     isAdd ? 'WALLET_ADD' : 'WALLET_DEDUCT',
-    `${isAdd?'지급':'회수'} ${fmt(amt)} 대상:${u.id} 메모:${memo}`,
+    `${isAdd?'지급':'회수'} ${fmtFull(amt)} 대상:${u.id} 메모:${memo}`,
     'admin'
   );
 
   toast(
-    `✅ ${u.name}에게 ${fmt(amt)} ${isAdd?'지급':'회수'} 완료\n메모: ${memo}`,
+    `✅ ${u.name}에게 ${fmtFull(amt)} ${isAdd?'지급':'회수'} 완료\n메모: ${memo}`,
     isAdd ? 'success' : 'error'
   );
 
@@ -4362,7 +4362,7 @@ async function adminEditAmounts(){
 
   const today=localDateStr(new Date());
   await audit('ADMIN_EDIT_AMOUNTS',
-    `금액수정 [${u.id}] 투자:${fmt(oldInv)}→${fmt(newInvestment)} ROI:${fmt(oldRoi)}→${fmt(newRoi)} 잔액:${fmt(oldWallet)}→${fmt(newWallet)}`,
+    `금액수정 [${u.id}] 투자:${fmtFull(oldInv)}→${fmtFull(newInvestment)} ROI:${fmtFull(oldRoi)}→${fmtFull(newRoi)} 잔액:${fmtFull(oldWallet)}→${fmtFull(newWallet)}`,
     'admin');
 
   toast(`✅ ${u.name} 금액 수정 완료`,'success');
@@ -4383,7 +4383,7 @@ async function rejectWithdrawal(id){
     const user=await dbGet('users',wd.userId);
     if(user){user.wallet+=wd.amount; await dbPut('users',user);}
     await dbDelete('pendingWithdrawals',id);
-    await audit('WD_REJECT',`출금 거부+반환 ${fmt(wd.amount)} 회원:${wd.userId}`,'admin');
+    await audit('WD_REJECT',`출금 거부+반환 ${fmtFull(wd.amount)} 회원:${wd.userId}`,'admin');
     toast('출금이 거부되었고 잔액이 반환되었습니다');
     renderAdmin();
   },'거부 및 반환','btn-danger');
@@ -4440,9 +4440,9 @@ async function renderAdmin(){
   const totalWallet=members.reduce((a,u)=>a+u.wallet,0);
   document.getElementById('admin-kpi').innerHTML=`
     <div class="stat-card card-gold"><div class="stat-label">총 회원</div><div class="stat-value">${members.length}</div><div class="stat-sub">명</div></div>
-    <div class="stat-card card-blue"><div class="stat-label">총 투자금</div><div class="stat-value">${fmt(totalInvest)}</div></div>
-    <div class="stat-card card-green"><div class="stat-label">총 ROI 지급</div><div class="stat-value">${fmt(totalRoi)}</div></div>
-    <div class="stat-card"><div class="stat-label">총 잔액</div><div class="stat-value">${fmt(totalWallet)}</div></div>
+    <div class="stat-card card-blue"><div class="stat-label">총 투자금</div><div class="stat-value">${fmtFull(totalInvest)}</div></div>
+    <div class="stat-card card-green"><div class="stat-label">총 ROI 지급</div><div class="stat-value">${fmtFull(totalRoi)}</div></div>
+    <div class="stat-card"><div class="stat-label">총 잔액</div><div class="stat-value">${fmtFull(totalWallet)}</div></div>
   `;
   // 배지
   const pendApproval=allUsers.filter(u=>u.role==='member'&&u.approvalStatus==='pending');
@@ -4542,7 +4542,7 @@ function renderAdminOverview(members){
   if(ctx&&top.length>0){
     adminBarChart=new Chart(ctx,{type:'bar',
       data:{labels:top.map(u=>u.name),datasets:[{label:'투자금',data:top.map(u=>u.investment),backgroundColor:'rgba(212,168,83,0.6)',borderColor:'var(--gold)',borderWidth:1},{label:'ROI',data:top.map(u=>u.roi),backgroundColor:'rgba(61,214,140,0.5)',borderColor:'var(--green)',borderWidth:1}]},
-      options:{responsive:true,plugins:{legend:{labels:{color:'#8890a4',font:{size:11}}}},scales:{x:{ticks:{color:'#4a5068',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#4a5068',font:{size:10},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'}}}}
+      options:{responsive:true,plugins:{legend:{labels:{color:'#8890a4',font:{size:11}}}},scales:{x:{ticks:{color:'#4a5068',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#4a5068',font:{size:10},callback:v=>fmtFull(v)},grid:{color:'rgba(255,255,255,0.04)'}}}}
     });
   }
   // 직급 현황
@@ -4594,9 +4594,9 @@ function renderAdminMembers(members){
       <td><div style="font-weight:600;">${_esc(u.name)}</div><div style="font-size:14px;color:var(--text3);font-family:'Space Mono',monospace;">${_esc(u.id)}</div></td>
       <td style="font-size:14px;color:var(--text3);">${u.sponsorCode&&u.sponsorCode!=='SYSTEM-ROOT'?_esc(u.sponsorCode):'-'}</td>
       <td style="font-size:14px;color:var(--blue);">${u.placedUnder?_esc(u.placedUnder):'<span style="color:var(--text3);">-</span>'}</td>
-      <td class="td-amount">${fmt(u.investment)}</td>
-      <td class="td-amount" style="color:var(--gold);">${fmt(u.roi)}${isMaxed?'<span class="stat-badge badge-down" style="margin-left:4px;font-size:9px;">${(CFG.MAX_PAYOUT*100).toFixed(0)}%</span>':''}</td>
-      <td class="td-amount" style="color:var(--green);">${fmt(u.wallet)}</td>
+      <td class="td-amount">${fmtFull(u.investment||0)}</td>
+      <td class="td-amount" style="color:var(--gold);">${fmtFull(u.roi||0)}${isMaxed?'<span class="stat-badge badge-down" style="margin-left:4px;font-size:9px;">${(CFG.MAX_PAYOUT*100).toFixed(0)}%</span>':''}</td>
+      <td class="td-amount" style="color:var(--green);">${fmtFull(u.wallet||0)}</td>
       <td><div class="rank-badge ${rank.class}" style="font-size:15px;">${rank.label}</div></td>
       <td>${u.approvalStatus==='pending'?'<span class="status status-pend">승인대기</span>':u.suspended?'<span class="status status-fail">정지</span>':u.investment>0?'<span class="status status-done">투자중</span>':'<span class="status status-stop">미투자</span>'}</td>
       <td><button class="btn btn-secondary btn-sm" onclick="openMemberDetail('${_esc(u.id)}')"><i class="fas fa-cog"></i> 관리</button></td>
@@ -4643,7 +4643,7 @@ function renderAdminLogs(allTx){
     <td style="font-size:14px;color:var(--text3);white-space:nowrap;">${t.date}</td>
     <td style="font-size:14px;font-family:'Space Mono',monospace;">${_esc(t.userId)}</td>
     <td><span style="color:${typeColor(t.type)};font-size:14px;font-weight:600;">${typeLabel(t.type)}</span></td>
-    <td class="td-amount">${fmt(t.amount)}</td>
+    <td class="td-amount">${fmtFull(t.amount)}</td>
     <td style="font-size:14px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis;">${_esc(t.desc||'')}</td>
     <td>${statusHtml(t.status)}</td>
   </tr>`).join('');
@@ -4753,7 +4753,7 @@ async function approveInvestment(id){
     // 직급 수당 체크 (상위 라인 전체)
     await checkRankBonuses(user.id,today);
     await dbDelete('pendingInvestments',id);
-    await audit('INV_APPROVE',`투자 승인 ${fmt(inv.amount)} 회원:${inv.userId}`,'admin');
+    await audit('INV_APPROVE',`투자 승인 ${fmtFull(inv.amount)} 회원:${inv.userId}`,'admin');
     toast('투자가 승인되었습니다','success');
     renderAdmin();
   },'승인','btn-success');
@@ -4875,8 +4875,8 @@ async function checkRankBonuses(newUserId,date){
           if(!cur.paidRanks) cur.paidRanks=[];
           cur.paidRanks.push(rank.rank);
           await dbPut('users',cur);
-          await dbPut('transactions',{id:Date.now()+depth,userId:cur.id,type:'직급수당',amount:actual,fee:0,netAmount:actual,date,status:'completed',desc:`${rank.label} 직급 수당 달성 (소라인 ${fmt(sl)})`});
-          toast(`${cur.name}님 ${rank.label} 직급 달성! ${fmt(actual)} 지급`,'success');
+          await dbPut('transactions',{id:Date.now()+depth,userId:cur.id,type:'직급수당',amount:actual,fee:0,netAmount:actual,date,status:'completed',desc:`${rank.label} 직급 수당 달성 (소라인 ${fmtFull(sl)})`});
+          toast(`${cur.name}님 ${rank.label} 직급 달성! ${fmtFull(actual)} 지급`,'success');
         }
       }
     }
@@ -4889,7 +4889,7 @@ async function approveWithdrawal(id){
     const today=localDateStr(new Date());
     await dbPut('transactions',{id:Date.now(),userId:wd.userId,type:'출금',amount:wd.amount,fee:wd.fee,netAmount:wd.net,date:today,status:'completed',desc:'출금 승인 완료'});
     await dbDelete('pendingWithdrawals',id);
-    await audit('WD_APPROVE',`출금 승인 ${fmt(wd.amount)} 회원:${wd.userId}`,'admin');
+    await audit('WD_APPROVE',`출금 승인 ${fmtFull(wd.amount)} 회원:${wd.userId}`,'admin');
     toast('출금이 승인되었습니다','success');
     renderAdmin().catch(e=>console.error(e));
   },'승인','btn-success');
@@ -5036,7 +5036,7 @@ async function catchUpRoi(){
   const paid=await processUserRoi(currentUser.id);
   if(paid>0){
     const u=await dbGet('users',currentUser.id); currentUser=u;
-    toast(`미지급 ROI ${fmt(paid)} 자동 보정 완료`,'success');
+    toast(`미지급 ROI ${fmtFull(paid)} 자동 보정 완료`,'success');
     if(currentView==='dashboard') renderDashboard().catch(e=>console.error(e));
   }
 }
@@ -5055,15 +5055,15 @@ async function autoSettleAll(label){
   // 정산 로그 저장
   const runTime=localDateTimeStr(new Date());
   await dbPut('settings',{key:'__scheduler__',value:{lastRun:localDateStr(new Date()),runTime,count,totalAmt,ts:Date.now()}});
-  console.log(`[자동정산 ${label}] ${runTime} — ${count}명 / ${fmt(totalAmt)} 지급 완료`);
+  console.log(`[자동정산 ${label}] ${runTime} — ${count}명 / ${fmtFull(totalAmt)} 지급 완료`);
   if(count>0){
     if(currentUser&&currentUser.role!=='admin'&&currentUser.investment>0){
       const myPayout=Math.round(currentUser.investment*CFG.DAILY_ROI);
-      toast(`💰 오늘의 ROI ${fmt(myPayout)}이 지급되었습니다!`,'success');
+      toast(`💰 오늘의 ROI ${fmtFull(myPayout)}이 지급되었습니다!`,'success');
       if(currentView==='dashboard') renderDashboard().catch(e=>console.error(e));
     }
     if(currentUser&&currentUser.role==='admin'){
-      toast(`✅ 자동 정산 완료 — ${count}명 / ${fmt(totalAmt)}`, 'success');
+      toast(`✅ 자동 정산 완료 — ${count}명 / ${fmtFull(totalAmt)}`, 'success');
       renderAdmin();
     }
   }
