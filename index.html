@@ -2917,7 +2917,16 @@ function renderReferralTree(u, userMap){
   assignRef(u.id, 0);
 
   const allP = Object.values(pos);
-  if(!allP.length){ container.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);">추천 하부 없음</div>'; return; }
+  if(!allP.length){
+    Array.from(container.children).forEach(ch=>{
+      if(!ch.classList.contains('tree-zoom-btns') && !ch.classList.contains('tree-loading-overlay')) ch.remove();
+    });
+    const _rn=document.createElement('div');
+    _rn.style.cssText='padding:40px;text-align:center;color:var(--text3);';
+    _rn.textContent='추천 하부 없음';
+    container.appendChild(_rn);
+    return;
+  }
   const minX=Math.min(...allP.map(p=>p.x)), maxX=Math.max(...allP.map(p=>p.x)), maxY=Math.max(...allP.map(p=>p.y));
   const offX=-minX+HGAP, offY=VGAP;
   const W=Math.max(maxX-minX+NW+HGAP*2,500), H=maxY+NH+VGAP*2;
@@ -2964,9 +2973,16 @@ function renderReferralTree(u, userMap){
     </div>`;
   }
 
-  container.innerHTML=`<div style="position:relative;width:${W}px;height:${H}px;min-width:${W}px;">
-    <svg style="position:absolute;top:0;left:0;" width="${W}" height="${H}" overflow="visible">${svg}</svg>${html}
-  </div>`;
+  // 줌 버튼 보존하며 inner div만 교체
+  const _rafLov = container.querySelector('.tree-loading-overlay');
+  if(_rafLov) _rafLov.style.display='none';
+  Array.from(container.children).forEach(ch=>{
+    if(!ch.classList.contains('tree-zoom-btns') && !ch.classList.contains('tree-loading-overlay')) ch.remove();
+  });
+  const _rafInner = document.createElement('div');
+  _rafInner.style.cssText = `position:relative;width:${W}px;height:${H}px;min-width:${W}px;`;
+  _rafInner.innerHTML = `<svg style="position:absolute;top:0;left:0;" width="${W}" height="${H}" overflow="visible">${svg}</svg>${html}`;
+  container.appendChild(_rafInner);
   initTreeDrag(container);
 }
 
@@ -2993,7 +3009,16 @@ async function renderAdminBothTrees(){
 async function renderAdminReferralTree(){
   const container = document.getElementById('admin-referral-tree');
   if(!container) return;
-  container.innerHTML='<div style="padding:30px;text-align:center;color:var(--text2);">로딩 중...</div>';
+  let _rLoadDiv = container.querySelector('.tree-loading-overlay');
+  if(!_rLoadDiv){
+    _rLoadDiv = document.createElement('div');
+    _rLoadDiv.className = 'tree-loading-overlay';
+    _rLoadDiv.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg3);z-index:50;border-radius:var(--r);';
+    container.style.position = 'relative';
+    container.appendChild(_rLoadDiv);
+  }
+  _rLoadDiv.innerHTML = '<div style="color:var(--text2);">로딩 중...</div>';
+  _rLoadDiv.style.display = 'flex';
   const rootInput = document.getElementById('admin-tree-root');
   const rootId = (rootInput?.value||'').trim();
   const allUsers = await dbGetAll('users');
@@ -3016,7 +3041,14 @@ async function renderAdminReferralTree(){
       if(anyMember.length>0) startId = anyMember[0].id;
     }
   }
-  if(!startId){ container.innerHTML='<div style="padding:30px;text-align:center;color:var(--text3);">회원이 없습니다</div>'; return; }
+  if(!startId){   Array.from(container.children).forEach(ch=>{
+      if(!ch.classList.contains('tree-zoom-btns') && !ch.classList.contains('tree-loading-overlay')) ch.remove();
+    });
+    const _en=document.createElement('div');
+    _en.style.cssText='padding:30px;text-align:center;color:var(--text3);';
+    _en.textContent='회원이 없습니다';
+    container.appendChild(_en);
+    return; }
 
   // 추천 조직도 렌더링 (sponsorCode 기반)
   const NW=148,NH=74,HGAP=28,VGAP=65;
@@ -3035,7 +3067,14 @@ async function renderAdminReferralTree(){
     if(!xs.length)leafIdx++;
   }
   assignRef(startId,0);
-  const allP=Object.values(pos); if(!allP.length){container.innerHTML='<div style="padding:30px;text-align:center;color:var(--text3);">데이터 없음</div>';return;}
+  const allP=Object.values(pos); if(!allP.length){  Array.from(container.children).forEach(ch=>{
+      if(!ch.classList.contains('tree-zoom-btns') && !ch.classList.contains('tree-loading-overlay')) ch.remove();
+    });
+    const _en=document.createElement('div');
+    _en.style.cssText='padding:30px;text-align:center;color:var(--text3);';
+    _en.textContent='데이터 없음';
+    container.appendChild(_en);
+    return;}
   const minX=Math.min(...allP.map(p=>p.x)),maxX=Math.max(...allP.map(p=>p.x)),maxY=Math.max(...allP.map(p=>p.y));
   const offX=-minX+HGAP,offY=VGAP,W=Math.max(maxX-minX+NW+HGAP*2,500),H=maxY+NH+VGAP*2;
   let svg=''; const sv=new Set();
@@ -3065,14 +3104,35 @@ async function renderAdminReferralTree(){
       <div style="font-size:11px;color:#6b7280;">${_esc(uid)}</div>${iv2}
     </div>`;
   }
-  container.innerHTML=`<div style="position:relative;width:${W}px;height:${H}px;min-width:${W}px;"><svg style="position:absolute;top:0;left:0;" width="${W}" height="${H}" overflow="visible">${svg}</svg>${html}</div>`;
+  // 로딩 overlay 제거
+  const _rLov = container.querySelector('.tree-loading-overlay');
+  if(_rLov) _rLov.style.display = 'none';
+
+  // 줌 버튼 보존하며 inner div만 교체
+  Array.from(container.children).forEach(ch=>{
+    if(!ch.classList.contains('tree-zoom-btns') && !ch.classList.contains('tree-loading-overlay')) ch.remove();
+  });
+  const _rInner = document.createElement('div');
+  _rInner.style.cssText = `position:relative;width:${W}px;height:${H}px;min-width:${W}px;`;
+  _rInner.innerHTML = `<svg style="position:absolute;top:0;left:0;" width="${W}" height="${H}" overflow="visible">${svg}</svg>${html}`;
+  container.appendChild(_rInner);
   initTreeDrag(container);
 }
 
 async function renderAdminTree(){
   const container = document.getElementById('admin-network-tree');
   if(!container) return;
-  container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text2);">조직도 로딩 중...</div>';
+  // 로딩 표시 — innerHTML 전체 교체 대신 overlay
+  let _loadingDiv = container.querySelector('.tree-loading-overlay');
+  if(!_loadingDiv){
+    _loadingDiv = document.createElement('div');
+    _loadingDiv.className = 'tree-loading-overlay';
+    _loadingDiv.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg3);z-index:50;border-radius:var(--r);';
+    container.style.position = 'relative';
+    container.appendChild(_loadingDiv);
+  }
+  _loadingDiv.innerHTML = '<div style="color:var(--text2);font-size:16px;">조직도 로딩 중...</div>';
+  _loadingDiv.style.display = 'flex';
 
   const rootInput = document.getElementById('admin-tree-root');
   const rootId = (rootInput?.value||'').trim();
@@ -3095,8 +3155,16 @@ async function renderAdminTree(){
     }
   }
 
+  // 로딩 overlay 제거
+  const _lov = container.querySelector('.tree-loading-overlay');
+  if(_lov) _lov.style.display = 'none';
+
   if(!startId){
-    container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">표시할 회원이 없습니다</div>';
+    Array.from(container.children).forEach(ch=>{ if(!ch.classList.contains('tree-zoom-btns')) ch.remove(); });
+    const _nm = document.createElement('div');
+    _nm.style.cssText = 'padding:40px;text-align:center;color:var(--text3);';
+    _nm.textContent = '표시할 회원이 없습니다';
+    container.appendChild(_nm);
     return;
   }
   renderTree('admin-network-tree', startId, userMap, null);
@@ -3105,7 +3173,10 @@ async function renderAdminTree(){
 function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
   const wrap = document.getElementById(containerId);
   if(!wrap) return;
-  wrap.innerHTML = '';
+  // 줌 버튼 보존하며 기존 inner만 제거
+  Array.from(wrap.children).forEach(ch=>{
+    if(!ch.classList.contains('tree-zoom-btns') && !ch.classList.contains('tree-loading-overlay')) ch.remove();
+  });
 
   // ── 후원 조직도: placedUnder 기반으로 자식 찾기 ──
   // placedUnder가 uid인 회원을 가입일 순으로 L, R 배치
@@ -3148,7 +3219,13 @@ function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
   }
 
   if(!nodes.length){
-    wrap.innerHTML='<div style="padding:60px;text-align:center;color:#6b7280;font-size:16px;">데이터 없음</div>';
+    Array.from(wrap.children).forEach(ch=>{
+      if(!ch.classList.contains('tree-zoom-btns') && !ch.classList.contains('tree-loading-overlay')) ch.remove();
+    });
+    const _nm1=document.createElement('div');
+    _nm1.style.cssText='padding:60px;text-align:center;color:#6b7280;font-size:16px;';
+    _nm1.textContent='데이터 없음';
+    wrap.appendChild(_nm1);
     return;
   }
 
@@ -3259,11 +3336,32 @@ function renderTree(containerId, rootId, userMap, selfId, mode='sponsor'){
     </div>`;
   });
 
-  wrap.innerHTML=`<div style="position:relative;width:${W}px;height:${H}px;flex-shrink:0;">
-    <svg style="position:absolute;top:0;left:0;" width="${W}" height="${H}" overflow="visible">${svg}</svg>
-    ${html}
-  </div>`;
+  // 줌 버튼 보존 (innerHTML 교체해도 버튼 살아있게)
+  const _existZoom = wrap.querySelector('.tree-zoom-btns');
+  const _savedZid  = wrap.dataset.zoomCid || '';
+  const _savedSc   = _savedZid && window._treeScales ? (window._treeScales[_savedZid]||1) : 1;
+
+  // 기존 inner div만 제거 (tree-zoom-btns는 유지)
+  Array.from(wrap.children).forEach(ch=>{
+    if(!ch.classList.contains('tree-zoom-btns')) ch.remove();
+  });
+
+  // 새 inner div 추가
+  const _innerDiv = document.createElement('div');
+  _innerDiv.style.cssText = `position:relative;width:${W}px;height:${H}px;flex-shrink:0;`;
+  _innerDiv.innerHTML = `<svg style="position:absolute;top:0;left:0;" width="${W}" height="${H}" overflow="visible">${svg}</svg>${html}`;
+  wrap.appendChild(_innerDiv);
+
+  // 줌 버튼 없으면 추가 (initTreeDrag가 처리)
   initTreeDrag(wrap);
+
+  // 이전 스케일 복원
+  if(_savedZid && _savedSc !== 1 && window._treeScales){
+    _innerDiv.style.transform = 'scale('+_savedSc+')';
+    _innerDiv.style.transformOrigin = 'top left';
+    const _sl = wrap.querySelector('.zoom-scale-label');
+    if(_sl) _sl.textContent = Math.round(_savedSc*100)+'%';
+  }
 }
 
 // ══════════════════════════════════════════
@@ -3287,8 +3385,8 @@ function _treeZoomBy(zid, delta){
   window._treeScales[zid] = sc;
   inner.style.transform       = 'scale(' + sc + ')';
   inner.style.transformOrigin = 'top left';
-  // 스케일 표시 업데이트
-  const scLabel = con.parentElement && con.parentElement.querySelector('.zoom-scale-label');
+  // 스케일 표시 업데이트 (con 내부에서 찾기)
+  const scLabel = con.querySelector('.zoom-scale-label');
   if(scLabel) scLabel.textContent = Math.round(sc*100) + '%';
 }
 
