@@ -846,7 +846,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
         </div>
         <div class="form-group">
           <label class="form-label">투자 금액 (원)</label>
-          <input class="form-input mono" id="inp-invest-amount" type="number" placeholder="투자금액 입력" min="0" step="1000" oninput="formatInvestInput(this);calcSim()">
+          <input class="form-input mono" id="inp-invest-amount" type="text" inputmode="numeric" placeholder="1,000,000" oninput="formatInvestInput(this);calcSim()">
           <div class="form-hint" style="color:var(--text3);">₩ 기호 제외하고 숫자만 입력하세요</div>
         </div>
         <div class="form-group">
@@ -1668,19 +1668,7 @@ td{font-size:14px !important;padding:14px 16px !important;}
 <!-- TOAST -->
 <div id="toast-container"></div>
 
-<!-- 회원 상세 모달 -->
-<div id="modal-member-detail" class="modal-overlay hidden" onclick="if(event.target===this)closeMemberDetail()">
-  <div class="modal" style="max-width:520px;width:95%;max-height:85vh;overflow-y:auto;">
-    <div class="modal-title" id="mmd-title">회원 상세</div>
-    <div id="mmd-body" style="font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:16px;"></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-purple btn-sm" onclick="adminManualRoi()" id="mmd-roi-btn"><i class="fas fa-coins"></i> ROI 수동 지급</button>
-      <button class="btn btn-success btn-sm" onclick="adminAddWallet()" id="mmd-wallet-btn"><i class="fas fa-plus"></i> 잔액 추가</button>
-      <button class="btn btn-danger btn-sm" id="mmd-suspend-btn"><i class="fas fa-ban"></i> 계정 정지</button>
-      <button class="btn btn-secondary btn-sm" onclick="closeMemberDetail()"><i class="fas fa-times"></i> 닫기</button>
-    </div>
-  </div>
-</div>
+
 
 <!-- CONFIRM MODAL -->
 <div id="modal-confirm" class="modal-overlay hidden">
@@ -2577,19 +2565,7 @@ async function renderInvest(){
     <div style="font-size:15px;color:var(--text3);margin-top:5px;text-align:right;">${(u.roi/max*100).toFixed(1)}% / ${(CFG.MAX_PAYOUT*100).toFixed(0)}%</div>
   `:'<div class="empty"><i class="fas fa-chart-line"></i><p>투자를 시작하세요</p></div>';
 }
-// ── 조직도 줌 내부 함수 ──
 
-function treeZoom(cid, delta){
-  const con = document.querySelector('[data-zoom-id="'+cid+'"]');
-  if(!con) return;
-  const inner = con.querySelector('div[style*="position:relative"]');
-  if(!inner) return;
-  let sc = parseFloat(inner.style.transform?.match(/scale\(([^)]+)\)/)?.[1]||1);
-  if(delta===0) sc=1;
-  else sc = Math.min(2.5, Math.max(0.2, sc+delta));
-  inner.style.transform='scale('+sc+')';
-  inner.style.transformOrigin='top left';
-}
 
 // 입력창 콤마 자동 포맷
 function formatCommaInput(el){
@@ -4260,6 +4236,9 @@ async function openMemberDetail(uid){
         <button class="btn btn-purple btn-sm" onclick="adminManualRoi()">
           <i class="fas fa-coins"></i> ROI 지급
         </button>
+        <button class="btn btn-primary btn-sm" onclick="adminSetInvestment()" style="margin-top:6px;">
+          <i class="fas fa-chart-line"></i> 💰 투자금 직접설정
+        </button>
       </div>
       <div style="font-size:14px;color:var(--text3);margin-top:10px;">
         💡 지급: 잔액 증가 / 회수: 잔액 감소 — 메모가 거래내역에 표시됩니다
@@ -4412,6 +4391,41 @@ async function toggleSuspend(uid){
   toast(`${u.name} 계정이 ${u.suspended?'정지':'활성화'}되었습니다`,u.suspended?'error':'success');
   openMemberDetail(uid);
 }
+async function adminSetInvestment(){
+  if(!_detailUserId) return;
+  const u = await dbGet('users', _detailUserId);
+  if(!u){ toast('회원 정보 없음','error'); return; }
+  const amtStr = prompt(`${u.name}의 투자금을 직접 설정합니다.
+현재 투자금: ${fmtFull(u.investment||0)}
+
+새 투자금 입력 (숫자만):`, u.investment||0);
+  if(amtStr === null) return;
+  const amt = parseInt(amtStr.replace(/,/g,''));
+  if(isNaN(amt) || amt < 0){ toast('올바른 금액을 입력하세요','error'); return; }
+  showModal('투자금 직접 설정',
+    `${u.name}의 투자금을 ${fmtFull(amt)}으로 설정합니다.
+
+※ 이 작업은 실제 입금 확인 후에만 사용하세요.`,
+    async()=>{
+      const today = localDateStr(new Date());
+      u.investment = amt;
+      u.lastInvestmentDate = u.lastInvestmentDate || today;
+      await dbPut('users', u);
+      // 거래 기록
+      await dbPut('transactions',{
+        id: Date.now(), userId: u.id,
+        type:'투자', amount: amt, fee:0, netAmount: amt,
+        date: today, status:'completed',
+        desc:`[관리자 직접설정] 투자금 ${fmtFull(amt)}`
+      });
+      // 조직도 배치 업데이트
+      await updateLinePoints(u.id, amt, 'left').catch(e=>console.warn(e));
+      await audit('INVEST_DIRECT_SET', `투자금 직접설정 ${fmtFull(amt)} 대상:${u.id}`, 'admin');
+      toast(`✅ ${u.name} 투자금 ${fmtFull(amt)} 설정 완료`, 'success');
+      openMemberDetail(_detailUserId);
+    }, '설정', 'btn-primary');
+}
+
 async function adminManualRoi(){
   if(!_detailUserId)return;
   const u=await dbGet('users',_detailUserId);
